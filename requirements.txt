@@ -1,0 +1,8 @@
+Django>=1.8
+django-debug-panel
+django-debug-toolbar
+django-filter
+django-nose
+djangorestframework
+Markdown
+nose

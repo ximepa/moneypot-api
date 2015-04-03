@@ -1,0 +1,76 @@
+@startuml
+
+package auth {
+
+    class User {
+    }
+
+    User --> Group : group
+    User --> UserPermissions : perms
+
+    class Group {
+
+    }
+
+    Group --> GroupPermissions : perms
+
+    class UserPermissions {
+
+    }
+
+    UserPermissions --> Permission
+
+    class GroupPermissions {
+
+    }
+
+    GroupPermissions --> Permission
+
+    class Permission {
+
+    }
+
+}
+
+package base {
+
+    class Pot {
+        .. Permissions ..
+        - can use as source
+        - can use as destination
+        - can see items
+        - can see counts
+        - can confirm source
+        - can confirm destination
+    }
+
+    class Transaction {
+        .. Fields ..
+        + source
+        + destintation
+        ~ timestamp create
+        ~ timestamp complete
+        ~ sender negotiated
+        ~ recipient negotiated
+        ~ sender completed
+        ~ recipient completed
+    }
+
+    Transaction --> Pot : source
+    Transaction --> Pot : destination
+
+    Pot .. Permission
+
+    class Item {
+
+    }
+
+    class ItemCategory {
+
+    }
+
+    class Pot
+
+}
+
+@enduml
