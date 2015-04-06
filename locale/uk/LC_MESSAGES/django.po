@@ -1,0 +1,286 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2015-04-06 13:02+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: base/models.py:16
+msgid "integer unit"
+msgstr "ціле число"
+
+#: base/models.py:17
+msgid "decimal unit"
+msgstr "не ціле число"
+
+#: base/models.py:20 base/models.py:32 base/models.py:76
+msgid "name"
+msgstr "ім'я"
+
+#: base/models.py:21
+msgid "unit type"
+msgstr "тим одиниці виміру"
+
+#: base/models.py:24 base/models.py:33
+msgid "unit"
+msgstr "одиниця виміру"
+
+#: base/models.py:25
+msgid "units"
+msgstr "одиниці виміру"
+
+#: base/models.py:34
+msgid "stackable"
+msgstr "можуть бути з'єднані"
+
+#: base/models.py:35 base/models.py:77
+msgid "parent"
+msgstr "батьківський елемент"
+
+#: base/models.py:38 base/models.py:107 base/models.py:296
+msgid "item category"
+msgstr "категорія предмету"
+
+#: base/models.py:39
+msgid "item categories"
+msgstr "категорії предметів"
+
+#: base/models.py:54
+msgid "Unit must be set for object or for one of its parents."
+msgstr ""
+"Одиниця виміру має бути вказана для об'єкта чи для одного з батьківських "
+"елементів"
+
+#: base/models.py:64
+msgid "Stackable must be set for object or for one of its parents."
+msgstr ""
+"Можливість з'єднання має бути вказана для об'єкта чи для одного з "
+"батьківських елементів"
+
+#: base/models.py:78
+msgid "is shop"
+msgstr "це магазин?"
+
+#: base/models.py:85
+msgid "view place"
+msgstr "переглянути місце"
+
+#: base/models.py:86
+msgid "view items"
+msgstr "переглянути предмети"
+
+#: base/models.py:87
+msgid "view item quantity"
+msgstr "переглянути кількість предметів"
+
+#: base/models.py:88
+msgid "view item serial"
+msgstr "переглянути серійні номери"
+
+#: base/models.py:89
+msgid "accept transactions"
+msgstr "прийняти транзакцію"
+
+#: base/models.py:90
+msgid "request item store"
+msgstr "запросити як пункт призначення"
+
+#: base/models.py:91
+msgid "request item withdraw"
+msgstr "запросити як джерело"
+
+#: base/models.py:92
+msgid "change serial"
+msgstr "змінити серійний номер"
+
+#: base/models.py:93
+msgid "change chunks"
+msgstr "змінити відрізки"
+
+#: base/models.py:94
+msgid "modify items"
+msgstr "змінити предмети (super user)"
+
+#: base/models.py:95
+msgid "make purchase"
+msgstr "створити закупівлю"
+
+#: base/models.py:96
+msgid "make auto purchase"
+msgstr "створити автоматичну закупівлю"
+
+#: base/models.py:108 base/models.py:297
+msgid "quantity"
+msgstr "кількість"
+
+#: base/models.py:126
+msgid "Category unit type is unknown"
+msgstr "Одиниця виміру категорії невідома"
+
+#: base/models.py:130
+#, python-format
+msgid "data error: %s"
+msgstr "помилка в данних: %s"
+
+#: base/models.py:134
+#, python-brace-format
+msgid "chunks sum error: {total}≠{quantity}"
+msgstr "помилка суми відрізків: {total}≠{quantity}"
+
+#: base/models.py:156
+#, python-format
+msgid "unit type `%s` can not have serials"
+msgstr "одиниця виміру `%s` не може мати серійних номерів"
+
+#: base/models.py:161
+#, python-brace-format
+msgid "serials count error: {count}≠{quantity}"
+msgstr "помилка кількості серійних номерів: {count}≠{quantity}"
+
+#: base/models.py:183
+#, python-format
+msgid "unit type `%s` can not be decimal"
+msgstr "одиниця виміру `%s` повинна бути цілою"
+
+#: base/models.py:197 base/models.py:359
+msgid "Purchase"
+msgstr "Закупка"
+
+#: base/models.py:198
+msgid "price"
+msgstr "ціна"
+
+#: base/models.py:206
+msgid "purchase item"
+msgstr "предмет закупка"
+
+#: base/models.py:207
+msgid "purchase items"
+msgstr "предмети закупки"
+
+#: base/models.py:214 base/models.py:217 base/models.py:270
+msgid "payer"
+msgstr "платник"
+
+#: base/models.py:218
+msgid "payers"
+msgstr "платники"
+
+#: base/models.py:225
+msgid "created at"
+msgstr "створено"
+
+#: base/models.py:226
+msgid "completed at"
+msgstr "завершено"
+
+#: base/models.py:266 base/models.py:304 base/models.py:376
+msgid "items"
+msgstr "предмети"
+
+#: base/models.py:267 base/models.py:377 base/models.py:378
+msgid "source"
+msgstr "джерело"
+
+#: base/models.py:268
+msgid "destination"
+msgstr "пункт призначення"
+
+#: base/models.py:269
+msgid "auto source"
+msgstr "автоматичне джерело"
+
+#: base/models.py:273 base/models.py:300 base/models.py:321 base/models.py:334
+#: base/models.py:347
+msgid "purchase"
+msgstr "закупка"
+
+#: base/models.py:274
+msgid "purchases"
+msgstr "закупки"
+
+#: base/models.py:282
+msgid "auto source is allowed for shops only"
+msgstr "автоматичне джерело дозволено тільки якщо джерело це магазин"
+
+#: base/models.py:298
+msgid "is reserved"
+msgstr "зарезервовано"
+
+#: base/models.py:299
+msgid "place"
+msgstr "місце"
+
+#: base/models.py:303 base/models.py:319 base/models.py:332 base/models.py:345
+msgid "item"
+msgstr "предмет"
+
+#: base/models.py:320 base/models.py:324
+msgid "serial"
+msgstr "серійний номер"
+
+#: base/models.py:325
+msgid "serials"
+msgstr "серійні номери"
+
+#: base/models.py:333 base/models.py:337
+msgid "label"
+msgstr "мітка"
+
+#: base/models.py:338
+msgid "labels"
+msgstr "мітки"
+
+#: base/models.py:350
+msgid "chunk"
+msgstr "відрізок"
+
+#: base/models.py:351
+msgid "chunks"
+msgstr "відрізки"
+
+#: base/models.py:358
+msgid "item transaction"
+msgstr "предмет транзакції"
+
+#: base/models.py:368
+msgid "transaction item"
+msgstr "предмет транзакції"
+
+#: base/models.py:369
+msgid "transaction items"
+msgstr "предмети транзакції"
+
+#: base/models.py:379
+msgid "source negotiated"
+msgstr "джерело погоджено"
+
+#: base/models.py:380
+msgid "destination negotiated"
+msgstr "пункт призначення погоджено"
+
+#: base/models.py:381
+msgid "source confirmed"
+msgstr "джерело підтверджено"
+
+#: base/models.py:382
+msgid "destination confirmed"
+msgstr "пункт призначення підтверджено"
+
+#: base/models.py:383
+msgid "is complete"
+msgstr "завершено"

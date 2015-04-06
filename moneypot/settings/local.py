@@ -14,6 +14,7 @@ INSTALLED_APPS = base.INSTALLED_APPS + (
     # 'django_nose',
     'debug_toolbar',
     'debug_panel',
+    'django_extensions'
 )
 
 MIDDLEWARE_CLASSES = base.MIDDLEWARE_CLASSES + (

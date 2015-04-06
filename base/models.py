@@ -6,7 +6,6 @@ from django.utils.translation import ugettext_lazy as _, ugettext
 from mptt.models import MPTTModel, TreeForeignKey
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from django.utils.functional import lazy_property
 import re
 
 
@@ -131,7 +130,12 @@ class MovementItem(models.Model):
             raise ValidationError({'_chunks': ugettext('data error: %s' % e)})
         total = reduce(lambda x, y: f(x + y), chunks_data, 0)
         if not total == self.quantity:
-            raise ValidationError({'_chunks': ugettext(u'chunks sum error: %s≠%s' % (total, self.quantity))})
+            raise ValidationError({
+                '_chunks': ugettext(u'chunks sum error: {total}≠{quantity}'.format(
+                    total=total,
+                    quantity=self.quantity
+                ))
+            })
         self._chunks = ", ".join(map(str, chunks_data))
         return chunks_data
 
@@ -154,7 +158,7 @@ class MovementItem(models.Model):
         serials_data = re.findall(r"[\w-]+", self._serials)
         if not self.quantity == len(serials_data):
             raise ValidationError({'_serials': ugettext(
-                u'serials count error: %s≠%s' % (len(serials_data), self.quantity)
+                u'serials count error: {count}≠{quantity}'.format(count=len(serials_data), quantity=self.quantity)
             )})
         self._serials = ", ".join(map(str, serials_data))
         return serials_data
@@ -183,7 +187,6 @@ class MovementItem(models.Model):
         self.clean_quantity()
         self.clean_chunks()
         self.clean_serials()
-
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -219,6 +222,9 @@ class Payer(models.Model):
 
 
 class Movement(models.Model):
+    created_at = models.DateTimeField(_("created at"), default=timezone.now)
+    completed_at = models.DateTimeField(_("completed at"), default=None, blank=True, null=True)
+
     is_prepared = False
     items_prepared = []
 
@@ -257,13 +263,16 @@ class Movement(models.Model):
 
 
 class Purchase(Movement):
-    created_at = models.DateTimeField(_("created at"), default=timezone.now)
-    completed_at = models.DateTimeField(_("completed at"), default=None, blank=True, null=True)
     items = models.ManyToManyField("ItemCategory", through="PurchaseItem", verbose_name=_("items"))
     source = TreeForeignKey("Place", verbose_name=_("source"), related_name="purchase_sources")
     destination = TreeForeignKey("Place", verbose_name=_("destination"), related_name="purchase_destinations")
     is_auto_source = models.BooleanField(_("auto source"), blank=True, default=False)
     payer = models.ForeignKey("Payer", verbose_name=_("payer"))
+
+    # Movement superclass
+    # created_at = models.DateTimeField(_("created at"), default=timezone.now)
+    # completed_at = models.DateTimeField(_("completed at"), default=None, blank=True, null=True)
+
 
     class Meta:
         verbose_name = _("purchase")
@@ -368,14 +377,16 @@ class TransactionItem(MovementItem):
         return self.category.name
 
 
-class Transaction(models.Model):
-    created_at = models.DateTimeField(_("created at"), default=timezone.now)
-    completed_at = models.DateTimeField(_("completed at"), default=timezone.now)
+class Transaction(Movement):
     items = models.ManyToManyField("ItemCategory", through="TransactionItem", verbose_name=_("items"))
     source = TreeForeignKey("Place", verbose_name=_("source"), related_name="transaction_sources")
     destination = TreeForeignKey("Place", verbose_name=_("source"), related_name="transaction_destinations")
     is_negotiated_source = models.BooleanField(_("source negotiated"), blank=True, default=False)
     is_negotiated_destination = models.BooleanField(_("destination negotiated"), blank=True, default=False)
-    is_confirmed_source = models.BooleanField(_("source negotiated"), blank=True, default=False)
-    is_confirmed_destination = models.BooleanField(_("destination negotiated"), blank=True, default=False)
-    is_completed = models.BooleanField(_("destination negotiated"), blank=True, default=False)
+    is_confirmed_source = models.BooleanField(_("source confirmed"), blank=True, default=False)
+    is_confirmed_destination = models.BooleanField(_("destination confirmed"), blank=True, default=False)
+    is_completed = models.BooleanField(_("is complete"), blank=True, default=False)
+
+    # Movement superclass
+    # created_at = models.DateTimeField(_("created at"), default=timezone.now)
+    # completed_at = models.DateTimeField(_("completed at"), default=None, blank=True, null=True)
