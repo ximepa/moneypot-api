@@ -46,23 +46,12 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('chunk', models.DecimalField(max_digits=9, decimal_places=3)),
+                ('label', models.CharField(unique=True, max_length=32, verbose_name='label')),
                 ('item', models.ForeignKey(related_name='chunks', verbose_name='item', to='base.Item')),
             ],
             options={
-                'verbose_name': 'label',
-                'verbose_name_plural': 'labels',
-            },
-        ),
-        migrations.CreateModel(
-            name='ItemLabel',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('label', models.CharField(unique=True, max_length=32, verbose_name='label')),
-                ('item', models.ForeignKey(related_name='labels', verbose_name='item', to='base.Item')),
-            ],
-            options={
-                'verbose_name': 'label',
-                'verbose_name_plural': 'labels',
+                'verbose_name': 'chunk',
+                'verbose_name_plural': 'chunks',
             },
         ),
         migrations.CreateModel(
@@ -125,9 +114,9 @@ class Migration(migrations.Migration):
                 ('quantity', models.DecimalField(verbose_name='quantity', max_digits=9, decimal_places=3)),
                 ('_serials', models.TextField(null=True, blank=True)),
                 ('_chunks', models.TextField(null=True, blank=True)),
-                ('price', models.DecimalField(verbose_name='price', max_digits=9, decimal_places=3)),
+                ('price', models.DecimalField(verbose_name='price', max_digits=9, decimal_places=2)),
                 ('category', models.ForeignKey(verbose_name='item category', to='base.ItemCategory')),
-                ('purchase', models.ForeignKey(verbose_name='Purchase', to='base.Purchase')),
+                ('purchase', models.ForeignKey(related_name='purchase_items', verbose_name='Purchase', to='base.Purchase')),
             ],
             options={
                 'verbose_name': 'purchase item',
@@ -139,14 +128,18 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now, verbose_name='created at')),
-                ('completed_at', models.DateTimeField(default=django.utils.timezone.now, verbose_name='completed at')),
+                ('completed_at', models.DateTimeField(default=None, null=True, verbose_name='completed at', blank=True)),
                 ('is_negotiated_source', models.BooleanField(default=False, verbose_name='source negotiated')),
                 ('is_negotiated_destination', models.BooleanField(default=False, verbose_name='destination negotiated')),
-                ('is_confirmed_source', models.BooleanField(default=False, verbose_name='source negotiated')),
-                ('is_confirmed_destination', models.BooleanField(default=False, verbose_name='destination negotiated')),
-                ('is_completed', models.BooleanField(default=False, verbose_name='destination negotiated')),
+                ('is_confirmed_source', models.BooleanField(default=False, verbose_name='source confirmed')),
+                ('is_confirmed_destination', models.BooleanField(default=False, verbose_name='destination confirmed')),
+                ('is_completed', models.BooleanField(default=False, verbose_name='is complete')),
                 ('destination', mptt.fields.TreeForeignKey(related_name='transaction_destinations', verbose_name='source', to='base.Place')),
             ],
+            options={
+                'verbose_name': 'transaction',
+                'verbose_name_plural': 'transaction',
+            },
         ),
         migrations.CreateModel(
             name='TransactionItem',
@@ -157,11 +150,11 @@ class Migration(migrations.Migration):
                 ('_chunks', models.TextField(null=True, blank=True)),
                 ('category', models.ForeignKey(verbose_name='item category', to='base.ItemCategory')),
                 ('purchase', models.ForeignKey(related_name='transaction_items', verbose_name='Purchase', blank=True, to='base.Purchase', null=True)),
-                ('transaction', models.ForeignKey(verbose_name='item transaction', to='base.Transaction')),
+                ('transaction', models.ForeignKey(related_name='transaction_items', verbose_name='item transaction', to='base.Transaction')),
             ],
             options={
-                'verbose_name': 'purchase item',
-                'verbose_name_plural': 'purchase items',
+                'verbose_name': 'transaction item',
+                'verbose_name_plural': 'transaction items',
             },
         ),
         migrations.CreateModel(
@@ -204,17 +197,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='itemserial',
             name='purchase',
-            field=models.ForeignKey(verbose_name='purchase', blank=True, to='base.Purchase', null=True),
-        ),
-        migrations.AddField(
-            model_name='itemlabel',
-            name='purchase',
-            field=models.ForeignKey(verbose_name='purchase', blank=True, to='base.Purchase', null=True),
+            field=models.ForeignKey(verbose_name='purchase', blank=True, to='base.PurchaseItem', null=True),
         ),
         migrations.AddField(
             model_name='itemchunk',
             name='purchase',
-            field=models.ForeignKey(verbose_name='purchase', blank=True, to='base.Purchase', null=True),
+            field=models.ForeignKey(verbose_name='purchase', blank=True, to='base.PurchaseItem', null=True),
         ),
         migrations.AddField(
             model_name='itemcategory',

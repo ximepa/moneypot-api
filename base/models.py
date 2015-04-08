@@ -6,7 +6,24 @@ from django.utils.translation import ugettext_lazy as _, ugettext
 from mptt.models import MPTTModel, TreeForeignKey
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.db import transaction
 import re
+
+
+class IncompatibleUnitException(ValueError):
+    pass
+
+
+class ItemNotFound(ValueError):
+    pass
+
+
+class QuantityNotEnough(ValueError):
+    pass
+
+
+class InvalidParameters(ValueError):
+    pass
 
 
 class Unit(models.Model):
@@ -319,6 +336,149 @@ class Item(models.Model):
     def is_stackable(self):
         return self.category.is_stackable
 
+    def clean_quantity(self):
+        f = None
+        if self.category.unit.unit_type == Unit.INTEGER:
+            f = int
+        if self.category.unit.unit_type == Unit.DECIMAL:
+            f = Decimal
+
+        if not f(self.quantity) == self.quantity:
+            raise ValidationError({'quantity': ugettext(
+                'unit type `%s` can not be decimal' % self.category.unit.name
+            )})
+
+    def clean(self):
+        self.clean_quantity()
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super(Item, self).save(*args, **kwargs)
+
+    @property
+    def qs(self):
+        return self.__class__.objects.filter(pk=self.pk)
+
+    # noinspection DjangoOrm
+    def withdraw_any(self, quantity):
+        """
+        :param quantity: Amount of items to withdraw
+        :type quantity: int or Decimal
+        :returns: Item created in result of withdrawal spit request.
+                  Marked as reserved until transaction will be completed or cancelled
+        :rtype: base.models.Item()
+        """
+
+        if self.serials.count():
+            raise InvalidParameters(_("please provide serial to withdraw"))
+        if self.chunks.count():
+            raise InvalidParameters(_("please provide chunk to withdraw"))
+        item = Item.objects.create(
+            quantity=quantity,
+            is_reserved=True,
+            purchase=self.purchase,
+            category=self.category,
+            place=self.place,
+        )
+        return item
+
+    # noinspection DjangoOrm
+    def withdraw_serial(self, quantity, serials):
+        """
+        :param quantity: Amount of items to withdraw
+        :type quantity: int or Decimal
+        :param serials: Queryset of base.models.ItemSerial
+        :type serials: django.db.models.Queryset()
+        :returns: Item created in result of withdrawal spit request.
+                  Marked as reserved until transaction will be completed or cancelled
+        :rtype: base.models.Item()
+        """
+        if not serials.count() == quantity:
+            raise InvalidParameters(_("Serials count does not match requested quantity"))
+        for serial in serials:
+            if not serial.item == self:
+                raise InvalidParameters(_("Serial {serial} doesn't belong to item {item}".format(
+                    serial=serial.serial,
+                    item=self.__unicode__()
+                )))
+        item = Item.objects.create(
+            quantity=quantity,
+            is_reserved=True,
+            purchase=self.purchase,
+            category=self.category,
+            place=self.place,
+        )
+        serials.update(item=item)
+        return item
+
+    def withdraw_chunk(self, quantity, chunks):
+        """
+        :param quantity: Amount of items to withdraw
+        :type quantity: int or Decimal
+        :param chunks: Queryset of base.models.ItemChunk
+        :type chunks: django.db.models.Queryset()
+        :returns: Item created in result of withdrawal spit request.
+                  Marked as reserved until transaction will be completed or cancelled
+        :rtype: base.models.Item()
+        """
+        for chunk in chunks:
+            if not chunk.item == self:
+                raise InvalidParameters(_("Chunk {chunk} doesn't belong to item {item}".format(
+                    serial=chunk.__unicode__(),
+                    item=self.__unicode__()
+                )))
+        if not chunks.aggregate(models.Sum('quantity'))['quantity_sum'] == quantity:
+            raise InvalidParameters(_("Chunks total sum does not match requested quantity"))
+        item = Item.objects.create(
+            quantity=quantity,
+            is_reserved=True,
+            purchase=self.purchase,
+            category=self.category,
+            place=self.place,
+        )
+        chunks.update(item=item)
+        return item
+
+    @transaction.atomic
+    def withdraw(self, quantity, serials=None, chunks=None):
+        """
+        :param quantity: Amount of items to withdraw
+        :type quantity: int or Decimal
+        :param serials: optional, Queryset of base.models.ItemSerial
+        :type serials: django.db.models.Queryset()
+        :param chunks: optional, Queryset of base.models.ItemChunk
+        :type chunks: django.db.models.Queryset()
+        :returns: Item created in result of withdrawal spit request.
+                  Marked as reserved until transaction will be completed or cancelled
+        :rtype: base.models.Item()
+        """
+        if self.unit.unit_type == Unit.INTEGER:
+            if not int(quantity) == quantity:
+                raise IncompatibleUnitException(_("Unit {unit} can not have value {quantity}".format(
+                    unit=self.unit.name,
+                    quantity=quantity)
+                ))
+        if quantity > self.quantity:
+            raise QuantityNotEnough(_("Requested quantity more than available"))
+
+        if serials:
+            item = self.withdraw_serial(quantity, serials)
+        elif chunks:
+            item = self.withdraw_chunk(quantity, chunks)
+        else:
+            item = self.withdraw_any(quantity)
+
+        self.qs.update(quantity=models.F('quantity') - quantity)
+
+        # new_self = Item.objects.get(pk=self.pk)
+        # self.__dict__.update(new_self.__dict__)
+        self.refresh_from_db()
+
+        if self.quantity == 0:
+            self.delete()
+
+        return item
+
 
 class ItemSerial(models.Model):
     item = models.ForeignKey("Item", verbose_name=_("item"), related_name='serials')
@@ -333,22 +493,10 @@ class ItemSerial(models.Model):
         return self.serial
 
 
-class ItemLabel(models.Model):
-    item = models.ForeignKey("Item", verbose_name=_("item"), related_name='labels')
-    label = models.CharField(_("label"), max_length=32, unique=True)
-    purchase = models.ForeignKey("PurchaseItem", verbose_name=_("purchase"), blank=True, null=True)
-
-    class Meta:
-        verbose_name = _("label")
-        verbose_name_plural = _("labels")
-
-    def __unicode__(self):
-        return self.serial
-
-
 class ItemChunk(models.Model):
     item = models.ForeignKey("Item", verbose_name=_("item"), related_name='chunks')
     chunk = models.DecimalField(max_digits=9, decimal_places=3)
+    label = models.CharField(_("label"), max_length=32, unique=True)
     purchase = models.ForeignKey("PurchaseItem", verbose_name=_("purchase"), blank=True, null=True)
 
     class Meta:
@@ -356,7 +504,7 @@ class ItemChunk(models.Model):
         verbose_name_plural = _("chunks")
 
     def __unicode__(self):
-        return self.serial
+        return "%s%s" % (self.chunk, (" %s" % self.label) if self.label else "")
 
 
 class TransactionItem(MovementItem):
@@ -390,3 +538,10 @@ class Transaction(Movement):
     # Movement superclass
     # created_at = models.DateTimeField(_("created at"), default=timezone.now)
     # completed_at = models.DateTimeField(_("completed at"), default=None, blank=True, null=True)
+
+    class Meta:
+        verbose_name = _("transaction")
+        verbose_name_plural = _("transaction")
+
+    def __unicode__(self):
+        return u'%s → %s' % (self.source.name, self.destination.name)

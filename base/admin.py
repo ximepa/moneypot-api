@@ -2,7 +2,7 @@ from django.contrib import admin
 from mptt.admin import MPTTModelAdmin
 
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
-    ItemLabel, TransactionItem, Transaction
+    TransactionItem, Transaction
 
 
 @admin.register(Unit)
@@ -46,11 +46,6 @@ class ItemAdmin(admin.ModelAdmin):
 
 @admin.register(ItemSerial)
 class ItemSerialAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(ItemLabel)
-class ItemLabelAdmin(admin.ModelAdmin):
     pass
 
 
