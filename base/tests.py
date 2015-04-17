@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TransactionTestCase
 from django.forms import ValidationError
 
 # Create your tests here.
@@ -8,10 +8,13 @@ from model_mommy import mommy
 from model_mommy.recipe import Recipe, foreign_key
 from decimal import Decimal
 
-from.models import Unit, ItemCategory, Item, ItemSerial, ItemChunk, IncompatibleUnitException, InvalidParameters
+from .models import Unit, ItemCategory, Item, ItemSerial, ItemChunk, IncompatibleUnitException, InvalidParameters, \
+    DryRun, Place, Purchase
+
+from django.db import models
 
 
-class ItemTestCase(TestCase):
+class ItemTestCase(TransactionTestCase):
     unit_pcs = None
     unit_litre = None
     unit_m = None
@@ -19,23 +22,39 @@ class ItemTestCase(TestCase):
     cat_fuel = None
     cat_cable = None
 
-    @classmethod
-    def setUpClass(cls):
-        cls.unit_pcs = mommy.make(Unit, name='pcs', unit_type=Unit.INTEGER)
-        cls.unit_litre = mommy.make(Unit, name='litre', unit_type=Unit.DECIMAL)
-        cls.unit_m = mommy.make(Unit, name='m', unit_type=Unit.DECIMAL)
-        cls.cat_router = mommy.make(ItemCategory, unit=cls.unit_pcs, is_stackable=True)
-        cls.cat_fuel = mommy.make(ItemCategory, unit=cls.unit_litre, is_stackable=True)
-        cls.cat_cable = mommy.make(ItemCategory, unit=cls.unit_m, is_stackable=False)
+    # @classmethod
+    # def setUpClass(cls):
+    #     cls.unit_pcs = mommy.make(Unit, name='pcs', unit_type=Unit.INTEGER)
+    #     cls.unit_litre = mommy.make(Unit, name='litre', unit_type=Unit.DECIMAL)
+    #     cls.unit_m = mommy.make(Unit, name='m', unit_type=Unit.DECIMAL)
+    #     cls.cat_router = mommy.make(ItemCategory, unit=cls.unit_pcs, is_stackable=True)
+    #     cls.cat_fuel = mommy.make(ItemCategory, unit=cls.unit_litre, is_stackable=True)
+    #     cls.cat_cable = mommy.make(ItemCategory, unit=cls.unit_m, is_stackable=False)
+    #
+    # @classmethod
+    # def tearDownClass(cls):
+    #     cls.unit_pcs.delete()
+    #     cls.unit_litre.delete()
+    #     cls.unit_m.delete()
+    #     cls.cat_router.delete()
+    #     cls.cat_fuel.delete()
+    #     cls.cat_cable.delete()
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.unit_pcs.delete()
-        cls.unit_litre.delete()
-        cls.unit_m.delete()
-        cls.cat_router.delete()
-        cls.cat_fuel.delete()
-        cls.cat_cable.delete()
+    def setUp(self):
+        self.unit_pcs = mommy.make(Unit, name='pcs', unit_type=Unit.INTEGER)
+        self.unit_litre = mommy.make(Unit, name='litre', unit_type=Unit.DECIMAL)
+        self.unit_m = mommy.make(Unit, name='m', unit_type=Unit.DECIMAL)
+        self.cat_router = mommy.make(ItemCategory, unit=self.unit_pcs, is_stackable=True)
+        self.cat_fuel = mommy.make(ItemCategory, unit=self.unit_litre, is_stackable=True)
+        self.cat_cable = mommy.make(ItemCategory, unit=self.unit_m, is_stackable=False)
+
+    def tearDown(self):
+        self.unit_pcs.delete()
+        self.unit_litre.delete()
+        self.unit_m.delete()
+        self.cat_router.delete()
+        self.cat_fuel.delete()
+        self.cat_cable.delete()
 
     def test_00_item_create(self):
         i = mommy.make(Item, category=self.cat_router, quantity=10)
@@ -57,12 +76,10 @@ class ItemTestCase(TestCase):
     def test_04_withdraw_any(self):
         i = mommy.make(Item, category=self.cat_router, quantity=10)
         result = i.withdraw(quantity=4)
-        # new_i = Item.objects.get(pk=i.pk)
-        new_i = i
         self.assertEqual(result.quantity, Decimal(4))
-        self.assertEqual(new_i.quantity, Decimal(6))
+        self.assertEqual(i.quantity, Decimal(6))
         self.assertEqual(result.is_reserved, True)
-        self.assertEqual(new_i.is_reserved, False)
+        self.assertEqual(i.is_reserved, False)
         self.assertEqual(result.category, i.category)
         self.assertEqual(result.purchase, i.purchase)
         self.assertEqual(result.place, i.place)
@@ -75,12 +92,10 @@ class ItemTestCase(TestCase):
         i = mommy.make(Item, category=self.cat_router, quantity=10)
         serials = mommy.make(ItemSerial, _quantity=10, item=i)
         result = i.withdraw(quantity=2, serials=ItemSerial.objects.filter(pk__in=[serials[0].pk, serials[3].pk]))
-        # new_i = Item.objects.get(pk=i.pk)
-        new_i = i
         self.assertEqual(result.quantity, Decimal(2))
-        self.assertEqual(new_i.quantity, Decimal(8))
+        self.assertEqual(i.quantity, Decimal(8))
         self.assertEqual(result.is_reserved, True)
-        self.assertEqual(new_i.is_reserved, False)
+        self.assertEqual(i.is_reserved, False)
         self.assertEqual(result.category, i.category)
         self.assertEqual(result.purchase, i.purchase)
         self.assertEqual(result.place, i.place)
@@ -98,3 +113,111 @@ class ItemTestCase(TestCase):
         serials = mommy.make(ItemSerial, _quantity=10, item=i)
         self.assertRaises(InvalidParameters, i.withdraw, quantity=2)
 
+    def test_07_withdraw_atomic_test(self):
+        self.assertEqual(Item.objects.count(), 0)
+        i = mommy.make(Item, category=self.cat_router, quantity=10)
+        self.assertEqual(Item.objects.count(), 1)
+        self.assertEqual(i.quantity, 10)
+        result = i.withdraw(quantity=2)
+        self.assertEqual(Item.objects.count(), 2)
+        self.assertEqual(i.quantity, 8)
+        self.assertEqual(result.quantity, 2)
+        self.assertRaises(DryRun, i.withdraw, quantity=2, dry_run=True)
+        self.assertEqual(Item.objects.count(), 2)  # extra item not created due rollback
+        self.assertEqual(i.quantity, 6)  # item not refreshed yet!
+        i.refresh_from_db()
+        self.assertEqual(i.quantity, 8)  # item reloaded
+
+    def test_08_withdraw_all(self):
+        self.assertEqual(Item.objects.count(), 0)
+        i = mommy.make(Item, category=self.cat_router, quantity=10)
+        self.assertEqual(Item.objects.count(), 1)
+        self.assertEqual(i.quantity, 10)
+        result = i.withdraw(quantity=10)
+        self.assertEqual(Item.objects.count(), 1)
+        self.assertEqual(i.quantity, 0)
+        self.assertEqual(result.quantity, 10)
+        self.assertRaises(Item.DoesNotExist, i.refresh_from_db)
+
+    def test_09_deposit_withdrawed(self):
+        i = mommy.make(Item, category=self.cat_router, quantity=10)
+        result = i.withdraw(quantity=5)
+        self.assertEqual(i.quantity, 5)
+        i.deposit(result)
+        self.assertEqual(i.quantity, 10)
+        self.assertRaises(Item.DoesNotExist, result.refresh_from_db)
+
+    def test_10_deposit_self_fail(self):
+        i = mommy.make(Item, category=self.cat_router, quantity=10)
+        self.assertRaises(InvalidParameters, i.deposit, self)
+
+    def test_11_deposit_wrong_cat_fail(self):
+        i = mommy.make(Item, category=self.cat_router, quantity=10)
+        i2 = mommy.make(Item, category=self.cat_cable, quantity=10)
+        self.assertRaises(InvalidParameters, i.deposit, i2)
+
+    def test_12_deposit_same_cat(self):
+        i = mommy.make(Item, category=self.cat_router, quantity=10)
+        i2 = mommy.make(Item, category=self.cat_router, quantity=5)
+        i.deposit(i2)
+        self.assertEqual(i.quantity, 15)
+
+    def test_13_deposit_not_saved_item_source_fail(self):
+        i = mommy.make(Item, category=self.cat_router, quantity=10)
+        i2 = mommy.prepare(Item, category=self.cat_router, quantity=5)
+        self.assertRaises(InvalidParameters, i.deposit, i2)
+        i2.save()
+        i.deposit(i2)
+        self.assertEqual(i.quantity, 15)
+
+    def test_14_deposit_not_saved_item_source_fail(self):
+        i = mommy.prepare(Item, category=self.cat_router, quantity=10)
+        i2 = mommy.make(Item, category=self.cat_router, quantity=5)
+        self.assertRaises(InvalidParameters, i.deposit, i2)
+        i.save()
+        i.deposit(i2)
+        self.assertEqual(i.quantity, 15)
+
+    def test_15_deposit_decimal_stackable(self):
+        i = mommy.make(Item, category=self.cat_fuel, quantity=Decimal('11.4'))
+        i2 = mommy.make(Item, category=self.cat_fuel, quantity=Decimal('2.25'))
+        i.deposit(i2)
+        self.assertEqual(i.is_stackable, True)
+        self.assertEqual(i.quantity, Decimal('13.65'))
+        self.assertEqual(ItemChunk.objects.count(), 0)
+
+    def test_16_deposit_decimal_not_stackable(self):
+        i = mommy.make(Item, category=self.cat_cable, quantity=Decimal('11.4'))
+        i2 = mommy.make(Item, category=self.cat_cable, quantity=Decimal('2.25'))
+        i.deposit(i2)
+        self.assertEqual(i.is_stackable, False)
+        self.assertEqual(i.quantity, Decimal('13.65'))
+        self.assertEqual(ItemChunk.objects.count(), 2)
+        for chunk in ItemChunk.objects.all():
+            self.assertEqual(chunk.item, i)
+        self.assertEqual(ItemChunk.objects.filter(item=i).aggregate(sum=models.Sum('chunk'))['sum'], i.quantity)
+
+
+class PurchaseTestCase(TransactionTestCase):
+
+    def setUp(self):
+        self.unit_pcs = mommy.make(Unit, name='pcs', unit_type=Unit.INTEGER)
+        self.unit_litre = mommy.make(Unit, name='litre', unit_type=Unit.DECIMAL)
+        self.unit_m = mommy.make(Unit, name='m', unit_type=Unit.DECIMAL)
+        self.cat_router = mommy.make(ItemCategory, unit=self.unit_pcs, is_stackable=True)
+        self.cat_fuel = mommy.make(ItemCategory, unit=self.unit_litre, is_stackable=True)
+        self.cat_cable = mommy.make(ItemCategory, unit=self.unit_m, is_stackable=False)
+        self.source = mommy.make(Place, is_shop=False)
+        self.destination = mommy.make(Place, is_shop=False)
+        self.shop = mommy.make(Place, is_shop=True)
+
+    def tearDown(self):
+        self.unit_pcs.delete()
+        self.unit_litre.delete()
+        self.unit_m.delete()
+        self.cat_router.delete()
+        self.cat_fuel.delete()
+        self.cat_cable.delete()
+
+    def test_01_purchase_create(self):
+        pass

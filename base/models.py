@@ -26,6 +26,10 @@ class InvalidParameters(ValueError):
     pass
 
 
+class DryRun(RuntimeError):
+    pass
+
+
 class Unit(models.Model):
     INTEGER = 0
     DECIMAL = 1
@@ -131,7 +135,7 @@ class MovementItem(models.Model):
 
     def clean_chunks(self):
         if not self._chunks:
-            return
+            return []
 
         chunks_str = re.findall(r"[\d\.]+", self._chunks)
         f = None
@@ -166,7 +170,7 @@ class MovementItem(models.Model):
 
     def clean_serials(self):
         if not self._serials:
-            return
+            return []
 
         if self.category.unit.unit_type == Unit.DECIMAL:
             raise ValidationError({'_serials': ugettext(
@@ -242,41 +246,8 @@ class Movement(models.Model):
     created_at = models.DateTimeField(_("created at"), default=timezone.now)
     completed_at = models.DateTimeField(_("completed at"), default=None, blank=True, null=True)
 
-    is_prepared = False
-    items_prepared = []
-
     class Meta:
         abstract = True
-
-    def prepare_source(self):
-        # TODO: source withdraw items
-        pass
-
-    def prepare_items(self):
-        self.items_prepared = []
-        self.is_prepared = False
-        for purchase_item in self.purchase_items.all():
-            purchase_item.item_set.all().delete()
-            i = Item.objects.create(
-                category=purchase_item.category, quantity=purchase_item.quantity, purchase=purchase_item)
-            if purchase_item.chunks:
-                for chunk in purchase_item.chunks:
-                    ItemChunk.objects.create(item=i, chunk=chunk, purchase=purchase_item)
-            if purchase_item.serials:
-                for serial in purchase_item.serials:
-                    ItemSerial.objects.create(item=i, serial=serial, purchase=purchase_item)
-            self.items_prepared.append(i)
-        self.is_prepared = True
-
-    def check_auto_source(self):
-        if hasattr(self, 'is_auto_source'):
-            return self.is_auto_source
-        return False
-
-    def prepare(self):
-        if not self.check_auto_source():
-            self.prepare_source()
-        self.prepare_items()
 
 
 class Purchase(Movement):
@@ -289,7 +260,6 @@ class Purchase(Movement):
     # Movement superclass
     # created_at = models.DateTimeField(_("created at"), default=timezone.now)
     # completed_at = models.DateTimeField(_("completed at"), default=None, blank=True, null=True)
-
 
     class Meta:
         verbose_name = _("purchase")
@@ -309,6 +279,27 @@ class Purchase(Movement):
     def save(self, *args, **kwargs):
         self.full_clean()
         super(Purchase, self).save(*args, **kwargs)
+
+    def prepare_items_auto(self):
+        self.items_prepared = []
+        self.is_prepared = False
+        for purchase_item in self.purchase_items.all():
+            purchase_item.item_set.all().delete()
+            i = Item.objects.create(
+                category=purchase_item.category, quantity=purchase_item.quantity, purchase=purchase_item)
+            if purchase_item.chunks:
+                for chunk in purchase_item.chunks:
+                    ItemChunk.objects.create(item=i, chunk=chunk, purchase=purchase_item)
+            if purchase_item.serials:
+                for serial in purchase_item.serials:
+                    ItemSerial.objects.create(item=i, serial=serial, purchase=purchase_item)
+            self.items_prepared.append(i)
+        self.source.items.add(self.items_prepared)
+        self.is_prepared = True
+
+    def prepare(self):
+        if self.is_auto_source:
+            self.prepare_items_auto()
 
     def complete(self):
         pass
@@ -440,7 +431,7 @@ class Item(models.Model):
         return item
 
     @transaction.atomic
-    def withdraw(self, quantity, serials=None, chunks=None):
+    def withdraw(self, quantity, serials=None, chunks=None, dry_run=False):
         """
         :param quantity: Amount of items to withdraw
         :type quantity: int or Decimal
@@ -452,6 +443,7 @@ class Item(models.Model):
                   Marked as reserved until transaction will be completed or cancelled
         :rtype: base.models.Item()
         """
+
         if self.unit.unit_type == Unit.INTEGER:
             if not int(quantity) == quantity:
                 raise IncompatibleUnitException(_("Unit {unit} can not have value {quantity}".format(
@@ -469,15 +461,57 @@ class Item(models.Model):
             item = self.withdraw_any(quantity)
 
         self.qs.update(quantity=models.F('quantity') - quantity)
-
-        # new_self = Item.objects.get(pk=self.pk)
-        # self.__dict__.update(new_self.__dict__)
         self.refresh_from_db()
 
         if self.quantity == 0:
             self.delete()
 
+        if dry_run:
+            raise DryRun(_("Cancelled due to dry_run option"))
+
         return item
+
+    @transaction.atomic
+    def deposit(self, item, dry_run=False):
+        """
+        :param item: item to join with current, categiry must match
+        :type item: base.models.Item()
+        :returns: updated item (self)
+        :rtype: base.models.Item()
+        """
+        if not isinstance(item, Item):
+            raise InvalidParameters(_("item parameter must be instance of base.models.Item"))
+
+        if not self.category == item.category:
+            raise InvalidParameters(_("Item category must match"))
+
+        if not self.pk:
+            raise InvalidParameters(_("Destination item must exist in db"))
+
+        if not item.pk:
+            raise InvalidParameters(_("Source item must exist in db"))
+
+        if self.pk == item.pk:
+            raise InvalidParameters(_("Can't join item with itself"))
+
+        if not item.is_stackable:
+            if not item.chunks.count():
+                ItemChunk.objects.create(item=item, chunk=item.quantity, purchase=item.purchase)
+            if not self.chunks.count():
+                ItemChunk.objects.create(item=self, chunk=self.quantity, purchase=self.purchase)
+
+        self.qs.update(quantity=models.F('quantity') + item.quantity)
+        self.refresh_from_db()
+
+        item.chunks.update(item=self)
+        item.serials.update(item=self)
+
+        item.delete()
+
+        if dry_run:
+            raise DryRun(_("Cancelled due to dry_run option"))
+
+        return self
 
 
 class ItemSerial(models.Model):
@@ -496,7 +530,7 @@ class ItemSerial(models.Model):
 class ItemChunk(models.Model):
     item = models.ForeignKey("Item", verbose_name=_("item"), related_name='chunks')
     chunk = models.DecimalField(max_digits=9, decimal_places=3)
-    label = models.CharField(_("label"), max_length=32, unique=True)
+    label = models.CharField(_("label"), max_length=32, unique=True, blank=True, null=True)
     purchase = models.ForeignKey("PurchaseItem", verbose_name=_("purchase"), blank=True, null=True)
 
     class Meta:

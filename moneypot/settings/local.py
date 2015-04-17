@@ -29,8 +29,20 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(base.BASE_DIR, 'db.sqlite3'),
+        'ATOMIC_REQUEST': True,
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#         'NAME': 'moneypot_dev',
+#         'HOST': 'localhost',
+#         'USER': 'moneypot',
+#         'PASSWORD': '3aHguR6Ysm8G8Gf',
+#         'ATOMIC_REQUEST': True,
+#     }
+# }
 
 # Recipients of traceback emails and other notifications.
 ADMINS = (
