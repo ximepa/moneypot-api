@@ -135,9 +135,9 @@ class ItemTestCase(TransactionTestCase):
         self.assertEqual(i.quantity, 10)
         result = i.withdraw(quantity=10)
         self.assertEqual(Item.objects.count(), 1)
+        self.assertRaises(Item.DoesNotExist, i.refresh_from_db)
         self.assertEqual(i.quantity, 0)
         self.assertEqual(result.quantity, 10)
-        self.assertRaises(Item.DoesNotExist, i.refresh_from_db)
 
     def test_09_deposit_withdrawed(self):
         i = mommy.make(Item, category=self.cat_router, quantity=10)
@@ -198,7 +198,7 @@ class ItemTestCase(TransactionTestCase):
         self.assertEqual(ItemChunk.objects.filter(item=i).aggregate(sum=models.Sum('chunk'))['sum'], i.quantity)
 
 
-class PurchaseTestCase(TransactionTestCase):
+class MovementTestCase(TransactionTestCase):
 
     def setUp(self):
         self.unit_pcs = mommy.make(Unit, name='pcs', unit_type=Unit.INTEGER)

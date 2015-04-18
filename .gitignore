@@ -108,3 +108,5 @@ target/
 
 
 *.sqlite3
+static
+moneypot/db.sqlite3

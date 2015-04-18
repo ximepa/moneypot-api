@@ -134,9 +134,30 @@ class Place(MPTTModel):
         except Item.DoesNotExist:
             item.place = self
             item.is_reserved = False
+            item.reserved_by = None
+            item.parent = None
             item.save()
         else:
             i.deposit(item)
+
+    def withdraw(self, item):
+        try:
+            i = self.items.get(category=item.category, is_reserved=False)
+        except Item.DoesNotExist:
+            raise ItemNotFound(_("Can not withdraw {item} from {place}: not found.".format(
+                item=item,
+                place=self
+            )))
+        else:
+            serials=None
+            if item.serials:
+                serials = i.serials.filter(serial__in=item.serials)
+                if not serials.count() == len(item.serials):
+                    raise ItemNotFound(_("Can not withdraw {item} from {place}: some serials not found".format(
+                        item=item,
+                        place=self
+                    )))
+            return i.withdraw(quantity=item.quantity, serials=serials)
 
 
 class MovementItem(models.Model):
@@ -259,10 +280,10 @@ class Payer(models.Model):
 
 class Movement(models.Model):
     items_prepared = []
-    is_prepared = False
     created_at = models.DateTimeField(_("created at"), default=timezone.now)
     completed_at = models.DateTimeField(_("completed at"), default=None, blank=True, null=True)
-    is_completed = models.BooleanField(_("is complete"), blank=True, default=False)
+    is_completed = models.BooleanField(_("is completed"), blank=True, default=False)
+    is_prepared = models.BooleanField(_("is prepared"), blank=True, default=False)
 
     class Meta:
         abstract = True
@@ -278,7 +299,8 @@ class Purchase(Movement):
     # Movement superclass
     # created_at = models.DateTimeField(_("created at"), default=timezone.now)
     # completed_at = models.DateTimeField(_("completed at"), default=None, blank=True, null=True)
-    # is_completed = models.BooleanField(_("is complete"), blank=True, default=False)
+    # is_completed = models.BooleanField(_("is completed"), blank=True, default=False)
+    # is_prepared = models.BooleanField(_("is prepared"), blank=True, default=False)
 
     class Meta:
         verbose_name = _("purchase")
@@ -315,6 +337,7 @@ class Purchase(Movement):
             self.items_prepared.append(i)
         self.source.items.add(*self.items_prepared)
         self.is_prepared = True
+        self.save()
 
     @transaction.atomic
     def prepare(self):
@@ -323,17 +346,23 @@ class Purchase(Movement):
 
     @transaction.atomic
     def complete(self):
+        self.prepare()
         t = Transaction.objects.create(source=self.source, destination=self.destination)
         for pi in self.purchase_items.all():
-            TransactionItem.objects.create(purchase=self, transaction=t, category=pi.category,
+            ti = TransactionItem.objects.create(purchase=self, transaction=t, category=pi.category,
                                                 quantity=pi.quantity, _serials=pi._serials, _chunks=pi._chunks)
-        t.items_prepared = copy.deepcopy(self.items_prepared)
+            for item in pi.item_set.all():
+                item.is_reserved = True
+                item.reserved_by = ti
+                item.save()
+
         t.is_prepared = self.is_prepared
         t.is_negotiated_source = True
         t.is_negotiated_destination = True
         t.is_confirmed_source = True
         t.is_confirmed_destination = True
         t.complete()
+
         self.completed_at = timezone.now()
         self.is_completed = True
         self.save()
@@ -343,6 +372,8 @@ class Item(models.Model):
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"), related_name='items')
     quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
     is_reserved = models.BooleanField(_("is reserved"), blank=True, default=False)
+    reserved_by = models.ForeignKey("TransactionItem", verbose_name=_("reserved by transaction"), blank=True, null=True)
+    parent = models.ForeignKey('self', verbose_name=_("parent"), blank=True, null=True, related_name="children")
     place = models.ForeignKey("Place", verbose_name=_("place"), blank=True, null=True, related_name='items')
     purchase = models.ForeignKey("PurchaseItem", verbose_name=_("purchase"), blank=True, null=True)
 
@@ -404,6 +435,7 @@ class Item(models.Model):
             purchase=self.purchase,
             category=self.category,
             place=self.place,
+            parent=self,
         )
         return item
 
@@ -432,6 +464,7 @@ class Item(models.Model):
             purchase=self.purchase,
             category=self.category,
             place=self.place,
+            parent=self,
         )
         serials.update(item=item)
         return item
@@ -460,6 +493,7 @@ class Item(models.Model):
             purchase=self.purchase,
             category=self.category,
             place=self.place,
+            parent=self,
         )
         chunks.update(item=item)
         return item
@@ -498,6 +532,7 @@ class Item(models.Model):
         self.refresh_from_db()
 
         if self.quantity == 0:
+            self.children.update(parent=None)
             self.delete()
 
         if dry_run:
@@ -605,7 +640,8 @@ class Transaction(Movement):
     # Movement superclass
     # created_at = models.DateTimeField(_("created at"), default=timezone.now)
     # completed_at = models.DateTimeField(_("completed at"), default=None, blank=True, null=True)
-    # is_completed = models.BooleanField(_("is complete"), blank=True, default=False)
+    # is_completed = models.BooleanField(_("is completed"), blank=True, default=False)
+    # is_prepared = models.BooleanField(_("is prepared"), blank=True, default=False)
 
     class Meta:
         verbose_name = _("transaction")
@@ -614,14 +650,56 @@ class Transaction(Movement):
     def __unicode__(self):
         return u'%s → %s' % (self.source.name, self.destination.name)
 
+    def reset(self):
+        self.is_prepared = False
+        self.is_negotiated_source = False
+        self.is_negotiated_destination = False
+        self.is_confirmed_source = False
+        self.is_confirmed_destination = False
+        for trans_item in self.transaction_items.all():
+            try:
+                item = Item.objects.get(reserved_by=trans_item)
+            except Item.DoesNotExist:
+                pass
+            else:
+                if item.parent:
+                    item.parent.deposit(item)
+                else:
+                    self.source.deposit(item)
+
     @transaction.atomic
     def prepare(self):
-        pass
+        self.items_prepared = []
+
+        for trans_item in self.transaction_items.all():
+            try:
+                Item.objects.get(reserved_by=trans_item)
+            except Item.DoesNotExist:
+                item = self.source.withdraw(trans_item)
+                item.is_reserved = True
+                item.reserved_by = trans_item
+                item.save()
+        self.is_prepared = True
+
+    def check_prepared(self):
+        for ti in self.transaction_items.all():
+            item = ti.item_set.get()
+            assert(item.quantity == ti.quantity)
+            assert(item.category == ti.category)
+            self.items_prepared.append(item)
+
+    def force_complete(self):
+        self.is_negotiated_source = True
+        self.is_negotiated_destination = True
+        self.is_confirmed_source = True
+        self.is_confirmed_destination = True
+        self.complete()
 
     @transaction.atomic
     def complete(self):
         if not self.is_prepared:
             self.prepare()
+        self.check_prepared()
         if not self.is_negotiated_source:
             raise TransactionNotReady(_("list is not confirmed by source"))
         if not self.is_negotiated_destination:
@@ -635,5 +713,6 @@ class Transaction(Movement):
         self.is_completed = True
         self.completed_at = timezone.now()
         self.save()
+
 
 
