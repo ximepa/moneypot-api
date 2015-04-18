@@ -11,6 +11,19 @@ from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase
 
 import autocomplete_light
 
+
+def create_model_admin(model_admin, model, name=None):
+    class  Meta:
+        proxy = True
+        app_label = model._meta.app_label
+
+    attrs = {'__module__': '', 'Meta': Meta}
+
+    new_model = type(name, (model,), attrs)
+    admin.site.register(new_model, model_admin)
+    return model_admin
+
+
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
     pass
@@ -56,14 +69,24 @@ class PurchaseItemInline(admin.TabularInline):
 
 
 class PurchaseForm(autocomplete_light.ModelForm):
+    force_complete = forms.BooleanField(required=False, label=_("force complete"))
+
     class Meta:
         model = Purchase
         exclude = ['is_completed', 'is_prepared']
 
+    def save(self, *args, **kwargs):
+        p = super(PurchaseForm, self).save(*args, **kwargs)
+        if self.cleaned_data['force_complete']:
+            try:
+                p.complete()
+            except Exception, e:
+                raise forms.ValidationError(e)
+        return p
+
 
 @admin.register(Purchase)
 class PurchaseAdmin(admin.ModelAdmin):
-    force_complete = forms.BooleanField(required=False, label=_("force complete"))
     form = PurchaseForm
     inlines = [PurchaseItemInline,]
     list_display = ['__unicode__', 'created_at', 'completed_at', 'source', 'destination', 'is_completed', 'is_prepared',]
@@ -102,6 +125,7 @@ class TransactionItemForm(autocomplete_light.ModelForm):
             print
             print "TRANSACTION RESET"
             ti.transaction.reset()
+        return ti
 
 
 @admin.register(TransactionItem)
@@ -121,7 +145,10 @@ class TransactionForm(autocomplete_light.ModelForm):
     def save(self, *args, **kwargs):
         t = super(TransactionForm, self).save(*args, **kwargs)
         if self.cleaned_data['force_complete']:
-            t.force_complete()
+            try:
+                t.force_complete()
+            except Exception, e:
+                raise forms.ValidationError(e)
         return t
 
 
@@ -155,20 +182,39 @@ class TransactionAdmin(admin.ModelAdmin):
     ]
 
 
-@admin.site.register_view('itemss')
-class PlaceItemAdmin(admin.ModelAdmin):
-    def get_urls(self):
-        urls = super(PlaceItemAdmin, self).get_urls()
-        info = self.model._meta.app_label, self.model._meta.module_name
-        select_list_url = patterns('',
-            url(r'^selectlist/$', self.selectlist_view,
-                name='%s_%s_select' % info)
-        )
-        return select_list_url + urls
+class PlaceItemAdmin(ItemAdmin):
+    place_id = None
 
-    def selectlist_view(self, request, extra_context=None):
-        temp_list_display_links = self.list_display_links
-        self.list_display_links = (None, )
-        response = self.changelist_view(request, extra_context)
-        self.list_display_links = temp_list_display_links
-        return response
+    def get_queryset(self, request):
+        qs = super(PlaceItemAdmin, self).get_queryset(request)
+        return qs.filter(place_id=self.place_id)
+
+    def changelist_view(self, request, place_id=None, extra_context=None):
+        self.place_id = place_id
+        try:
+            place = Place.objects.get(pk=place_id)
+        except Place.DoesNotExist:
+            self.opts.verbose_name_plural = _('Place does not exist')
+        else:
+            self.opts.verbose_name_plural = _("Items for {name}".format(name=place.name))
+        view = super(PlaceItemAdmin, self).changelist_view(request, extra_context=extra_context)
+        return view
+
+    def get_urls(self):
+        from django.conf.urls import url
+        from functools import update_wrapper
+
+        def wrap(view):
+            def wrapper(*args, **kwargs):
+                return self.admin_site.admin_view(view)(*args, **kwargs)
+            return update_wrapper(wrapper, view)
+
+        # info = self.model._meta.app_label, self.model._meta.model_name
+
+        urlpatterns = [
+            url(r'^(?P<place_id>\d+)/$', wrap(self.changelist_view), name='base_place_items_changelist'),
+        ]
+        return urlpatterns
+
+create_model_admin(PlaceItemAdmin, name='place-item', model=Item)
+

@@ -128,6 +128,10 @@ class Place(MPTTModel):
     def __unicode__(self):
         return self.name
 
+    def get_absolute_url(self):
+        from django.core.urlresolvers import reverse
+        return reverse('admin:base_place_items_changelist', kwargs={'place_id': self.pk})
+
     def deposit(self, item):
         try:
             i = self.items.get(category=item.category, is_reserved=False)
