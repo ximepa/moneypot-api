@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db import transaction
 import re
+import copy
 
 
 class IncompatibleUnitException(ValueError):
@@ -27,6 +28,10 @@ class InvalidParameters(ValueError):
 
 
 class DryRun(RuntimeError):
+    pass
+
+
+class TransactionNotReady(RuntimeError):
     pass
 
 
@@ -53,7 +58,7 @@ class ItemCategory(MPTTModel):
     name = models.CharField(_("name"), max_length=100, unique=True)
     unit = models.ForeignKey("Unit", verbose_name=_("unit"), blank=True, null=True)
     is_stackable = models.NullBooleanField(_("stackable"), blank=True, null=True)
-    parent = TreeForeignKey('self', verbose_name=_("parent"), null=True, blank=True, related_name='children')
+    parent = models.ForeignKey('self', verbose_name=_("parent"), null=True, blank=True, related_name='children')
 
     class Meta:
         verbose_name = _("item category")
@@ -94,8 +99,8 @@ class ItemCategory(MPTTModel):
 
 
 class Place(MPTTModel):
-    name = models.CharField(_("name"), max_length=100)
-    parent = TreeForeignKey('self', verbose_name=_("parent"), null=True, blank=True, related_name='children')
+    name = models.CharField(_("name"), max_length=100, unique=True)
+    parent = models.ForeignKey('self', verbose_name=_("parent"), null=True, blank=True, related_name='children')
     is_shop = models.BooleanField(_("is shop"), blank=True, default=False)
 
     class Meta:
@@ -122,6 +127,16 @@ class Place(MPTTModel):
 
     def __unicode__(self):
         return self.name
+
+    def deposit(self, item):
+        try:
+            i = self.items.get(category=item.category, is_reserved=False)
+        except Item.DoesNotExist:
+            item.place = self
+            item.is_reserved = False
+            item.save()
+        else:
+            i.deposit(item)
 
 
 class MovementItem(models.Model):
@@ -243,8 +258,11 @@ class Payer(models.Model):
 
 
 class Movement(models.Model):
+    items_prepared = []
+    is_prepared = False
     created_at = models.DateTimeField(_("created at"), default=timezone.now)
     completed_at = models.DateTimeField(_("completed at"), default=None, blank=True, null=True)
+    is_completed = models.BooleanField(_("is complete"), blank=True, default=False)
 
     class Meta:
         abstract = True
@@ -252,14 +270,15 @@ class Movement(models.Model):
 
 class Purchase(Movement):
     items = models.ManyToManyField("ItemCategory", through="PurchaseItem", verbose_name=_("items"))
-    source = TreeForeignKey("Place", verbose_name=_("source"), related_name="purchase_sources")
-    destination = TreeForeignKey("Place", verbose_name=_("destination"), related_name="purchase_destinations")
+    source = models.ForeignKey("Place", verbose_name=_("source"), related_name="purchase_sources")
+    destination = models.ForeignKey("Place", verbose_name=_("destination"), related_name="purchase_destinations")
     is_auto_source = models.BooleanField(_("auto source"), blank=True, default=False)
     payer = models.ForeignKey("Payer", verbose_name=_("payer"))
 
     # Movement superclass
     # created_at = models.DateTimeField(_("created at"), default=timezone.now)
     # completed_at = models.DateTimeField(_("completed at"), default=None, blank=True, null=True)
+    # is_completed = models.BooleanField(_("is complete"), blank=True, default=False)
 
     class Meta:
         verbose_name = _("purchase")
@@ -294,22 +313,37 @@ class Purchase(Movement):
                 for serial in purchase_item.serials:
                     ItemSerial.objects.create(item=i, serial=serial, purchase=purchase_item)
             self.items_prepared.append(i)
-        self.source.items.add(self.items_prepared)
+        self.source.items.add(*self.items_prepared)
         self.is_prepared = True
 
+    @transaction.atomic
     def prepare(self):
         if self.is_auto_source:
             self.prepare_items_auto()
 
+    @transaction.atomic
     def complete(self):
-        pass
+        t = Transaction.objects.create(source=self.source, destination=self.destination)
+        for pi in self.purchase_items.all():
+            TransactionItem.objects.create(purchase=self, transaction=t, category=pi.category,
+                                                quantity=pi.quantity, _serials=pi._serials, _chunks=pi._chunks)
+        t.items_prepared = copy.deepcopy(self.items_prepared)
+        t.is_prepared = self.is_prepared
+        t.is_negotiated_source = True
+        t.is_negotiated_destination = True
+        t.is_confirmed_source = True
+        t.is_confirmed_destination = True
+        t.complete()
+        self.completed_at = timezone.now()
+        self.is_completed = True
+        self.save()
 
 
 class Item(models.Model):
-    category = TreeForeignKey("ItemCategory", verbose_name=_("item category"), related_name='items')
+    category = models.ForeignKey("ItemCategory", verbose_name=_("item category"), related_name='items')
     quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
     is_reserved = models.BooleanField(_("is reserved"), blank=True, default=False)
-    place = TreeForeignKey("Place", verbose_name=_("place"), blank=True, null=True, related_name='items')
+    place = models.ForeignKey("Place", verbose_name=_("place"), blank=True, null=True, related_name='items')
     purchase = models.ForeignKey("PurchaseItem", verbose_name=_("purchase"), blank=True, null=True)
 
     class Meta:
@@ -561,17 +595,17 @@ class TransactionItem(MovementItem):
 
 class Transaction(Movement):
     items = models.ManyToManyField("ItemCategory", through="TransactionItem", verbose_name=_("items"))
-    source = TreeForeignKey("Place", verbose_name=_("source"), related_name="transaction_sources")
-    destination = TreeForeignKey("Place", verbose_name=_("source"), related_name="transaction_destinations")
+    source = models.ForeignKey("Place", verbose_name=_("source"), related_name="transaction_sources")
+    destination = models.ForeignKey("Place", verbose_name=_("destination"), related_name="transaction_destinations")
     is_negotiated_source = models.BooleanField(_("source negotiated"), blank=True, default=False)
     is_negotiated_destination = models.BooleanField(_("destination negotiated"), blank=True, default=False)
     is_confirmed_source = models.BooleanField(_("source confirmed"), blank=True, default=False)
     is_confirmed_destination = models.BooleanField(_("destination confirmed"), blank=True, default=False)
-    is_completed = models.BooleanField(_("is complete"), blank=True, default=False)
 
     # Movement superclass
     # created_at = models.DateTimeField(_("created at"), default=timezone.now)
     # completed_at = models.DateTimeField(_("completed at"), default=None, blank=True, null=True)
+    # is_completed = models.BooleanField(_("is complete"), blank=True, default=False)
 
     class Meta:
         verbose_name = _("transaction")
@@ -579,3 +613,27 @@ class Transaction(Movement):
 
     def __unicode__(self):
         return u'%s → %s' % (self.source.name, self.destination.name)
+
+    @transaction.atomic
+    def prepare(self):
+        pass
+
+    @transaction.atomic
+    def complete(self):
+        if not self.is_prepared:
+            self.prepare()
+        if not self.is_negotiated_source:
+            raise TransactionNotReady(_("list is not confirmed by source"))
+        if not self.is_negotiated_destination:
+            raise TransactionNotReady(_("list is not confirmed by destination"))
+        if not self.is_confirmed_source:
+            raise TransactionNotReady(_("transaction is not confirmed by source"))
+        if not self.is_confirmed_destination:
+            raise TransactionNotReady(_("transaction is not confirmed by destination"))
+        for item in self.items_prepared:
+            self.destination.deposit(item)
+        self.is_completed = True
+        self.completed_at = timezone.now()
+        self.save()
+
+

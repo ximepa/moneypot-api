@@ -4,6 +4,7 @@ from mptt.admin import MPTTModelAdmin
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
     TransactionItem, Transaction
 
+import autocomplete_light
 
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
@@ -54,11 +55,35 @@ class ItemChunkAdmin(admin.ModelAdmin):
     pass
 
 
+class TransactionItemForm(autocomplete_light.ModelForm):
+    class Meta:
+        model = TransactionItem
+        exclude = ['_chunks', 'purchase']
+        autocomplete_fields = ('category',)
+
+
 @admin.register(TransactionItem)
 class TransactionItemAdmin(admin.ModelAdmin):
     pass
 
 
+class TransactionForm(autocomplete_light.ModelForm):
+    class Meta:
+        model = Transaction
+        exclude = []
+        autocomplete_fields = ('source', 'destination', 'items')
+
+
+class TransactionItemInline(admin.TabularInline):
+    model = TransactionItem
+    form = TransactionItemForm
+
+
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    pass
+    class Media:
+        js = ('base/js/transaction_source_item_autocomplete.js',)
+    form = TransactionForm
+    inlines = [
+        TransactionItemInline
+    ]

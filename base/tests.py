@@ -9,7 +9,7 @@ from model_mommy.recipe import Recipe, foreign_key
 from decimal import Decimal
 
 from .models import Unit, ItemCategory, Item, ItemSerial, ItemChunk, IncompatibleUnitException, InvalidParameters, \
-    DryRun, Place, Purchase
+    DryRun, Place, Purchase, PurchaseItem
 
 from django.db import models
 
@@ -219,5 +219,14 @@ class PurchaseTestCase(TransactionTestCase):
         self.cat_fuel.delete()
         self.cat_cable.delete()
 
-    def test_01_purchase_create(self):
-        pass
+    def test_01_purchase_auto(self):
+        p = mommy.make(Purchase, source=self.shop, destination=self.destination, is_auto_source=True)
+        mommy.make(PurchaseItem, purchase=p, price=Decimal('13.52'), category=self.cat_router, quantity=10)
+        mommy.make(PurchaseItem, purchase=p, price=Decimal('3.5'), category=self.cat_cable, quantity=Decimal('4.5'))
+        p.prepare()
+        self.assertEqual(p.is_prepared, True)
+        self.assertEqual(p.items_prepared, list(self.shop.items.filter(purchase__purchase=p)))
+        self.assertEqual([], list(self.destination.items.filter(purchase__purchase=p)))
+        p.complete()
+        self.assertEqual(p.items_prepared, list(self.destination.items.filter(purchase__purchase=p)))
+        self.assertEqual([], list(self.shop.items.filter(purchase__purchase=p)))
