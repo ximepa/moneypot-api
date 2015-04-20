@@ -97,3 +97,6 @@ LOGGING = {
 }
 
 INTERNAL_IPS = ('127.0.0.1',)
+
+LANGUAGE_CODE = 'uk'
+# LANGUAGE_CODE = 'en'

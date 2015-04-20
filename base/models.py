@@ -4,11 +4,12 @@ from decimal import Decimal
 from django.db import models
 from django.utils.translation import ugettext_lazy as _, ugettext
 from mptt.models import MPTTModel, TreeForeignKey
+from django.core.urlresolvers import reverse
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db import transaction
 import re
-import copy
+
 
 
 class IncompatibleUnitException(ValueError):
@@ -104,6 +105,8 @@ class Place(MPTTModel):
     is_shop = models.BooleanField(_("is shop"), blank=True, default=False)
 
     class Meta:
+        verbose_name = _("place")
+        verbose_name_plural = _("places")
         unique_together = (
             ('name', 'parent'),
         )
@@ -129,8 +132,7 @@ class Place(MPTTModel):
         return self.name
 
     def get_absolute_url(self):
-        from django.core.urlresolvers import reverse
-        return reverse('admin:base_place_items_changelist', kwargs={'place_id': self.pk})
+        return reverse('admin:base_place_item_changelist', kwargs={'place_id': self.pk})
 
     def deposit(self, item):
         try:
@@ -388,6 +390,9 @@ class Item(models.Model):
     def __unicode__(self):
         return self.category.name
 
+    def get_absolute_url(self):
+        return reverse('admin:base_item_serials_filtered_changelist', kwargs={'item_id': self.pk})
+
     @property
     def unit(self):
         return self.category.unit
@@ -599,6 +604,9 @@ class ItemSerial(models.Model):
     def __unicode__(self):
         return self.serial
 
+    def category_name(self):
+        return self.item.category.name
+
 
 class ItemChunk(models.Model):
     item = models.ForeignKey("Item", verbose_name=_("item"), related_name='chunks')
@@ -612,6 +620,9 @@ class ItemChunk(models.Model):
 
     def __unicode__(self):
         return "%s%s" % (self.chunk, (" %s" % self.label) if self.label else "")
+
+    def category_name(self):
+        return self.item.category.name
 
 
 class TransactionItem(MovementItem):

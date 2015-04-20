@@ -4,7 +4,9 @@ from django.db import models
 from mptt.admin import MPTTModelAdmin
 from django_mptt_admin.admin import DjangoMpttAdmin
 from django.utils.translation import ugettext_lazy as _, ugettext
+from django.utils.html import mark_safe
 from django.conf.urls import patterns, include, url
+from django.core.urlresolvers import reverse
 
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
     TransactionItem, Transaction
@@ -105,12 +107,14 @@ class ItemAdmin(admin.ModelAdmin):
 class ItemSerialAdmin(admin.ModelAdmin):
     search_fields = ['item__category__name']
     list_filter = ['item__category',]
+    list_display = ['__unicode__', 'category_name']
 
 
 @admin.register(ItemChunk)
 class ItemChunkAdmin(admin.ModelAdmin):
     search_fields = ['item__category__name']
     list_filter = ['item__category',]
+    list_display = ['__unicode__','category_name']
 
 
 class TransactionItemForm(autocomplete_light.ModelForm):
@@ -184,6 +188,12 @@ class TransactionAdmin(admin.ModelAdmin):
 
 class PlaceItemAdmin(ItemAdmin):
     place_id = None
+    list_display = ['obj_link', 'quantity', 'place']
+
+    def obj_link(self, obj):
+        # link = reverse("admin:base_item_change", args=[obj.id])
+        link = reverse("admin:base_place_item_change", kwargs={'place_id': self.place_id, 'object_id': obj.id})
+        return mark_safe(u'<a href="%s">%s</a>' % (link, obj.__unicode__()))
 
     def get_queryset(self, request):
         qs = super(PlaceItemAdmin, self).get_queryset(request)
@@ -191,13 +201,75 @@ class PlaceItemAdmin(ItemAdmin):
 
     def changelist_view(self, request, place_id=None, extra_context=None):
         self.place_id = place_id
+        extra_context = extra_context or {}
         try:
             place = Place.objects.get(pk=place_id)
         except Place.DoesNotExist:
-            self.opts.verbose_name_plural = _('Place does not exist')
+            extra_context.update({'cl_header': _('Place does not exist')})
         else:
-            self.opts.verbose_name_plural = _("Items for {name}".format(name=place.name))
+            extra_context.update({'cl_header': _(u"Items for {name}".format(name=unicode(place.name)))})
         view = super(PlaceItemAdmin, self).changelist_view(request, extra_context=extra_context)
+        return view
+
+    def change_view(self, request, place_id=None, object_id=None, form_url='', extra_context=None):
+        self.place_id = place_id
+        extra_context = extra_context or {}
+        extra_context.update({'place_id': place_id})
+        try:
+            place = Place.objects.get(pk=place_id)
+        except Place.DoesNotExist:
+            extra_context.update({'cl_header': _('Place does not exist')})
+        else:
+            extra_context.update({'cl_header': _(u"Items for {name}".format(name=unicode(place.name)))})
+        return super(PlaceItemAdmin, self).change_view(request, object_id, form_url='', extra_context=extra_context)
+
+    def get_urls(self):
+        from django.conf.urls import url
+        from functools import update_wrapper
+
+        def wrap(view):
+            def wrapper(*args, **kwargs):
+                return self.admin_site.admin_view(view)(*args, **kwargs)
+            return update_wrapper(wrapper, view)
+
+        urlpatterns = [
+            url(r'^(?P<place_id>\d+)/$', wrap(self.changelist_view), name='base_place_item_changelist'),
+            url(r'^(?P<place_id>\d+)/(?P<object_id>\d+)$', wrap(self.change_view), name='base_place_item_change'),
+        ]
+        return urlpatterns
+
+    change_list_template = 'admin/proxy_place_item_change_list.html'
+    change_form_template = 'admin/proxy_place_item_change_form.html'
+
+
+
+create_model_admin(PlaceItemAdmin, name='place_item', model=Item)
+
+
+class ItemSerialsFilteredAdmin(ItemSerialAdmin):
+    item_id = None
+    list_display = ['obj_link', 'category_name']
+
+    def obj_link(self, obj):
+        link = reverse("admin:base_itemserial_change", args=[obj.id])
+        return mark_safe(u'<a href="%s">%s</a>' % (link, obj.__unicode__()))
+
+    def get_queryset(self, request):
+        qs = super(ItemSerialsFilteredAdmin, self).get_queryset(request)
+        return qs.filter(item_id=self.item_id)
+
+    def changelist_view(self, request, item_id=None, extra_context=None):
+        self.item_id = item_id
+        try:
+            item = Item.objects.get(pk=item_id)
+        except Item.DoesNotExist:
+            self.opts.verbose_name_plural = _('Item does not exist')
+        else:
+            self.opts.verbose_name_plural = _(u"Serials for {name} in {place}".format(
+                name=unicode(item.category.name),
+                place=unicode(item.place.name)
+            ))
+        view = super(ItemSerialsFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
 
     def get_urls(self):
@@ -212,9 +284,8 @@ class PlaceItemAdmin(ItemAdmin):
         # info = self.model._meta.app_label, self.model._meta.model_name
 
         urlpatterns = [
-            url(r'^(?P<place_id>\d+)/$', wrap(self.changelist_view), name='base_place_items_changelist'),
+            url(r'^(?P<item_id>\d+)/$', wrap(self.changelist_view), name='base_item_serials_filtered_changelist'),
         ]
         return urlpatterns
 
-create_model_admin(PlaceItemAdmin, name='place-item', model=Item)
-
+create_model_admin(ItemSerialsFilteredAdmin, name='item_serials_filtered', model=ItemSerial)
