@@ -9,8 +9,8 @@
         <ul>
             <li><a href="{% url 'admin:index' %}">{% trans "Home" %}</a></li>
             <li><a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a></li>
-            <li>{% if has_change_permission %}<a href="{% url "admin:base_place_item_changelist" place_id=place_id %}">{{ cl_header|capfirst }}</a>{% else %}{{ cl_header|capfirst }}{% endif %}</li>
-            <li>{{ opts.verbose_name }}</li>
+            <li>{% if has_change_permission %}<a href="{% url proxy_url proxy_url_arg %}">{{ cl_header|capfirst }}</a>{% else %}{{ cl_header|capfirst }}{% endif %}</li>
+            <li>{{ obj_header}}</li>
         </ul>
     {% endif %}
 {% endblock %}

@@ -132,7 +132,7 @@ class Place(MPTTModel):
         return self.name
 
     def get_absolute_url(self):
-        return reverse('admin:base_place_item_changelist', kwargs={'place_id': self.pk})
+        return reverse('admin:base_place_item_changelist', args=[self.pk])
 
     def deposit(self, item):
         try:
@@ -391,7 +391,7 @@ class Item(models.Model):
         return self.category.name
 
     def get_absolute_url(self):
-        return reverse('admin:base_item_serials_filtered_changelist', kwargs={'item_id': self.pk})
+        return reverse('admin:base_item_serials_filtered_changelist', args=[self.pk])
 
     @property
     def unit(self):

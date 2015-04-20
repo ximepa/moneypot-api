@@ -192,14 +192,14 @@ class PlaceItemAdmin(ItemAdmin):
 
     def obj_link(self, obj):
         # link = reverse("admin:base_item_change", args=[obj.id])
-        link = reverse("admin:base_place_item_change", kwargs={'place_id': self.place_id, 'object_id': obj.id})
+        link = reverse("admin:base_place_item_change", args=[self.place_id, obj.id])
         return mark_safe(u'<a href="%s">%s</a>' % (link, obj.__unicode__()))
 
     def get_queryset(self, request):
         qs = super(PlaceItemAdmin, self).get_queryset(request)
         return qs.filter(place_id=self.place_id)
 
-    def changelist_view(self, request, place_id=None, extra_context=None):
+    def changelist_view(self, request, place_id, extra_context=None):
         self.place_id = place_id
         extra_context = extra_context or {}
         try:
@@ -211,10 +211,20 @@ class PlaceItemAdmin(ItemAdmin):
         view = super(PlaceItemAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
 
-    def change_view(self, request, place_id=None, object_id=None, form_url='', extra_context=None):
+    def change_view(self, request, place_id, object_id, form_url='', extra_context=None):
         self.place_id = place_id
         extra_context = extra_context or {}
-        extra_context.update({'place_id': place_id})
+        extra_context.update({
+            'place_id': place_id,
+            'proxy_url': "admin:base_place_item_changelist",
+            'proxy_url_arg': self.place_id,
+        })
+        try:
+            item = Item.objects.get(pk=object_id)
+        except Item.DoesNotExist:
+            extra_context.update({'obj_header': _('Serial does not exist')})
+        else:
+            extra_context.update({'obj_header': unicode(item.category.name)})
         try:
             place = Place.objects.get(pk=place_id)
         except Place.DoesNotExist:
@@ -233,15 +243,13 @@ class PlaceItemAdmin(ItemAdmin):
             return update_wrapper(wrapper, view)
 
         urlpatterns = [
-            url(r'^(?P<place_id>\d+)/$', wrap(self.changelist_view), name='base_place_item_changelist'),
-            url(r'^(?P<place_id>\d+)/(?P<object_id>\d+)$', wrap(self.change_view), name='base_place_item_change'),
+            url(r'^(\d+)/$', wrap(self.changelist_view), name='base_place_item_changelist'),
+            url(r'^(\d+)/(\d+)$', wrap(self.change_view), name='base_place_item_change'),
         ]
         return urlpatterns
 
-    change_list_template = 'admin/proxy_place_item_change_list.html'
-    change_form_template = 'admin/proxy_place_item_change_form.html'
-
-
+    change_list_template = 'admin/proxy_change_list.html'
+    change_form_template = 'admin/proxy_change_form.html'
 
 create_model_admin(PlaceItemAdmin, name='place_item', model=Item)
 
@@ -251,26 +259,52 @@ class ItemSerialsFilteredAdmin(ItemSerialAdmin):
     list_display = ['obj_link', 'category_name']
 
     def obj_link(self, obj):
-        link = reverse("admin:base_itemserial_change", args=[obj.id])
+        link = reverse("admin:base_item_serials_filtered_change",  args=[self.item_id, obj.id])
         return mark_safe(u'<a href="%s">%s</a>' % (link, obj.__unicode__()))
 
     def get_queryset(self, request):
         qs = super(ItemSerialsFilteredAdmin, self).get_queryset(request)
         return qs.filter(item_id=self.item_id)
 
-    def changelist_view(self, request, item_id=None, extra_context=None):
+    def changelist_view(self, request, item_id, extra_context=None):
         self.item_id = item_id
+        extra_context = extra_context or {}
         try:
             item = Item.objects.get(pk=item_id)
         except Item.DoesNotExist:
-            self.opts.verbose_name_plural = _('Item does not exist')
+            extra_context.update({'cl_header': _('Item does not exist')})
         else:
-            self.opts.verbose_name_plural = _(u"Serials for {name} in {place}".format(
+            extra_context.update({'cl_header': _(u"Serials for {name} in {place}".format(
                 name=unicode(item.category.name),
                 place=unicode(item.place.name)
-            ))
+            ))})
         view = super(ItemSerialsFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
+
+    def change_view(self, request, item_id, object_id, form_url='', extra_context=None):
+        self.item_id = item_id
+        extra_context = extra_context or {}
+        extra_context.update({
+            'item_id': item_id,
+            'proxy_url': "admin:base_item_serials_filtered_changelist",
+            'proxy_url_arg': self.item_id,
+        })
+        try:
+            serial = ItemSerial.objects.get(pk=object_id)
+        except ItemSerial.DoesNotExist:
+            extra_context.update({'obj_header': _('Serial does not exist')})
+        else:
+            extra_context.update({'obj_header': unicode(serial.serial)})
+        try:
+            item = Item.objects.get(pk=item_id)
+        except Item.DoesNotExist:
+            extra_context.update({'cl_header': _('Item does not exist')})
+        else:
+            extra_context.update({'cl_header': _(u"Serials for {name} in {place}".format(
+                name=unicode(item.category.name),
+                place=unicode(item.place.name)
+            ))})
+        return super(ItemSerialsFilteredAdmin, self).change_view(request, object_id, form_url='', extra_context=extra_context)
 
     def get_urls(self):
         from django.conf.urls import url
@@ -281,11 +315,13 @@ class ItemSerialsFilteredAdmin(ItemSerialAdmin):
                 return self.admin_site.admin_view(view)(*args, **kwargs)
             return update_wrapper(wrapper, view)
 
-        # info = self.model._meta.app_label, self.model._meta.model_name
-
         urlpatterns = [
-            url(r'^(?P<item_id>\d+)/$', wrap(self.changelist_view), name='base_item_serials_filtered_changelist'),
+            url(r'^(\d+)/$', wrap(self.changelist_view), name='base_item_serials_filtered_changelist'),
+            url(r'^(\d+)/(\d+)$', wrap(self.change_view), name='base_item_serials_filtered_change'),
         ]
         return urlpatterns
+
+    change_list_template = 'admin/proxy_change_list.html'
+    change_form_template = 'admin/proxy_change_form.html'
 
 create_model_admin(ItemSerialsFilteredAdmin, name='item_serials_filtered', model=ItemSerial)
