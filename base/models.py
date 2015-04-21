@@ -352,6 +352,8 @@ class Purchase(Movement):
 
     @transaction.atomic
     def complete(self):
+        if self.is_completed:
+            return
         self.prepare()
         t = Transaction.objects.create(source=self.source, destination=self.destination)
         for pi in self.purchase_items.all():
@@ -434,9 +436,9 @@ class Item(models.Model):
         :rtype: base.models.Item()
         """
 
-        if self.serials.count():
+        if self.quantity - self.serials.count() < quantity:
             raise InvalidParameters(_("please provide serial to withdraw"))
-        if self.chunks.count():
+        if self.chunks.count() and self.quantity - self.chunks.aggregate(models.Sum('chunk'))['chunk__sum'] < quantity:
             raise InvalidParameters(_("please provide chunk to withdraw"))
         item = Item.objects.create(
             quantity=quantity,
@@ -494,7 +496,7 @@ class Item(models.Model):
                     serial=chunk.__unicode__(),
                     item=self.__unicode__()
                 )))
-        if not chunks.aggregate(models.Sum('quantity'))['quantity_sum'] == quantity:
+        if not chunks.aggregate(models.Sum('chunk'))['chunk__sum'] == quantity:
             raise InvalidParameters(_("Chunks total sum does not match requested quantity"))
         item = Item.objects.create(
             quantity=quantity,
@@ -540,9 +542,9 @@ class Item(models.Model):
         self.qs.update(quantity=models.F('quantity') - quantity)
         self.refresh_from_db()
 
-        if self.quantity == 0:
-            self.children.update(parent=None)
-            self.delete()
+        # if self.quantity == 0:
+        #     self.children.update(parent=None)
+        #     self.delete()
 
         if dry_run:
             raise DryRun(_("Cancelled due to dry_run option"))
@@ -712,6 +714,8 @@ class Transaction(Movement):
 
     @transaction.atomic
     def complete(self):
+        if self.is_completed:
+            return
         if not self.is_prepared:
             self.prepare()
         self.check_prepared()

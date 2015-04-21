@@ -1,3 +1,5 @@
+from __future__ import unicode_literals, print_function
+
 """
 Django settings for moneypot project.
 
@@ -12,6 +14,11 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__) + "../../../")
+
+import sys
+
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
 
 
 # Quick-start development settings - unsuitable for production
@@ -54,6 +61,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'moneypot.middleware.ExceptionMiddleware'
 )
 
 TEMPLATES = [

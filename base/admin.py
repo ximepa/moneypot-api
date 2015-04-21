@@ -7,6 +7,8 @@ from django.utils.translation import ugettext_lazy as _, ugettext
 from django.utils.html import mark_safe
 from django.conf.urls import patterns, include, url
 from django.core.urlresolvers import reverse
+from django.conf.urls import url
+from functools import update_wrapper
 
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
     TransactionItem, Transaction
@@ -41,6 +43,12 @@ class ItemCategoryAdmin(DjangoMpttAdmin):
 class PlaceAdmin(DjangoMpttAdmin):
     search_fields = ['name',]
     tree_auto_open = False
+    list_display = ['__unicode__', 'is_shop', 'items_changelist_link']
+
+    def items_changelist_link(self, obj):
+        # link = reverse("admin:base_item_change", args=[obj.id])
+        link = reverse("admin:base_place_item_changelist", args=[obj.id])
+        return mark_safe(u'<a href="%s">%s</a>' % (link, _("items list")))
 
 
 @admin.register(PurchaseItem)
@@ -80,6 +88,8 @@ class PurchaseForm(autocomplete_light.ModelForm):
     def save(self, *args, **kwargs):
         p = super(PurchaseForm, self).save(*args, **kwargs)
         if self.cleaned_data['force_complete']:
+            if p.is_completed:
+                raise forms.ValidationError(_("already completed"))
             try:
                 p.complete()
             except Exception, e:
@@ -149,6 +159,8 @@ class TransactionForm(autocomplete_light.ModelForm):
     def save(self, *args, **kwargs):
         t = super(TransactionForm, self).save(*args, **kwargs)
         if self.cleaned_data['force_complete']:
+            if t.is_completed:
+                raise forms.ValidationError(_("already completed"))
             try:
                 t.force_complete()
             except Exception, e:
@@ -188,12 +200,21 @@ class TransactionAdmin(admin.ModelAdmin):
 
 class PlaceItemAdmin(ItemAdmin):
     place_id = None
-    list_display = ['obj_link', 'quantity', 'place']
+    list_display = ['obj_link', 'quantity', 'place', 'items_serials_changelist_link', 'items_chunks_changelist_link']
 
     def obj_link(self, obj):
         # link = reverse("admin:base_item_change", args=[obj.id])
         link = reverse("admin:base_place_item_change", args=[self.place_id, obj.id])
         return mark_safe(u'<a href="%s">%s</a>' % (link, obj.__unicode__()))
+
+    def items_serials_changelist_link(self, obj):
+        link = reverse("admin:base_item_serials_filtered_changelist", args=[obj.id])
+        return mark_safe(u'<a href="%s">%s</a>' % (link, _("serials list")))
+
+    def items_chunks_changelist_link(self, obj):
+        # link = reverse("admin:base_item_serials_filtered_changelist", args=[obj.id])
+        link = "#"
+        return mark_safe(u'<a href="%s">%s</a>' % (link, _("chunks list")))
 
     def get_queryset(self, request):
         qs = super(PlaceItemAdmin, self).get_queryset(request)
@@ -234,8 +255,6 @@ class PlaceItemAdmin(ItemAdmin):
         return super(PlaceItemAdmin, self).change_view(request, object_id, form_url='', extra_context=extra_context)
 
     def get_urls(self):
-        from django.conf.urls import url
-        from functools import update_wrapper
 
         def wrap(view):
             def wrapper(*args, **kwargs):
@@ -307,8 +326,6 @@ class ItemSerialsFilteredAdmin(ItemSerialAdmin):
         return super(ItemSerialsFilteredAdmin, self).change_view(request, object_id, form_url='', extra_context=extra_context)
 
     def get_urls(self):
-        from django.conf.urls import url
-        from functools import update_wrapper
 
         def wrap(view):
             def wrapper(*args, **kwargs):
