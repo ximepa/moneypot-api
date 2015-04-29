@@ -1,14 +1,13 @@
 # -*- encoding: utf-8 -*-
 __author__ = 'maxim'
 
+import sys
+
 from django.views.debug import ExceptionReporter
 from django.http import HttpResponse
-from unidecode import unidecode
-import sys
-import code
+
 
 class ExceptionMiddleware(object):
-
     def process_exception(self, request, exception):
         exc_type, exc_value, tb = sys.exc_info()
         reporter = ExceptionReporter(request, exc_type, exc_value, tb)

@@ -6,6 +6,7 @@ class LocalSettingsException(Exception):
 
 
 from .base import *
+
 try:
     from .local import *
 except ImportError, exc:

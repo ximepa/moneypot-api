@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__) + "../../../")
 
@@ -33,23 +34,23 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = (
-        # core batteries
+    # core batteries
     'autocomplete_light',
     'grappelli',
-        # django stuff
+    # django stuff
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-        # batteries
+    # batteries
     'mptt',
     'django_mptt_admin',
-    #'guardian',
+    # 'guardian',
     'rest_framework',
     'rest_framework.authtoken',
-        # project apps
+    # project apps
     'base',
 )
 

@@ -1,6 +1,6 @@
-(function($) {
-    $(document).ready(function() {
-        $('body').on('change', '.autocomplete-light-widget select[name$=source]', function() {
+(function ($) {
+    $(document).ready(function () {
+        $('body').on('change', '.autocomplete-light-widget select[name$=source]', function () {
             var sourceSelectElement = $(this);
             var itemSelectElements = $("select[id^='id_transaction_items-'][name*='category']");
             var itemWidgetElements = itemSelectElements.parents('.autocomplete-light-widget');
@@ -8,7 +8,7 @@
             // When the country select changes
             value = $(this).val();
 
-            $.each(itemWidgetElements, function(){
+            $.each(itemWidgetElements, function () {
                 if (value) {
                     // If value is contains something, add it to autocomplete.data
                     $(this).yourlabsWidget().autocomplete.data = {

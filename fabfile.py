@@ -12,7 +12,7 @@ from fabric.contrib.files import exists
 from fabric.operations import _prefix_commands, _prefix_env_vars
 #from fabric.decorators import runs_once
 #from fabric.context_managers import cd, lcd, settings, hide
-from fabric.contrib.files import exists
+
 
 # CHANGEME
 env.hosts = ['maxim@192.168.33.152']

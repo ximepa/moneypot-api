@@ -1,3 +1,5 @@
+from functools import update_wrapper
+
 from django.contrib import admin
 from django import forms
 from django.db import models
@@ -6,18 +8,16 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.html import mark_safe
 from django.core.urlresolvers import reverse
 from django.conf.urls import url
-from functools import update_wrapper
+import autocomplete_light
 
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
     TransactionItem, Transaction, ItemCategoryComment
 
-import autocomplete_light
-
 
 def create_model_admin(model_admin, model, name=None):
-    class  Meta:
+    class Meta:
         proxy = True
-        app_label = model._meta.app_label           # noqa
+        app_label = model._meta.app_label  # noqa
 
     attrs = {'__module__': '', 'Meta': Meta}
 
@@ -45,14 +45,14 @@ class ItemCategoryCommentInline(admin.TabularInline):
 
 @admin.register(ItemCategory)
 class ItemCategoryAdmin(DjangoMpttAdmin):
-    search_fields = ['name',]
+    search_fields = ['name', ]
     tree_auto_open = False
     inlines = [ItemCategoryCommentInline]
 
 
 @admin.register(Place)
 class PlaceAdmin(DjangoMpttAdmin):
-    search_fields = ['name',]
+    search_fields = ['name', ]
     tree_auto_open = False
     list_display = ['__unicode__', 'is_shop', 'items_changelist_link']
 
@@ -69,7 +69,7 @@ class PurchaseItemAdmin(admin.ModelAdmin):
 
 @admin.register(Payer)
 class PayerAdmin(admin.ModelAdmin):
-    search_fields = ['name',]
+    search_fields = ['name', ]
 
 
 class PurchaseItemForm(autocomplete_light.ModelForm):
@@ -104,38 +104,39 @@ class PurchaseForm(autocomplete_light.ModelForm):
             # try:
             p.complete()
             # except Exception, e:
-            #     raise forms.ValidationError(e)
+            # raise forms.ValidationError(e)
         return p
 
 
 @admin.register(Purchase)
 class PurchaseAdmin(admin.ModelAdmin):
     form = PurchaseForm
-    inlines = [PurchaseItemInline,]
-    list_display = ['__unicode__', 'created_at', 'completed_at', 'source', 'destination', 'is_completed', 'is_prepared',]
-    list_filter = ['source', 'destination', 'is_completed', 'is_prepared',]
+    inlines = [PurchaseItemInline, ]
+    list_display = ['__unicode__', 'created_at', 'completed_at', 'source', 'destination', 'is_completed',
+                    'is_prepared', ]
+    list_filter = ['source', 'destination', 'is_completed', 'is_prepared', ]
     search_fields = ['source__name', 'destination__name', 'purchase_items__category__name']
 
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
     search_fields = ['category__name', 'place__name']
-    list_filter = ['category',]
+    list_filter = ['category', ]
     list_display = ['__unicode__', 'quantity', 'place']
 
 
 @admin.register(ItemSerial)
 class ItemSerialAdmin(admin.ModelAdmin):
     search_fields = ['item__category__name', 'serial']
-    list_filter = ['item__category',]
+    list_filter = ['item__category', ]
     list_display = ['__unicode__', 'category_name']
 
 
 @admin.register(ItemChunk)
 class ItemChunkAdmin(admin.ModelAdmin):
     search_fields = ['item__category__name']
-    list_filter = ['item__category',]
-    list_display = ['__unicode__','category_name']
+    list_filter = ['item__category', ]
+    list_display = ['__unicode__', 'category_name']
 
 
 class TransactionItemForm(autocomplete_light.ModelForm):
@@ -175,7 +176,7 @@ class TransactionForm(autocomplete_light.ModelForm):
             # try:
             t.force_complete()
             # except Exception, e:
-            #     raise forms.ValidationError(e)
+            # raise forms.ValidationError(e)
         return t
 
 
@@ -192,7 +193,6 @@ class TransactionItemInline(admin.TabularInline):
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-
     class Media:
         js = ('base/js/transaction_source_item_autocomplete.js',)
 
@@ -231,7 +231,7 @@ class PlaceItemAdmin(ItemAdmin):
         qs = super(PlaceItemAdmin, self).get_queryset(request)
         return qs.filter(place_id=self.place_id)
 
-    def changelist_view(self, request, place_id, extra_context=None):                       # pylint:W0221
+    def changelist_view(self, request, place_id, extra_context=None):  # pylint:arguments-differ
         self.place_id = place_id
         extra_context = extra_context or {}
         try:
@@ -243,7 +243,7 @@ class PlaceItemAdmin(ItemAdmin):
         view = super(PlaceItemAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
 
-    def change_view(self, request, place_id, object_id, form_url='', extra_context=None):   # pylint:W0221
+    def change_view(self, request, place_id, object_id, form_url='', extra_context=None):  # pylint:arguments-differ
         self.place_id = place_id
         extra_context = extra_context or {}
         extra_context.update({
@@ -270,6 +270,7 @@ class PlaceItemAdmin(ItemAdmin):
         def wrap(view):
             def wrapper(*args, **kwargs):
                 return self.admin_site.admin_view(view)(*args, **kwargs)
+
             return update_wrapper(wrapper, view)
 
         urlpatterns = [
@@ -281,6 +282,7 @@ class PlaceItemAdmin(ItemAdmin):
     change_list_template = 'admin/proxy_change_list.html'
     change_form_template = 'admin/proxy_change_form.html'
 
+
 create_model_admin(PlaceItemAdmin, name='place_item', model=Item)
 
 
@@ -289,14 +291,14 @@ class ItemSerialsFilteredAdmin(ItemSerialAdmin):
     list_display = ['obj_link', 'category_name']
 
     def obj_link(self, obj):
-        link = reverse("admin:base_item_serials_filtered_change",  args=[self.item_id, obj.id])
+        link = reverse("admin:base_item_serials_filtered_change", args=[self.item_id, obj.id])
         return mark_safe(u'<a href="%s">%s</a>' % (link, obj.__unicode__()))
 
     def get_queryset(self, request):
         qs = super(ItemSerialsFilteredAdmin, self).get_queryset(request)
         return qs.filter(item_id=self.item_id)
 
-    def changelist_view(self, request, item_id, extra_context=None):                        # pylint:W0221
+    def changelist_view(self, request, item_id, extra_context=None):  # pylint:arguments-differ
         self.item_id = item_id
         extra_context = extra_context or {}
         try:
@@ -311,7 +313,7 @@ class ItemSerialsFilteredAdmin(ItemSerialAdmin):
         view = super(ItemSerialsFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
 
-    def change_view(self, request, item_id, object_id, form_url='', extra_context=None):    # pylint:W0221
+    def change_view(self, request, item_id, object_id, form_url='', extra_context=None):  # pylint:arguments-differ
         self.item_id = item_id
         extra_context = extra_context or {}
         extra_context.update({
@@ -334,13 +336,15 @@ class ItemSerialsFilteredAdmin(ItemSerialAdmin):
                 name=unicode(item.category.name),
                 place=unicode(item.place.name)
             ))})
-        return super(ItemSerialsFilteredAdmin, self).change_view(request, object_id, form_url='', extra_context=extra_context)
+        return super(ItemSerialsFilteredAdmin, self).change_view(request, object_id, form_url='',
+                                                                 extra_context=extra_context)
 
     def get_urls(self):
 
         def wrap(view):
             def wrapper(*args, **kwargs):
                 return self.admin_site.admin_view(view)(*args, **kwargs)
+
             return update_wrapper(wrapper, view)
 
         urlpatterns = [
@@ -351,5 +355,6 @@ class ItemSerialsFilteredAdmin(ItemSerialAdmin):
 
     change_list_template = 'admin/proxy_change_list.html'
     change_form_template = 'admin/proxy_change_form.html'
+
 
 create_model_admin(ItemSerialsFilteredAdmin, name='item_serials_filtered', model=ItemSerial)

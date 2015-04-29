@@ -13,3 +13,5 @@ pylint:
   disable:
     - super-on-old-class
     - old-style-class
+    - no-init
+    - nonstandard-exception

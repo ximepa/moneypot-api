@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from django.db import models, IntegrityError
 from django.utils.translation import ugettext_lazy as _, ugettext
-from mptt.models import MPTTModel, TreeForeignKey
+from mptt.models import MPTTModel
 from django.core.urlresolvers import reverse
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -193,7 +193,7 @@ class Place(MPTTModel):
                 place=self
             )))
         else:
-            serials=None
+            serials = None
             if item.serials:
                 serials = i.serials.filter(serial__in=item.serials)
                 if not serials.count() == len(item.serials):
@@ -392,7 +392,7 @@ class Purchase(Movement):
                                 item_serial.item.__unicode__(),
                                 item_serial.item.place.__unicode__(),
                                 item_serial.item.pk
-                           ))
+                            ))
             self.items_prepared.append(i)
         self.source.items.add(*self.items_prepared)
         self.is_prepared = True
@@ -411,7 +411,7 @@ class Purchase(Movement):
         t = Transaction.objects.create(source=self.source, destination=self.destination)
         for pi in self.purchase_items.all():
             ti = TransactionItem.objects.create(purchase=self, transaction=t, category=pi.category,
-                                                quantity=pi.quantity, _serials=pi._serials, _chunks=pi._chunks)
+                                                quantity=pi.quantity, _serials=pi._serials, _chunks=pi._chunks)  # noqa
             for item in pi.item_set.all():
                 item.is_reserved = True
                 item.reserved_by = ti
@@ -596,8 +596,8 @@ class Item(models.Model):
         self.refresh_from_db()
 
         # if self.quantity == 0:
-        #     self.children.update(parent=None)
-        #     self.delete()
+        # self.children.update(parent=None)
+        # self.delete()
 
         if dry_run:
             raise DryRun(_("Cancelled due to dry_run option"))
@@ -783,6 +783,7 @@ class Transaction(Movement):
     def check_prepared(self):
         self.items_prepared = []
         from pprint import pprint
+
         print "   CHECK PREPARED   "
         print self
         for ti in self.transaction_items.all():
@@ -790,10 +791,10 @@ class Transaction(Movement):
             print "  ti: %s" % ti
             item = ti.item_set.get()
             print "  item: %s" % item
-            assert(ti.transaction == self)
-            assert(item.quantity == ti.quantity)
-            assert(item.category == ti.category)
-            assert(item.place == ti.transaction.source)
+            assert (ti.transaction == self)
+            assert (item.quantity == ti.quantity)
+            assert (item.category == ti.category)
+            assert (item.place == ti.transaction.source)
             self.items_prepared.append(item)
             print "   --- check prepared OK ---   "
         print "   CHECK PREPARED OK    "

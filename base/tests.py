@@ -3,9 +3,8 @@ from django.forms import ValidationError
 
 # Create your tests here.
 
-#Third-party app imports
+# Third-party app imports
 from model_mommy import mommy
-from model_mommy.recipe import Recipe, foreign_key
 from decimal import Decimal
 
 from .models import Unit, ItemCategory, Item, ItemSerial, ItemChunk, IncompatibleUnitException, InvalidParameters, \
@@ -199,7 +198,6 @@ class ItemTestCase(TransactionTestCase):
 
 
 class MovementTestCase(TransactionTestCase):
-
     def setUp(self):
         self.unit_pcs = mommy.make(Unit, name='pcs', unit_type=Unit.INTEGER)
         self.unit_litre = mommy.make(Unit, name='litre', unit_type=Unit.DECIMAL)
