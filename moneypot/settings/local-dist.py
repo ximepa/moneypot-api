@@ -50,14 +50,14 @@ DEV = True
 ALLOWED_HOSTS = []
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'f!lhfeeqduid_7*1nz2j(9*s2izqr)ft^99lov*y-nuc5ly-g7'
+SECRET_KEY = 'f!lhfeeqduid_7*1nz2j(9*s2izqr)ft^99lov*y-nuc5ly-g7'  # noqa
 
 # Uncomment these to activate and customize Celery:
 # CELERY_ALWAYS_EAGER = False  # required to activate celeryd
 # BROKER_HOST = 'localhost'
 # BROKER_PORT = 5672
 # BROKER_USER = 'django'
-# BROKER_PASSWORD = 'django'
+# BROKER_PASSWORD = 'django'                                        # noqa
 # BROKER_VHOST = 'django'
 # CELERY_RESULT_BACKEND = 'amqp'
 
