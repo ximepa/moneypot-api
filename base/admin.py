@@ -11,7 +11,7 @@ from django.conf.urls import url
 from functools import update_wrapper
 
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
-    TransactionItem, Transaction
+    TransactionItem, Transaction, ItemCategoryComment
 
 import autocomplete_light
 
@@ -33,10 +33,23 @@ class UnitAdmin(admin.ModelAdmin):
     pass
 
 
+class ItemCategoryCommentForm(autocomplete_light.ModelForm):
+    class Meta:
+        model = ItemCategoryComment
+        exclude = []
+
+
+class ItemCategoryCommentInline(admin.TabularInline):
+    model = ItemCategoryComment
+    form = ItemCategoryCommentForm
+    extra = 10
+
+
 @admin.register(ItemCategory)
 class ItemCategoryAdmin(DjangoMpttAdmin):
     search_fields = ['name',]
     tree_auto_open = False
+    inlines = [ItemCategoryCommentInline]
 
 
 @admin.register(Place)
@@ -89,11 +102,11 @@ class PurchaseForm(autocomplete_light.ModelForm):
         p = super(PurchaseForm, self).save(*args, **kwargs)
         if self.cleaned_data['force_complete']:
             if p.is_completed:
-                raise forms.ValidationError(_("already completed"))
-            try:
-                p.complete()
-            except Exception, e:
-                raise forms.ValidationError(e)
+                raise RuntimeError(_("already completed"))
+            # try:
+            p.complete()
+            # except Exception, e:
+            #     raise forms.ValidationError(e)
         return p
 
 
@@ -115,7 +128,7 @@ class ItemAdmin(admin.ModelAdmin):
 
 @admin.register(ItemSerial)
 class ItemSerialAdmin(admin.ModelAdmin):
-    search_fields = ['item__category__name']
+    search_fields = ['item__category__name', 'serial']
     list_filter = ['item__category',]
     list_display = ['__unicode__', 'category_name']
 
@@ -160,11 +173,11 @@ class TransactionForm(autocomplete_light.ModelForm):
         t = super(TransactionForm, self).save(*args, **kwargs)
         if self.cleaned_data['force_complete']:
             if t.is_completed:
-                raise forms.ValidationError(_("already completed"))
-            try:
-                t.force_complete()
-            except Exception, e:
-                raise forms.ValidationError(e)
+                raise RuntimeError(_("already completed"))
+            # try:
+            t.force_complete()
+            # except Exception, e:
+            #     raise forms.ValidationError(e)
         return t
 
 

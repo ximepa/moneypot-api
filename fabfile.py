@@ -12,15 +12,18 @@ from fabric.contrib.files import exists
 from fabric.operations import _prefix_commands, _prefix_env_vars
 #from fabric.decorators import runs_once
 #from fabric.context_managers import cd, lcd, settings, hide
+from fabric.contrib.files import exists
 
 # CHANGEME
 env.hosts = ['maxim@192.168.33.152']
-env.code_dir = '/home/maxim/production/ecity'
-env.project_dir = '/home/maxim/production/ecity/ecity'
-env.static_root = '/home/maxim/production/ecity/static/'
-env.virtualenv = '/home/maxim/production/ecity/env'
-env.code_repo = 'git@bitbucket.org:shamanu4/ecity.git'
-env.django_settings_module = 'ecity.settings'
+env.project_name = 'moneypot-api'
+env.project_main_app = 'moneypot'
+env.code_dir = '/home/maxim/production/%s' % env.project_name
+env.project_dir = '/home/maxim/production/%s/%s' % (env.project_name, env.project_main_app)
+env.static_root = '/home/maxim/production/%s/static/' % env.project_name
+env.virtualenv = '/home/maxim/production/%s/env' % env.project_name
+env.code_repo = 'git@github.com:shamanu4/moneypot-api.git'
+env.django_settings_module = '%s.settings' % env.project_main_app
 
 # Python version
 PYTHON_BIN = "python2.7"
@@ -59,20 +62,19 @@ def ensure_virtualenv():
     if exists(env.virtualenv):
         return
 
-    #with cd(env.code_dir):
-    #    run("virtualenv --no-site-packages --python=%s %s" %
-    #        (PYTHON_BIN, env.virtualenv))
-    #    run("echo %s > %s/lib/%s/site-packages/projectsource.pth" %
-    #        (env.project_dir, env.virtualenv, PYTHON_BIN))
+    with cd(env.code_dir):
+       run("virtualenv --no-site-packages --python=%s %s" %
+           (PYTHON_BIN, env.virtualenv))
+       run("echo %s > %s/lib/%s/site-packages/projectsource.pth" %
+           (env.project_dir, env.virtualenv, PYTHON_BIN))
 
 
 def ensure_src_dir():
-    pass
-    #if not exists(env.code_dir):
-    #    run("mkdir -p %s" % env.code_dir)
-    #with cd(env.code_dir):
-    #    if not exists(posixpath.join(env.code_dir, '.git')):
-    #        run('git clone %s .' % (env.code_repo))
+    if not exists(env.code_dir):
+       run("mkdir -p %s" % env.code_dir)
+    with cd(env.code_dir):
+       if not exists(posixpath.join(env.code_dir, '.git')):
+           run('git clone %s .' % (env.code_repo))
 
 
 def push_sources():
@@ -119,7 +121,7 @@ def webserver_stop():
     Stop the webserver that is running the Django instance
     """
     with virtualenv(env.virtualenv):
-        sudo("supervisorctl stop ecity")
+        sudo("supervisorctl stop %s" % env.project_name)
 
 @task
 def webserver_restart():
@@ -134,7 +136,7 @@ def webserver_restart():
     #    #    webserver_stop()
     #    webserver_restart()
     with virtualenv(env.virtualenv):
-        sudo("supervisorctl reload ecity")
+        sudo("supervisorctl reload %s" % env.project_name)
 
 
 #def restart():

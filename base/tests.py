@@ -149,7 +149,7 @@ class ItemTestCase(TransactionTestCase):
 
     def test_10_deposit_self_fail(self):
         i = mommy.make(Item, category=self.cat_router, quantity=10)
-        self.assertRaises(InvalidParameters, i.deposit, self)
+        self.assertRaises(InvalidParameters, i.deposit, i)
 
     def test_11_deposit_wrong_cat_fail(self):
         i = mommy.make(Item, category=self.cat_router, quantity=10)

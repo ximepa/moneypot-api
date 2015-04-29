@@ -6,3 +6,4 @@ django-nose
 djangorestframework
 Markdown
 nose
+unidecode

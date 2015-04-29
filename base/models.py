@@ -1,7 +1,7 @@
 # coding=utf-8
 from decimal import Decimal
 
-from django.db import models
+from django.db import models, IntegrityError
 from django.utils.translation import ugettext_lazy as _, ugettext
 from mptt.models import MPTTModel, TreeForeignKey
 from django.core.urlresolvers import reverse
@@ -9,7 +9,6 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db import transaction
 import re
-
 
 
 class IncompatibleUnitException(ValueError):
@@ -99,6 +98,20 @@ class ItemCategory(MPTTModel):
         super(ItemCategory, self).save(*args, **kwargs)
 
 
+class ItemCategoryComment(models.Model):
+    category = models.ForeignKey("ItemCategory", verbose_name=_("item category"), related_name="comments")
+    serial_prefix = models.CharField(max_length=12, verbose_name=_("prefix"), unique=True)
+    serial_last_code = models.CharField(max_length=12, verbose_name=_("last code"), blank=True, null=True)
+    comment = models.CharField(max_length=100, verbose_name=_("comment"), blank=True, null=True)
+
+    class Meta:
+        verbose_name = _("item category comment")
+        verbose_name_plural = _("item category comments")
+
+    def __unicode__(self):
+        return "%s - %s" % (self.category.name, self.serial_prefix)
+
+
 class Place(MPTTModel):
     name = models.CharField(_("name"), max_length=100, unique=True)
     parent = models.ForeignKey('self', verbose_name=_("parent"), null=True, blank=True, related_name='children')
@@ -135,22 +148,47 @@ class Place(MPTTModel):
         return reverse('admin:base_place_item_changelist', args=[self.pk])
 
     def deposit(self, item):
+        print "================================"
+        print "         Place.deposit          "
+        print "          source item           "
+        print item
+        print item.pk
+        print item.place
+        print item.reserved_by
+        print "================================"
         try:
             i = self.items.get(category=item.category, is_reserved=False)
         except Item.DoesNotExist:
+            print " [W] item not found. saving in place "
             item.place = self
             item.is_reserved = False
             item.reserved_by = None
             item.parent = None
             item.save()
+            print "================================"
+            print "         Place.deposit          "
+            print "          item result           "
+            print item
+            print item.pk
+            print item.place
+            print item.reserved_by
+            print "================================"
         else:
+            print "================================"
+            print "         Place.deposit          "
+            print "        destination item        "
+            print i
+            print i.pk
+            print i.place
+            print i.reserved_by
+            print "================================"
             i.deposit(item)
 
     def withdraw(self, item):
         try:
             i = self.items.get(category=item.category, is_reserved=False)
         except Item.DoesNotExist:
-            raise ItemNotFound(_("Can not withdraw {item} from {place}: not found.".format(
+            raise ItemNotFound(_("Can not withdraw <{item}> from <{place}>: not found.".format(
                 item=item,
                 place=self
             )))
@@ -159,7 +197,7 @@ class Place(MPTTModel):
             if item.serials:
                 serials = i.serials.filter(serial__in=item.serials)
                 if not serials.count() == len(item.serials):
-                    raise ItemNotFound(_("Can not withdraw {item} from {place}: some serials not found".format(
+                    raise ItemNotFound(_("Can not withdraw <{item}> from <{place}>: some serials not found".format(
                         item=item,
                         place=self
                     )))
@@ -338,8 +376,23 @@ class Purchase(Movement):
                 for chunk in purchase_item.chunks:
                     ItemChunk.objects.create(item=i, chunk=chunk, purchase=purchase_item)
             if purchase_item.serials:
+                purchase_item.serials.sort()
                 for serial in purchase_item.serials:
-                    ItemSerial.objects.create(item=i, serial=serial, purchase=purchase_item)
+                    try:
+                        with transaction.atomic():
+                            ItemSerial.objects.create(item=i, serial=serial, purchase=purchase_item)
+                    except IntegrityError:
+                        try:
+                            item_serial = ItemSerial.objects.get(serial=serial)
+                        except Item.DoesNotExist:
+                            raise IntegrityError("serial %s duplicate but not found" % serial)
+                        else:
+                            raise IntegrityError("serial %s duplicate. item <%s> place <%s> pk <%s>" % (
+                                serial,
+                                item_serial.item.__unicode__(),
+                                item_serial.item.place.__unicode__(),
+                                item_serial.item.pk
+                           ))
             self.items_prepared.append(i)
         self.source.items.add(*self.items_prepared)
         self.is_prepared = True
@@ -559,6 +612,23 @@ class Item(models.Model):
         :returns: updated item (self)
         :rtype: base.models.Item()
         """
+        print "================================"
+        print "         item.deposit           "
+        print "          item source           "
+        print item
+        print item.pk
+        print item.place
+        print item.reserved_by
+        print "================================"
+        print "================================"
+        print "         Place.deposit          "
+        print "        item destination        "
+        print self
+        print self.pk
+        print self.place
+        print self.reserved_by
+        print "================================"
+
         if not isinstance(item, Item):
             raise InvalidParameters(_("item parameter must be instance of base.models.Item"))
 
@@ -687,23 +757,47 @@ class Transaction(Movement):
     @transaction.atomic
     def prepare(self):
         self.items_prepared = []
-
+        print "   PREPARE   "
+        print self
         for trans_item in self.transaction_items.all():
+            print "   ---    prepare    ---   "
+            print trans_item
             try:
-                Item.objects.get(reserved_by=trans_item)
+                item = Item.objects.get(reserved_by=trans_item)
+                print "   item already found   "
+                print item
+                print item.pk
             except Item.DoesNotExist:
+                print "   item withdrawing new  "
+                print "   source: %s" % self.source
                 item = self.source.withdraw(trans_item)
                 item.is_reserved = True
                 item.reserved_by = trans_item
                 item.save()
+                print item
+                print item.pk
+            print "   ---    prepare OK  ---   "
         self.is_prepared = True
+        print "   PREPARE OK   "
 
     def check_prepared(self):
+        self.items_prepared = []
+        from pprint import pprint
+        print "   CHECK PREPARED   "
+        print self
         for ti in self.transaction_items.all():
+            print "   --- check prepared ---   "
+            print "  ti: %s" % ti
             item = ti.item_set.get()
+            print "  item: %s" % item
+            assert(ti.transaction == self)
             assert(item.quantity == ti.quantity)
             assert(item.category == ti.category)
+            assert(item.place == ti.transaction.source)
             self.items_prepared.append(item)
+            print "   --- check prepared OK ---   "
+        print "   CHECK PREPARED OK    "
+        pprint(self.items_prepared)
 
     def force_complete(self):
         self.is_negotiated_source = True
@@ -716,7 +810,12 @@ class Transaction(Movement):
     def complete(self):
         if self.is_completed:
             return
+        print "==============================="
+        print "     transaction complete      "
+        print self
+        print self.pk
         if not self.is_prepared:
+            print "         not prepared          "
             self.prepare()
         self.check_prepared()
         if not self.is_negotiated_source:

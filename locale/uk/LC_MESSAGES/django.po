@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-04-20 15:30+0300\n"
+"POT-Creation-Date: 2015-04-24 12:49+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -61,365 +61,364 @@ msgstr "Предмет не існує"
 msgid "Serials for {name} in {place}"
 msgstr "Серійні номери для {name} в {place}"
 
-#: base/models.py:43
+#: base/models.py:42
 msgid "integer unit"
 msgstr "ціле число"
 
-#: base/models.py:44
+#: base/models.py:43
 msgid "decimal unit"
 msgstr "не ціле число"
 
-#: base/models.py:47 base/models.py:59 base/models.py:103
+#: base/models.py:46 base/models.py:58 base/models.py:102
 msgid "name"
 msgstr "ім'я"
 
-#: base/models.py:48
+#: base/models.py:47
 msgid "unit type"
 msgstr "тим одиниці виміру"
 
-#: base/models.py:51 base/models.py:60
+#: base/models.py:50 base/models.py:59
 msgid "unit"
 msgstr "одиниця виміру"
 
-#: base/models.py:52
+#: base/models.py:51
 msgid "units"
 msgstr "одиниці виміру"
 
-#: base/models.py:61
+#: base/models.py:60
 msgid "stackable"
 msgstr "можуть бути з'єднані"
 
-#: base/models.py:62 base/models.py:104 base/models.py:384
+#: base/models.py:61 base/models.py:103 base/models.py:423
 msgid "parent"
 msgstr "батьківський елемент"
 
-#: base/models.py:65 base/models.py:170 base/models.py:380
+#: base/models.py:64 base/models.py:194 base/models.py:419
 msgid "item category"
 msgstr "категорія предмету"
 
-#: base/models.py:66
+#: base/models.py:65
 msgid "item categories"
 msgstr "категорії предметів"
 
-#: base/models.py:81
+#: base/models.py:80
 msgid "Unit must be set for object or for one of its parents."
 msgstr ""
 "Одиниця виміру має бути вказана для об'єкта чи для одного з батьківських "
 "елементів"
 
-#: base/models.py:91
+#: base/models.py:90
 msgid "Stackable must be set for object or for one of its parents."
 msgstr ""
 "Можливість з'єднання має бути вказана для об'єкта чи для одного з "
 "батьківських елементів"
 
-#: base/models.py:105
+#: base/models.py:104
 msgid "is shop"
 msgstr "це магазин?"
 
-#: base/models.py:108 base/models.py:385
+#: base/models.py:107 base/models.py:424
 msgid "place"
 msgstr "місце"
 
-#: base/models.py:109
+#: base/models.py:108
 msgid "places"
 msgstr "місця"
 
-#: base/models.py:114
+#: base/models.py:113
 msgid "view place"
 msgstr "переглянути місце"
 
-#: base/models.py:115
+#: base/models.py:114
 msgid "view items"
 msgstr "переглянути предмети"
 
-#: base/models.py:116
+#: base/models.py:115
 msgid "view item quantity"
 msgstr "переглянути кількість предметів"
 
-#: base/models.py:117
+#: base/models.py:116
 msgid "view item serial"
 msgstr "переглянути серійні номери"
 
-#: base/models.py:118
+#: base/models.py:117
 msgid "accept transactions"
 msgstr "прийняти транзакцію"
 
-#: base/models.py:119
+#: base/models.py:118
 msgid "request item store"
 msgstr "запросити як пункт призначення"
 
-#: base/models.py:120
+#: base/models.py:119
 msgid "request item withdraw"
 msgstr "запросити як джерело"
 
-#: base/models.py:121
+#: base/models.py:120
 msgid "change serial"
 msgstr "змінити серійний номер"
 
-#: base/models.py:122
+#: base/models.py:121
 msgid "change chunks"
 msgstr "змінити відрізки"
 
-#: base/models.py:123
+#: base/models.py:122
 msgid "modify items"
 msgstr "змінити предмети (super user)"
 
-#: base/models.py:124
+#: base/models.py:123
 msgid "make purchase"
 msgstr "створити закупівлю"
 
-#: base/models.py:125
+#: base/models.py:124
 msgid "make auto purchase"
 msgstr "створити автоматичну закупівлю"
 
-#: base/models.py:153
-#, python-brace-format
-msgid "Can not withdraw {item} from {place}: not found."
-msgstr "Неможливо забрати {item} з {place}: не знайдено."
+#: base/models.py:177
+msgid "Can not withdraw <{item}> from <{place}>: not found."
+msgstr "Неможливо забрати <{item}> з <{place}>: не знайдено."
 
-#: base/models.py:162
-#, python-brace-format
-msgid "Can not withdraw {item} from {place}: some serials not found"
-msgstr "Неможливо забрати {item} з {place}: деякі серійні номери не знайдені"
+#: base/models.py:186
+#: python-brace-format
+msgid "Can not withdraw <{item}> from <{place}>: some serials not found"
+msgstr "Неможливо забрати <{item}> з <{place}>: деякі серійні номери не знайдені"
 
-#: base/models.py:171 base/models.py:381
+#: base/models.py:195 base/models.py:420
 msgid "quantity"
 msgstr "кількість"
 
-#: base/models.py:189
+#: base/models.py:213
 msgid "Category unit type is unknown"
 msgstr "Одиниця виміру категорії невідома"
 
-#: base/models.py:193
+#: base/models.py:217
 #, python-format
 msgid "data error: %s"
 msgstr "помилка в данних: %s"
 
-#: base/models.py:197
+#: base/models.py:221
 #, python-brace-format
 msgid "chunks sum error: {total}≠{quantity}"
 msgstr "помилка суми відрізків: {total}≠{quantity}"
 
-#: base/models.py:219
+#: base/models.py:243
 #, python-format
 msgid "unit type `%s` can not have serials"
 msgstr "одиниця виміру `%s` не може мати серійних номерів"
 
-#: base/models.py:224
+#: base/models.py:248
 #, python-brace-format
 msgid "serials count error: {count}≠{quantity}"
 msgstr "помилка кількості серійних номерів: {count}≠{quantity}"
 
-#: base/models.py:246 base/models.py:415
+#: base/models.py:270 base/models.py:454
 #, python-format
 msgid "unit type `%s` can not be decimal"
 msgstr "одиниця виміру `%s` повинна бути цілою"
 
-#: base/models.py:260 base/models.py:632
+#: base/models.py:284 base/models.py:688
 msgid "Purchase"
 msgstr "Закупка"
 
-#: base/models.py:261
+#: base/models.py:285
 msgid "price"
 msgstr "ціна"
 
-#: base/models.py:269
+#: base/models.py:293
 msgid "purchase item"
 msgstr "предмет закупка"
 
-#: base/models.py:270
+#: base/models.py:294
 msgid "purchase items"
 msgstr "предмети закупки"
 
-#: base/models.py:277 base/models.py:280 base/models.py:303
+#: base/models.py:301 base/models.py:304 base/models.py:327
 msgid "payer"
 msgstr "платник"
 
-#: base/models.py:281
+#: base/models.py:305
 msgid "payers"
 msgstr "платники"
 
-#: base/models.py:289
+#: base/models.py:313
 msgid "created at"
 msgstr "створено"
 
-#: base/models.py:290
+#: base/models.py:314
 msgid "completed at"
 msgstr "завершено"
 
-#: base/models.py:291
+#: base/models.py:315
 msgid "is completed"
 msgstr "завершено"
 
-#: base/models.py:292
+#: base/models.py:316
 msgid "is prepared"
 msgstr "підготовлено"
 
-#: base/models.py:299 base/models.py:390 base/models.py:649
+#: base/models.py:323 base/models.py:429 base/models.py:705
 msgid "items"
 msgstr "предмети"
 
-#: base/models.py:300 base/models.py:650
+#: base/models.py:324 base/models.py:706
 msgid "source"
 msgstr "джерело"
 
-#: base/models.py:301 base/models.py:651
+#: base/models.py:325 base/models.py:707
 msgid "destination"
 msgstr "пункт призначення"
 
-#: base/models.py:302
+#: base/models.py:326
 msgid "auto source"
 msgstr "автоматичне джерело"
 
-#: base/models.py:312 base/models.py:386 base/models.py:600 base/models.py:617
+#: base/models.py:336 base/models.py:425 base/models.py:656 base/models.py:673
 msgid "purchase"
 msgstr "закупка"
 
-#: base/models.py:313
+#: base/models.py:337
 msgid "purchases"
 msgstr "закупки"
 
-#: base/models.py:321
+#: base/models.py:345
 msgid "auto source is allowed for shops only"
 msgstr "автоматичне джерело дозволено тільки якщо джерело це магазин"
 
-#: base/models.py:382
+#: base/models.py:421
 msgid "is reserved"
 msgstr "зарезервовано"
 
-#: base/models.py:383
+#: base/models.py:422
 msgid "reserved by transaction"
 msgstr "зарезервовано в транзакції"
 
-#: base/models.py:389 base/models.py:598 base/models.py:614
+#: base/models.py:428 base/models.py:654 base/models.py:670
 msgid "item"
 msgstr "предмет"
 
-#: base/models.py:440
+#: base/models.py:479
 msgid "please provide serial to withdraw"
 msgstr "вкажіть серійні номери"
 
-#: base/models.py:442
+#: base/models.py:481
 msgid "please provide chunk to withdraw"
 msgstr "вкажіть відрізки"
 
-#: base/models.py:465
+#: base/models.py:504
 msgid "Serials count does not match requested quantity"
 msgstr "помилка кількості серійних номерів: {count}≠{quantity}"
 
-#: base/models.py:468
+#: base/models.py:507
 #, python-brace-format
 msgid "Serial {serial} doesn't belong to item {item}"
 msgstr "серійний номер {serial} не прив'язаний до предмета {item}"
 
-#: base/models.py:495
+#: base/models.py:534
 #, python-brace-format
 msgid "Chunk {chunk} doesn't belong to item {item}"
 msgstr "Відрізок {chunk} не прив'язаний до предмета {item}"
 
-#: base/models.py:500
+#: base/models.py:539
 msgid "Chunks total sum does not match requested quantity"
 msgstr "Відрізки в сумі не відповідають заявленій кількості"
 
-#: base/models.py:528
+#: base/models.py:567
 #, python-brace-format
 msgid "Unit {unit} can not have value {quantity}"
 msgstr "Одиниця виміру {unit} не може прийняти значенння {quantity}"
 
-#: base/models.py:533
+#: base/models.py:572
 msgid "Requested quantity more than available"
 msgstr "Заявленя кількість перевищує залишок"
 
-#: base/models.py:550 base/models.py:592
+#: base/models.py:589 base/models.py:648
 msgid "Cancelled due to dry_run option"
 msgstr "Відмінено через dry_run опцію"
 
-#: base/models.py:563
+#: base/models.py:619
 msgid "item parameter must be instance of base.models.Item"
 msgstr "item parameter must be instance of base.models.Item"
 
-#: base/models.py:566
+#: base/models.py:622
 msgid "Item category must match"
 msgstr "Категорії предметів маюсть співпадати "
 
-#: base/models.py:569
+#: base/models.py:625
 msgid "Destination item must exist in db"
 msgstr "Предмет призначення має ісеувати в базі данних"
 
-#: base/models.py:572
+#: base/models.py:628
 msgid "Source item must exist in db"
 msgstr "Предмет передачі має ісеувати в базі данних"
 
-#: base/models.py:575
+#: base/models.py:631
 msgid "Can't join item with itself"
 msgstr "Не можу об'єднати предмет із самим собою"
 
-#: base/models.py:599 base/models.py:603
+#: base/models.py:655 base/models.py:659
 msgid "serial"
 msgstr "серійний номер"
 
-#: base/models.py:604
+#: base/models.py:660
 msgid "serials"
 msgstr "серійні номери"
 
-#: base/models.py:616
+#: base/models.py:672
 msgid "label"
 msgstr "мітка"
 
-#: base/models.py:620
+#: base/models.py:676
 msgid "chunk"
 msgstr "відрізок"
 
-#: base/models.py:621
+#: base/models.py:677
 msgid "chunks"
 msgstr "відрізки"
 
-#: base/models.py:631
+#: base/models.py:687
 msgid "item transaction"
 msgstr "предмет транзакції"
 
-#: base/models.py:641
+#: base/models.py:697
 msgid "transaction item"
 msgstr "предмет транзакції"
 
-#: base/models.py:642
+#: base/models.py:698
 msgid "transaction items"
 msgstr "предмети транзакції"
 
-#: base/models.py:652
+#: base/models.py:708
 msgid "source negotiated"
 msgstr "джерело погоджено"
 
-#: base/models.py:653
+#: base/models.py:709
 msgid "destination negotiated"
 msgstr "пункт призначення погоджено"
 
-#: base/models.py:654
+#: base/models.py:710
 msgid "source confirmed"
 msgstr "джерело підтверджено"
 
-#: base/models.py:655
+#: base/models.py:711
 msgid "destination confirmed"
 msgstr "пункт призначення підтверджено"
 
-#: base/models.py:664 base/models.py:665
+#: base/models.py:720 base/models.py:721
 msgid "transaction"
 msgstr "транзакція"
 
-#: base/models.py:723
+#: base/models.py:779
 msgid "list is not confirmed by source"
 msgstr "список предметів не підтверджений джерелом"
 
-#: base/models.py:725
+#: base/models.py:781
 msgid "list is not confirmed by destination"
 msgstr "список предметів не підтверджений в пункті призначення"
 
-#: base/models.py:727
+#: base/models.py:783
 msgid "transaction is not confirmed by source"
 msgstr "транзакція не підтверджена джерелом"
 
-#: base/models.py:729
+#: base/models.py:785
 msgid "transaction is not confirmed by destination"
 msgstr "Транзакція не підтверджена в пункті призначення"
 
