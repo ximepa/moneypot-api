@@ -231,7 +231,7 @@ class PlaceItemAdmin(ItemAdmin):
         qs = super(PlaceItemAdmin, self).get_queryset(request)
         return qs.filter(place_id=self.place_id)
 
-    def changelist_view(self, request, place_id, extra_context=None):  # pylint:arguments-differ
+    def changelist_view(self, request, place_id, extra_context=None):  # pylint:disable=arguments-differ
         self.place_id = place_id
         extra_context = extra_context or {}
         try:
@@ -243,7 +243,7 @@ class PlaceItemAdmin(ItemAdmin):
         view = super(PlaceItemAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
 
-    def change_view(self, request, place_id, object_id, form_url='', extra_context=None):  # pylint:arguments-differ
+    def change_view(self, request, place_id, object_id, form_url='', extra_context=None):  # pylint:disable=arguments-differ
         self.place_id = place_id
         extra_context = extra_context or {}
         extra_context.update({
@@ -298,7 +298,7 @@ class ItemSerialsFilteredAdmin(ItemSerialAdmin):
         qs = super(ItemSerialsFilteredAdmin, self).get_queryset(request)
         return qs.filter(item_id=self.item_id)
 
-    def changelist_view(self, request, item_id, extra_context=None):  # pylint:arguments-differ
+    def changelist_view(self, request, item_id, extra_context=None):  # pylint:disable=arguments-differ
         self.item_id = item_id
         extra_context = extra_context or {}
         try:
@@ -313,7 +313,7 @@ class ItemSerialsFilteredAdmin(ItemSerialAdmin):
         view = super(ItemSerialsFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
 
-    def change_view(self, request, item_id, object_id, form_url='', extra_context=None):  # pylint:arguments-differ
+    def change_view(self, request, item_id, object_id, form_url='', extra_context=None):  # pylint:disable=arguments-differ
         self.item_id = item_id
         extra_context = extra_context or {}
         extra_context.update({
