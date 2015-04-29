@@ -46,7 +46,7 @@ INSTALLED_APPS = (
         # batteries
     'mptt',
     'django_mptt_admin',
-    'guardian',
+    #'guardian',
     'rest_framework',
     'rest_framework.authtoken',
         # project apps
