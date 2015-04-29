@@ -9,3 +9,6 @@ requirements:
     - requirements.txt
 ignore-paths:
     - docs
+pylint:
+  disable:
+    - super-on-old-class

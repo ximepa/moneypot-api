@@ -110,3 +110,4 @@ target/
 *.sqlite3
 static
 moneypot/db.sqlite3
+moneypot/settings/local.py

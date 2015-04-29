@@ -1,11 +1,9 @@
 from django.contrib import admin
 from django import forms
 from django.db import models
-from mptt.admin import MPTTModelAdmin
 from django_mptt_admin.admin import DjangoMpttAdmin
-from django.utils.translation import ugettext_lazy as _, ugettext
+from django.utils.translation import ugettext_lazy as _
 from django.utils.html import mark_safe
-from django.conf.urls import patterns, include, url
 from django.core.urlresolvers import reverse
 from django.conf.urls import url
 from functools import update_wrapper

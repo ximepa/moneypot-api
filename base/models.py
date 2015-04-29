@@ -546,7 +546,7 @@ class Item(models.Model):
         for chunk in chunks:
             if not chunk.item == self:
                 raise InvalidParameters(_("Chunk {chunk} doesn't belong to item {item}".format(
-                    serial=chunk.__unicode__(),
+                    chunk=chunk.__unicode__(),
                     item=self.__unicode__()
                 )))
         if not chunks.aggregate(models.Sum('chunk'))['chunk__sum'] == quantity:
