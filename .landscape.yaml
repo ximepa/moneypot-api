@@ -15,3 +15,4 @@ pylint:
     - old-style-class
     - no-init
     - nonstandard-exception
+    - too-few-public-methods
