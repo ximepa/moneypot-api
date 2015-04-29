@@ -834,4 +834,56 @@ class Transaction(Movement):
         self.save()
 
 
+class ProcessSerialMixin(object):
 
+    def __init__(self):
+        self.void = Place.objects.get(pk=74)
+        self.item = self.item or {}
+        self.serial = self.serial or ""
+
+    def process(self):
+        assert self.item.place.pk in get_workers_ids_list()
+        tr = Transaction.objects.create(source=self.item.place, destination=self.void)
+        TransactionItem.objects.create(transaction=tr, quantity=1, category=self.item.category, _serials=self.serial)
+        tr.force_complete()
+
+
+def get_workers_ids_list():
+    m = Place.objects.get(pk=14)
+    return m.get_descendants().values_list('id', flat=True)
+
+
+class OrderItemSerialManager(models.Manager):
+    def get_queryset(self):
+        qs = super(OrderItemSerialManager, self).get_queryset()
+        return qs.filter(item__category_id=89).filter(item__place_id__in=get_workers_ids_list())
+
+
+class OrderItemSerial(ItemSerial, ProcessSerialMixin):
+    objects = OrderItemSerialManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = _("order serial")
+        verbose_name_plural = _("order serials")
+
+    def owner(self):
+        return self.item.place
+
+
+class ContractItemSerialManager(models.Manager):
+    def get_queryset(self):
+        qs = super(ContractItemSerialManager, self).get_queryset()
+        return qs.filter(item__category_id=88).filter(item__place_id__in=get_workers_ids_list())
+
+
+class ContractItemSerial(ItemSerial, ProcessSerialMixin):
+    objects = ContractItemSerialManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = _("contract serial")
+        verbose_name_plural = _("contract serials")
+
+    def owner(self):
+        return self.item.place

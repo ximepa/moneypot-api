@@ -11,13 +11,16 @@ from django.conf.urls import url
 import autocomplete_light
 
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
-    TransactionItem, Transaction, ItemCategoryComment
+    TransactionItem, Transaction, ItemCategoryComment, OrderItemSerial, ContractItemSerial
 
 
-def create_model_admin(model_admin, model, name=None):
+def create_model_admin(model_admin, model, name=None, v_name=None):
+    v_name = v_name or name
+
     class Meta:
         proxy = True
         app_label = model._meta.app_label  # noqa
+        verbose_name = v_name
 
     attrs = {'__module__': '', 'Meta': Meta}
 
@@ -358,3 +361,25 @@ class ItemSerialsFilteredAdmin(ItemSerialAdmin):
 
 
 create_model_admin(ItemSerialsFilteredAdmin, name='item_serials_filtered', model=ItemSerial)
+
+
+def process_to_void(modeladmin, request, queryset):
+    for item in queryset:
+        item.process()
+process_to_void.short_description = _("Process to void")
+
+
+@admin.register(OrderItemSerial)
+class OrderItemSerialAdmin(admin.ModelAdmin):
+    search_fields = ['serial']
+    list_filter = ['item__place', ]
+    list_display = ['__unicode__', 'owner']
+    actions = [process_to_void]
+
+
+@admin.register(ContractItemSerial)
+class ContractItemSerialAdmin(admin.ModelAdmin):
+    search_fields = ['serial']
+    list_filter = ['item__place', ]
+    list_display = ['__unicode__', 'owner']
+    actions = [process_to_void]
