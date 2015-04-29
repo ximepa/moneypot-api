@@ -6,7 +6,7 @@ NUM_WORKERS=3
 # user/group to run as
 USER=maxim
 GROUP=maxim
-ADDRESS=127.0.0.1:8002
+ADDRESS=127.0.0.1:8003
 cd /home/maxim/production/moneypot-api
 source env/bin/activate
 test -d $LOGDIR || mkdir -p $LOGDIR
