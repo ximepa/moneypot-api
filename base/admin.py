@@ -17,7 +17,7 @@ import autocomplete_light
 def create_model_admin(model_admin, model, name=None):
     class  Meta:
         proxy = True
-        app_label = model._meta.app_label
+        app_label = model._meta.app_label           # noqa
 
     attrs = {'__module__': '', 'Meta': Meta}
 
@@ -224,14 +224,14 @@ class PlaceItemAdmin(ItemAdmin):
 
     def items_chunks_changelist_link(self, obj):
         # link = reverse("admin:base_item_serials_filtered_changelist", args=[obj.id])
-        link = "#"
+        link = "#%s" % obj.id
         return mark_safe(u'<a href="%s">%s</a>' % (link, _("chunks list")))
 
     def get_queryset(self, request):
         qs = super(PlaceItemAdmin, self).get_queryset(request)
         return qs.filter(place_id=self.place_id)
 
-    def changelist_view(self, request, place_id, extra_context=None):
+    def changelist_view(self, request, place_id, extra_context=None):                       # pylint:W0221
         self.place_id = place_id
         extra_context = extra_context or {}
         try:
@@ -243,7 +243,7 @@ class PlaceItemAdmin(ItemAdmin):
         view = super(PlaceItemAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
 
-    def change_view(self, request, place_id, object_id, form_url='', extra_context=None):
+    def change_view(self, request, place_id, object_id, form_url='', extra_context=None):   # pylint:W0221
         self.place_id = place_id
         extra_context = extra_context or {}
         extra_context.update({
@@ -296,7 +296,7 @@ class ItemSerialsFilteredAdmin(ItemSerialAdmin):
         qs = super(ItemSerialsFilteredAdmin, self).get_queryset(request)
         return qs.filter(item_id=self.item_id)
 
-    def changelist_view(self, request, item_id, extra_context=None):
+    def changelist_view(self, request, item_id, extra_context=None):                        # pylint:W0221
         self.item_id = item_id
         extra_context = extra_context or {}
         try:
@@ -311,7 +311,7 @@ class ItemSerialsFilteredAdmin(ItemSerialAdmin):
         view = super(ItemSerialsFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
 
-    def change_view(self, request, item_id, object_id, form_url='', extra_context=None):
+    def change_view(self, request, item_id, object_id, form_url='', extra_context=None):    # pylint:W0221
         self.item_id = item_id
         extra_context = extra_context or {}
         extra_context.update({

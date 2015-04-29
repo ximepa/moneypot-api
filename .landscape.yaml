@@ -12,3 +12,4 @@ ignore-paths:
 pylint:
   disable:
     - super-on-old-class
+    - old-style-class
