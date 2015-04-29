@@ -10,6 +10,6 @@ ADDRESS=127.0.0.1:8003
 cd /home/maxim/production/moneypot-api
 source env/bin/activate
 test -d $LOGDIR || mkdir -p $LOGDIR
-exec gunicorn ecity.wsgi:application -w $NUM_WORKERS --bind=$ADDRESS \
+exec gunicorn moneypot.wsgi:application -w $NUM_WORKERS --bind=$ADDRESS \
   --user=$USER --group=$GROUP --log-level=debug \
   --log-file=$LOGFILE 2>>$LOGFILE
