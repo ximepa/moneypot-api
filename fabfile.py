@@ -69,6 +69,14 @@ def ensure_virtualenv():
            (env.project_dir, env.virtualenv, PYTHON_BIN))
 
 
+def ensure_static_root():
+    if exists(env.static_root):
+        return
+
+    with cd(env.code_dir):
+       run("mkdir -p %s" % env.static_root)
+
+
 def ensure_src_dir():
     if not exists(env.code_dir):
        run("mkdir -p %s" % env.code_dir)
@@ -136,7 +144,7 @@ def webserver_restart():
     #    #    webserver_stop()
     #    webserver_restart()
     with virtualenv(env.virtualenv):
-        sudo("supervisorctl reload %s" % env.project_name)
+        sudo("supervisorctl restart %s" % env.project_name)
 
 
 #def restart():
@@ -146,6 +154,7 @@ def webserver_restart():
 
 
 def build_static():
+    ensure_static_root()
     assert env.static_root.strip() != '' and env.static_root.strip() != '/'
     with virtualenv(env.virtualenv):
         with cd(env.code_dir):
