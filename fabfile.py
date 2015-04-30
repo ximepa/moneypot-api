@@ -217,8 +217,8 @@ def deploy():
     """
     Deploy the project.
     """
-    with settings(warn_only=True):
-        webserver_stop()
+    # with settings(warn_only=True):
+    #     webserver_stop()
     push_sources()
     install_dependencies()
     update_database()
