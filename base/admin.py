@@ -384,7 +384,10 @@ process_to_void.short_description = _("Process to void")
 class OrderItemSerialAdmin(admin.ModelAdmin):
     search_fields = ['serial']
     list_filter = ['item__place', ]
-    list_display = ['__unicode__', 'owner']
+    list_display = ['__unicode__', 'owner', 'comment']
+    ordering = ['-comment',]
+    readonly_fields = ['item', 'purchase', 'serial', 'owner']
+    fields = ['comment', 'serial', 'owner']
     actions = [process_to_void]
 
 
@@ -392,5 +395,8 @@ class OrderItemSerialAdmin(admin.ModelAdmin):
 class ContractItemSerialAdmin(admin.ModelAdmin):
     search_fields = ['serial']
     list_filter = ['item__place', ]
-    list_display = ['__unicode__', 'owner']
+    list_display = ['__unicode__', 'owner', 'comment']
+    ordering = ['-comment',]
+    readonly_fields = ['item', 'purchase', 'serial', 'owner']
+    fields = ['comment', 'serial', 'owner']
     actions = [process_to_void]
