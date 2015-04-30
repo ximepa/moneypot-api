@@ -8,6 +8,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.html import mark_safe
 from django.core.urlresolvers import reverse
 from django.conf.urls import url
+from django.contrib import messages
 import autocomplete_light
 
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
@@ -371,7 +372,11 @@ create_model_admin(ItemSerialsFilteredAdmin, name='item_serials_filtered', model
 
 def process_to_void(modeladmin, request, queryset):
     for item in queryset:
-        item.process()
+        if item.comment:
+            item.process()
+            messages.add_message(request, messages.SUCCESS, _("processed %s" % item))
+        else:
+            messages.add_message(request, messages.ERROR, _("Error: no comment for %s" % item))
 process_to_void.short_description = _("Process to void")
 
 

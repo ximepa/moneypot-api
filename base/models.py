@@ -441,6 +441,7 @@ class Item(models.Model):
     parent = models.ForeignKey('self', verbose_name=_("parent"), blank=True, null=True, related_name="children")
     place = models.ForeignKey("Place", verbose_name=_("place"), blank=True, null=True, related_name='items')
     purchase = models.ForeignKey("PurchaseItem", verbose_name=_("purchase"), blank=True, null=True)
+    comment = models.TextField(_("comment"), blank=True, null=True)
 
     class Meta:
         verbose_name = _("item")
@@ -672,6 +673,7 @@ class ItemSerial(models.Model):
     item = models.ForeignKey("Item", verbose_name=_("item"), related_name='serials')
     serial = models.CharField(_("serial"), max_length=32, unique=True)
     purchase = models.ForeignKey("PurchaseItem", verbose_name=_("purchase"), blank=True, null=True)
+    comment = models.TextField(_("comment"), blank=True, null=True)
 
     class Meta:
         verbose_name = _("serial")
@@ -689,6 +691,7 @@ class ItemChunk(models.Model):
     chunk = models.DecimalField(max_digits=9, decimal_places=3)
     label = models.CharField(_("label"), max_length=32, unique=True, blank=True, null=True)
     purchase = models.ForeignKey("PurchaseItem", verbose_name=_("purchase"), blank=True, null=True)
+    comment = models.TextField(_("comment"), blank=True, null=True)
 
     class Meta:
         verbose_name = _("chunk")
