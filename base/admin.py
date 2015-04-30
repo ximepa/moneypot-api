@@ -167,7 +167,7 @@ class TransactionForm(autocomplete_light.ModelForm):
 
     class Meta:
         model = Transaction
-        exclude = ['is_completed', 'is_prepared', 'is_negotiated_source',
+        exclude = ['comment_places', 'is_completed', 'is_prepared', 'is_negotiated_source',
                    'is_negotiated_destination', 'is_confirmed_source', 'is_confirmed_destination']
         autocomplete_fields = ('source', 'destination', 'items')
 
@@ -194,6 +194,12 @@ class TransactionItemInline(admin.TabularInline):
     }
 
 
+class TransactionCommentPlaceInline(admin.TabularInline):
+    model = Transaction.comment_places.through
+    form = autocomplete_light.modelform_factory(Place, exclude=[])
+    extra = 10
+
+
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
     class Media:
@@ -208,7 +214,7 @@ class TransactionAdmin(admin.ModelAdmin):
                    'is_confirmed_destination']
     search_fields = ['source__name', 'destination__name', 'transaction_items__category__name']
     inlines = [
-        TransactionItemInline
+        TransactionItemInline, TransactionCommentPlaceInline
     ]
 
 

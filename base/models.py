@@ -59,6 +59,7 @@ class ItemCategory(MPTTModel):
     unit = models.ForeignKey("Unit", verbose_name=_("unit"), blank=True, null=True)
     is_stackable = models.NullBooleanField(_("stackable"), blank=True, null=True)
     parent = models.ForeignKey('self', verbose_name=_("parent"), null=True, blank=True, related_name='children')
+    comment = models.TextField(_("comment"), blank=True, null=True)
 
     class Meta:
         verbose_name = _("item category")
@@ -116,6 +117,7 @@ class Place(MPTTModel):
     name = models.CharField(_("name"), max_length=100, unique=True)
     parent = models.ForeignKey('self', verbose_name=_("parent"), null=True, blank=True, related_name='children')
     is_shop = models.BooleanField(_("is shop"), blank=True, default=False)
+    comment = models.TextField(_("comment"), blank=True, null=True)
 
     class Meta:
         verbose_name = _("place")
@@ -297,6 +299,7 @@ class MovementItem(models.Model):
 class PurchaseItem(MovementItem):
     purchase = models.ForeignKey("Purchase", verbose_name=_("Purchase"), related_name="purchase_items")
     price = models.DecimalField(_("price"), max_digits=9, decimal_places=2)
+    price_usd = models.DecimalField(_("price usd"), max_digits=9, decimal_places=2, blank=True, null=True)
     # Movement superclass
     # category = models.ForeignKey("ItemCategory", verbose_name=_("item category"))
     # quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
@@ -339,6 +342,7 @@ class Purchase(Movement):
     destination = models.ForeignKey("Place", verbose_name=_("destination"), related_name="purchase_destinations")
     is_auto_source = models.BooleanField(_("auto source"), blank=True, default=False)
     payer = models.ForeignKey("Payer", verbose_name=_("payer"))
+    comment = models.TextField(_("comment"), blank=True, null=True)
 
     # Movement superclass
     # created_at = models.DateTimeField(_("created at"), default=timezone.now)
@@ -723,6 +727,8 @@ class Transaction(Movement):
     is_negotiated_destination = models.BooleanField(_("destination negotiated"), blank=True, default=False)
     is_confirmed_source = models.BooleanField(_("source confirmed"), blank=True, default=False)
     is_confirmed_destination = models.BooleanField(_("destination confirmed"), blank=True, default=False)
+    comment = models.TextField(_("comment"), blank=True, null=True)
+    comment_places = models.ManyToManyField("Place", verbose_name=_("comment places"))
 
     # Movement superclass
     # created_at = models.DateTimeField(_("created at"), default=timezone.now)
