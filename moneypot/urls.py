@@ -14,6 +14,6 @@ urlpatterns = patterns('',
                        url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
                        url(r'^api-token-auth/', authtoken_views.obtain_auth_token),
                        url(r'^autocomplete/', include('autocomplete_light.urls')),
-                       url(r'^$', include(admin.site.urls)),
+                       url(r'', include(admin.site.urls)),
                        url(r'^admin/', TemplateView.as_view(template_name="base/redirect.html")),
                        )
