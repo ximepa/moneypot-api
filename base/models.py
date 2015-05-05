@@ -857,15 +857,23 @@ class ProcessSerialMixin(object):
         tr.force_complete()
 
 
-def get_workers_ids_list():
-    m = Place.objects.get(pk=14)
-    return m.get_descendants().values_list('id', flat=True)
+def get_descendants_ids(model, pk, include_self=False):
+    try:
+        obj = model.objects.get(pk=pk)
+    except model.DoesNotExist:
+        ids = []
+    else:
+        ids = obj.get_descendants(include_self=include_self).values_list('id', flat=True)
+    return ids
 
 
 class OrderItemSerialManager(models.Manager):
     def get_queryset(self):
         qs = super(OrderItemSerialManager, self).get_queryset()
-        return qs.filter(item__category_id=89).filter(item__place_id__in=get_workers_ids_list())
+        return qs.filter(
+            item__category_id__in=get_descendants_ids(ItemCategory, 89),
+            item__place_id__in=get_descendants_ids(Place, 14)
+        )
 
 
 class OrderItemSerial(ItemSerial, ProcessSerialMixin):
@@ -883,7 +891,11 @@ class OrderItemSerial(ItemSerial, ProcessSerialMixin):
 class ContractItemSerialManager(models.Manager):
     def get_queryset(self):
         qs = super(ContractItemSerialManager, self).get_queryset()
-        return qs.filter(item__category_id=88).filter(item__place_id__in=get_workers_ids_list())
+        return qs.filter(
+            item__category_id__in=get_descendants_ids(ItemCategory, 88),
+            item__place_id__in=get_descendants_ids(Place, 14)
+        )
+
 
 
 class ContractItemSerial(ItemSerial, ProcessSerialMixin):
