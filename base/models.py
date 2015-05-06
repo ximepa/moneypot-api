@@ -851,7 +851,7 @@ class ProcessSerialMixin(object):
         self.serial = self.serial or ""
 
     def process(self):
-        assert self.item.place.pk in get_workers_ids_list()
+        assert self.item.place.pk in get_descendants_ids(Place, 14)
         tr = Transaction.objects.create(source=self.item.place, destination=self.void)
         TransactionItem.objects.create(transaction=tr, quantity=1, category=self.item.category, _serials=self.serial)
         tr.force_complete()
