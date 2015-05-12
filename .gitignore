@@ -106,8 +106,9 @@ docs/_build/
 target/
 
 
-
-*.sqlite3
 static
-moneypot/db.sqlite3
 moneypot/settings/local.py
+*.sqlte3
+*.pgdump
+*.dump
+*.dump.*
