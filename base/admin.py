@@ -184,9 +184,8 @@ class PurchaseAdmin(admin.ModelAdmin):
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
-        print instances
         for instance in instances:
-            if instance.purchase.is_completed:
+            if formset.form.__name__ == PurchaseItemForm.__name__ and instance.purchase.is_completed:
                 raise forms.ValidationError(ugettext("purchase items data is read only!"))
             instance.save()
         formset.save_m2m()
@@ -277,6 +276,22 @@ class TransactionItemInline(admin.TabularInline):
     }
 
 
+class TransactionItemInlineReadonly(InlineReadOnly):
+    model = TransactionItem
+    form = TransactionItemForm
+    extra = 0
+    formfield_overrides = {
+        models.TextField: {'widget': forms.Textarea(
+            attrs={'rows': 1, 'cols': 60}
+        )},
+    }
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = super(TransactionItemInlineReadonly, self).get_readonly_fields(request, obj)
+        readonly_fields.remove('_serials')
+        return readonly_fields
+
+
 class TransactionCommentPlaceInline(admin.TabularInline):
     model = Transaction.comment_places.through
     form = autocomplete_light.modelform_factory(Place, exclude=[])
@@ -300,6 +315,27 @@ class TransactionAdmin(admin.ModelAdmin):
         TransactionItemInline, TransactionCommentPlaceInline
     ]
 
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = list(self.readonly_fields)
+        if obj and obj.is_completed:
+            readonly_fields.extend(['source', 'destination', 'completed_at'])
+            dir(self.form)
+        return readonly_fields
+
+    def get_fields(self, request, obj=None):
+        fields = super(TransactionAdmin, self).get_fields(request, obj)
+        if obj and obj.is_completed:
+            self.inlines = [TransactionItemInlineReadonly, ]
+            fields.remove('force_complete')
+            return fields
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        for instance in instances:
+            if formset.form.__name__ == TransactionItemForm.__name__ and instance.transaction.is_completed:
+                raise forms.ValidationError(ugettext("transaction items data is read only!"))
+            instance.save()
+        formset.save_m2m()
 
 class PlaceItemAdmin(ItemAdmin):
     place_id = None
