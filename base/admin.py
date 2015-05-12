@@ -47,17 +47,31 @@ class ItemCategoryCommentInline(admin.TabularInline):
     extra = 10
 
 
+class ItemCategoryForm(autocomplete_light.ModelForm):
+    class Meta:
+        model = ItemCategory
+        exclude = []
+
+
 @admin.register(ItemCategory)
 class ItemCategoryAdmin(DjangoMpttAdmin):
+    form = ItemCategoryForm
     search_fields = ['name', ]
     tree_auto_open = False
     inlines = [ItemCategoryCommentInline]
+
+
+class PlaceForm(autocomplete_light.ModelForm):
+    class Meta:
+        model = Place
+        exclude = []
 
 
 @admin.register(Place)
 class PlaceAdmin(DjangoMpttAdmin):
     search_fields = ['name', ]
     tree_auto_open = False
+    form = PlaceForm
     list_display = ['__unicode__', 'is_shop', 'items_changelist_link']
 
     def items_changelist_link(self, obj):
