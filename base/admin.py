@@ -218,20 +218,6 @@ class TransactionItemForm(autocomplete_light.ModelForm):
         exclude = ['_chunks', 'purchase']
         autocomplete_fields = ('category', 'serial')
 
-    def clean__serials(self):
-        _serials = self.cleaned_data.get("_serials","")
-        if not _serials:
-            return []
-
-        serials_data = re.findall(r"[\w-]+", _serials)
-        if len(serials_data) > 1:
-            raise forms.ValidationError(ugettext(
-                u'accepts only 1 serial per item')
-            )
-
-        _serials = ", ".join(map(str, serials_data))
-        return _serials
-
     def save(self, *args, **kwargs):
         ti = super(TransactionItemForm, self).save(*args, **kwargs)
         if ti.transaction.is_completed:
@@ -288,7 +274,6 @@ class TransactionItemInlineReadonly(InlineReadOnly):
 
     def get_readonly_fields(self, request, obj=None):
         readonly_fields = super(TransactionItemInlineReadonly, self).get_readonly_fields(request, obj)
-        readonly_fields.remove('_serials')
         return readonly_fields
 
 
@@ -327,7 +312,7 @@ class TransactionAdmin(admin.ModelAdmin):
         if obj and obj.is_completed:
             self.inlines = [TransactionItemInlineReadonly, ]
             fields.remove('force_complete')
-            return fields
+        return fields
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
@@ -336,6 +321,7 @@ class TransactionAdmin(admin.ModelAdmin):
                 raise forms.ValidationError(ugettext("transaction items data is read only!"))
             instance.save()
         formset.save_m2m()
+
 
 class PlaceItemAdmin(ItemAdmin):
     place_id = None

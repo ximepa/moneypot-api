@@ -195,21 +195,28 @@ class Place(MPTTModel):
                 place=self
             )))
         else:
-            serials = None
-            if item.serials:
-                serials = i.serials.filter(serial__in=item.serials)
-                if not serials.count() == len(item.serials):
-                    raise ItemNotFound(_("Can not withdraw <{item}> from <{place}>: some serials not found".format(
+            serial = None
+            if item.serial:
+                if not item.quantity == 1:
+                    raise InvalidParameters(_("Can not withdraw <{item}> from <{place}>: quantity >1 for serial <{serial}> ".format(
                         item=item,
-                        place=self
+                        place=self,
+                        serial=serial
                     )))
-            return i.withdraw(quantity=item.quantity, serials=serials)
+                try:
+                    serial = i.serials.get(serial=item.serial)
+                except ItemSerial.DoesNotExist:
+                    raise ItemNotFound(_("Can not withdraw <{item}> from <{place}>: serial <{serial}> not found".format(
+                        item=item,
+                        place=self,
+                        serial=serial
+                    )))
+            return i.withdraw(quantity=item.quantity, serial=serial)
 
 
 class MovementItem(models.Model):
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"))
     quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
-    _serials = models.TextField(blank=True, null=True)
     _chunks = models.TextField(blank=True, null=True)
 
     class Meta:
@@ -250,6 +257,44 @@ class MovementItem(models.Model):
     def chunks(self, value):
         self._chunks = ", ".join(value)
 
+    def clean_quantity(self):
+        f = None
+        if self.category.unit.unit_type == Unit.INTEGER:
+            f = int
+        if self.category.unit.unit_type == Unit.DECIMAL:
+            f = Decimal
+
+        if not f(self.quantity) == self.quantity:
+            raise ValidationError({'quantity': ugettext(
+                'unit type `%s` can not be decimal' % self.category.unit.name
+            )})
+
+    def clean(self):
+        self.clean_quantity()
+        self.clean_chunks()
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super(MovementItem, self).save(*args, **kwargs)
+
+
+class PurchaseItem(MovementItem):
+    purchase = models.ForeignKey("Purchase", verbose_name=_("Purchase"), related_name="purchase_items")
+    price = models.DecimalField(_("price"), max_digits=9, decimal_places=2)
+    price_usd = models.DecimalField(_("price usd"), max_digits=9, decimal_places=2, blank=True, null=True)
+    # Movement superclass
+    # category = models.ForeignKey("ItemCategory", verbose_name=_("item category"))
+    # quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
+    _serials = models.TextField(blank=True, null=True)
+    # _chunks = models.TextField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = _("purchase item")
+        verbose_name_plural = _("purchase items")
+
+    def __unicode__(self):
+        return self.category.name
+
     def clean_serials(self):
         if not self._serials:
             return []
@@ -274,44 +319,12 @@ class MovementItem(models.Model):
     def serials(self, value):
         self._serials = ", ".join(value)
 
-    def clean_quantity(self):
-        f = None
-        if self.category.unit.unit_type == Unit.INTEGER:
-            f = int
-        if self.category.unit.unit_type == Unit.DECIMAL:
-            f = Decimal
-
-        if not f(self.quantity) == self.quantity:
-            raise ValidationError({'quantity': ugettext(
-                'unit type `%s` can not be decimal' % self.category.unit.name
-            )})
-
     def clean(self):
-        self.clean_quantity()
-        self.clean_chunks()
         self.clean_serials()
 
     def save(self, *args, **kwargs):
         self.full_clean()
         super(MovementItem, self).save(*args, **kwargs)
-
-
-class PurchaseItem(MovementItem):
-    purchase = models.ForeignKey("Purchase", verbose_name=_("Purchase"), related_name="purchase_items")
-    price = models.DecimalField(_("price"), max_digits=9, decimal_places=2)
-    price_usd = models.DecimalField(_("price usd"), max_digits=9, decimal_places=2, blank=True, null=True)
-    # Movement superclass
-    # category = models.ForeignKey("ItemCategory", verbose_name=_("item category"))
-    # quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
-    # _serials = models.TextField(blank=True, null=True)
-    # _chunks = models.TextField(blank=True, null=True)
-
-    class Meta:
-        verbose_name = _("purchase item")
-        verbose_name_plural = _("purchase items")
-
-    def __unicode__(self):
-        return self.category.name
 
 
 class Payer(models.Model):
@@ -509,24 +522,23 @@ class Item(models.Model):
         return item
 
     # noinspection DjangoOrm
-    def withdraw_serial(self, quantity, serials):
+    def withdraw_serial(self, quantity, serial):
         """
         :param quantity: Amount of items to withdraw
         :type quantity: int or Decimal
-        :param serials: Queryset of base.models.ItemSerial
-        :type serials: django.db.models.Queryset()
+        :param serial: instance of base.models.ItemSerial
+        :type serial: base.models.ItemSerial()
         :returns: Item created in result of withdrawal spit request.
                   Marked as reserved until transaction will be completed or cancelled
         :rtype: base.models.Item()
         """
-        if not serials.count() == quantity:
+        if not quantity == 1:
             raise InvalidParameters(_("Serials count does not match requested quantity"))
-        for serial in serials:
-            if not serial.item == self:
-                raise InvalidParameters(_("Serial {serial} doesn't belong to item {item}".format(
-                    serial=serial.serial,
-                    item=self.__unicode__()
-                )))
+        if not serial.item == self:
+            raise InvalidParameters(_("Serial {serial} doesn't belong to item {item}".format(
+                serial=serial.serial,
+                item=self.__unicode__()
+            )))
         item = Item.objects.create(
             quantity=quantity,
             is_reserved=True,
@@ -535,7 +547,8 @@ class Item(models.Model):
             place=self.place,
             parent=self,
         )
-        serials.update(item=item)
+        serial.item=item
+        serial.save()
         return item
 
     def withdraw_chunk(self, quantity, chunks):
@@ -568,12 +581,12 @@ class Item(models.Model):
         return item
 
     @transaction.atomic
-    def withdraw(self, quantity, serials=None, chunks=None, dry_run=False):
+    def withdraw(self, quantity, serial=None, chunks=None, dry_run=False):
         """
         :param quantity: Amount of items to withdraw
         :type quantity: int or Decimal
-        :param serials: optional, Queryset of base.models.ItemSerial
-        :type serials: django.db.models.Queryset()
+        :param serial: optional, instance of base.models.ItemSerial
+        :type serial: base.models.ItemSerial()
         :param chunks: optional, Queryset of base.models.ItemChunk
         :type chunks: django.db.models.Queryset()
         :returns: Item created in result of withdrawal spit request.
@@ -590,8 +603,8 @@ class Item(models.Model):
         if quantity > self.quantity:
             raise QuantityNotEnough(_("Requested quantity more than available"))
 
-        if serials:
-            item = self.withdraw_serial(quantity, serials)
+        if serial:
+            item = self.withdraw_serial(quantity, serial)
         elif chunks:
             item = self.withdraw_chunk(quantity, chunks)
         else:
@@ -711,7 +724,6 @@ class TransactionItem(MovementItem):
     # Movement superclass
     # category = models.ForeignKey("ItemCategory", verbose_name=_("item category"))
     # quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
-    # _serials = models.TextField(blank=True, null=True)
     # _chunks = models.TextField(blank=True, null=True)
     serial = models.ForeignKey(ItemSerial, blank=True, null=True)
 
