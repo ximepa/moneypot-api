@@ -3,7 +3,7 @@ __author__ = 'maxim'
 
 import autocomplete_light
 
-from .models import Place, ItemCategory, Item
+from .models import Place, ItemCategory, Item, ItemSerial
 
 
 autocomplete_light.register(Place,
@@ -52,3 +52,26 @@ autocomplete_light.register(Item,
                                 # 'class': 'modern-style',
                             },
                             )
+
+
+class ItemSerialAutocomplete(autocomplete_light.AutocompleteModelBase):
+    autocomplete_js_attributes = {'placeholder': 'region name ..'}
+
+    def choices_for_request(self):
+        q = self.request.GET.get('q', '')
+        source_id = self.request.GET.get('source_id', None)
+
+        choices = ItemSerial.objects.filter(serial__icontains=q)
+
+        if source_id:
+            try:
+                place = Place.objects.get(pk=source_id)
+            except Place.DoesNotExist:
+                pass
+            else:
+                choices = choices.filter(item__place=place)
+
+        return self.order_choices(choices)[0:self.limit_choices]
+
+
+autocomplete_light.register(ItemSerial, ItemSerialAutocomplete)

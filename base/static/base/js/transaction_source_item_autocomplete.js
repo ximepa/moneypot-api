@@ -2,7 +2,12 @@
     $(document).ready(function () {
         $('body').on('change', '.autocomplete-light-widget select[name$=source]', function () {
             var sourceSelectElement = $(this);
-            var itemSelectElements = $("select[id^='id_transaction_items-'][name*='category']");
+            var itemCategoryElements = $("select[id^='id_transaction_items-'][name*='category']");
+            var itemSerialElements = $("select[id^='id_transaction_items-'][name*='serial']");
+            var itemSelectElements = $("#invalid_selector");
+            itemSelectElements = itemSelectElements.add(itemSerialElements);
+            itemSelectElements = itemSelectElements.add(itemCategoryElements);
+            window.itemSelectElements = itemSelectElements;
             var itemWidgetElements = itemSelectElements.parents('.autocomplete-light-widget');
 
             // When the country select changes
@@ -19,6 +24,7 @@
                     $(this).yourlabsWidget().autocomplete.data = {}
                 }
             });
+
 
             // example debug statements, that does not replace using breakbpoints and a proper debugger but can hel
             // console.log($(this), 'changed to', value);

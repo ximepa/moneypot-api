@@ -1,18 +1,35 @@
-from functools import update_wrapper
+# coding=utf-8
 
+from functools import update_wrapper
 from django.contrib import admin
 from django import forms
 from django.db import models
 from django_mptt_admin.admin import DjangoMpttAdmin
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _, ugettext
 from django.utils.html import mark_safe
 from django.core.urlresolvers import reverse
 from django.conf.urls import url
 from django.contrib import messages
 import autocomplete_light
+import re
 
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
     TransactionItem, Transaction, ItemCategoryComment, OrderItemSerial, ContractItemSerial
+
+
+class InlineReadOnly(admin.TabularInline):
+    can_delete = False
+
+    def has_add_permission(self, request):
+        return False
+
+    def get_readonly_fields(self, request, obj=None):
+        result = list(set(
+                [field.name for field in self.opts.local_fields] +
+                [field.name for field in self.opts.local_many_to_many]
+            ))
+        result.remove('id')
+        return result
 
 
 def create_model_admin(model_admin, model, name=None, v_name=None):
@@ -96,13 +113,29 @@ class PurchaseItemForm(autocomplete_light.ModelForm):
         exclude = ['_chunks']
 
 
+class PurchaseItemInlineReadonly(InlineReadOnly):
+    model = PurchaseItem
+    form = PurchaseItemForm
+    extra = 0
+    formfield_overrides = {
+        models.TextField: {'widget': forms.Textarea(
+            attrs={'rows': 1, 'cols': 60}
+        )},
+    }
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = super(PurchaseItemInlineReadonly, self).get_readonly_fields(request, obj)
+        readonly_fields.remove('_serials')
+        return readonly_fields
+
+
 class PurchaseItemInline(admin.TabularInline):
     model = PurchaseItem
     form = PurchaseItemForm
     extra = 10
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(
-            attrs={'rows': 1, 'cols': 60}
+            attrs={'rows': 1, 'cols': 60, '': 'disable'}
         )},
     }
 
@@ -135,6 +168,29 @@ class PurchaseAdmin(admin.ModelAdmin):
     list_filter = ['source', 'destination', 'is_completed', 'is_prepared', ]
     search_fields = ['source__name', 'destination__name', 'purchase_items__category__name']
 
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = list(self.readonly_fields)
+        if obj and obj.is_completed:
+            readonly_fields.extend(['source', 'destination', 'completed_at', 'is_auto_source'])
+            dir(self.form)
+        return readonly_fields
+
+    def get_fields(self, request, obj=None):
+        fields = super(PurchaseAdmin, self).get_fields(request, obj)
+        if obj and obj.is_completed:
+            self.inlines = [PurchaseItemInlineReadonly, ]
+            fields.remove('force_complete')
+        return fields
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        print instances
+        for instance in instances:
+            if instance.purchase.is_completed:
+                raise forms.ValidationError(ugettext("purchase items data is read only!"))
+            instance.save()
+        formset.save_m2m()
+
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
@@ -161,13 +217,25 @@ class TransactionItemForm(autocomplete_light.ModelForm):
     class Meta:
         model = TransactionItem
         exclude = ['_chunks', 'purchase']
-        autocomplete_fields = ('category',)
+        autocomplete_fields = ('category', 'serial')
+
+    def clean__serials(self):
+        _serials = self.cleaned_data.get("_serials","")
+        if not _serials:
+            return []
+
+        serials_data = re.findall(r"[\w-]+", _serials)
+        if len(serials_data) > 1:
+            raise forms.ValidationError(ugettext(
+                u'accepts only 1 serial per item')
+            )
+
+        _serials = ", ".join(map(str, serials_data))
+        return _serials
 
     def save(self, *args, **kwargs):
         ti = super(TransactionItemForm, self).save(*args, **kwargs)
         if ti.transaction.is_completed:
-            print
-            print "TRANSACTION RESET"
             ti.transaction.reset()
         return ti
 

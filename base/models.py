@@ -713,6 +713,7 @@ class TransactionItem(MovementItem):
     # quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
     # _serials = models.TextField(blank=True, null=True)
     # _chunks = models.TextField(blank=True, null=True)
+    serial = models.ForeignKey(ItemSerial, blank=True, null=True)
 
     class Meta:
         verbose_name = _("transaction item")
