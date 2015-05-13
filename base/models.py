@@ -863,10 +863,11 @@ class ProcessSerialMixin(object):
         self.item = self.item or {}
         self.serial = self.serial or ""
 
+    @transaction.atomic
     def process(self):
         assert self.item.place.pk in get_descendants_ids(Place, 14)
         tr = Transaction.objects.create(source=self.item.place, destination=self.void)
-        TransactionItem.objects.create(transaction=tr, quantity=1, category=self.item.category, _serials=self.serial)
+        TransactionItem.objects.create(transaction=tr, quantity=1, category=self.item.category, serial=self)
         tr.force_complete()
 
 
