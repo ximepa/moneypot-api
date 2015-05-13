@@ -403,26 +403,28 @@ class Purchase(Movement):
         t = Transaction.objects.create(source=self.source, destination=self.destination)
         for pi in self.purchase_items.all():
 
-            lti = None
-
-            for serial in pi.serials:
-                item = pi.item_set.get()
-                s, created = ItemSerial.objects.get_or_create(item=item, serial=serial)
-                s.purchase = pi
-                s.save()
-                ti = TransactionItem.objects.create(purchase=self, transaction=t, category=pi.category,
-                                                    quantity=1, serial=s, _chunks=pi._chunks)  # noqa
-                lti = ti
-
             if not pi.serials:
                 ti = TransactionItem.objects.create(purchase=self, transaction=t, category=pi.category,
                                                     quantity=pi.quantity, serial=None, _chunks=pi._chunks)  # noqa
-                lti = ti
 
-            for item in pi.item_set.all():
-                item.is_reserved = True
-                item.reserved_by = lti
-                item.save()
+                for item in pi.item_set.all():
+                    item.is_reserved = True
+                    item.reserved_by = ti
+                    item.save()
+            else:
+                for item in pi.item_set.all():
+                    item.is_reserved = True
+                    item.reserved_by = None
+                    item.save()
+
+                for serial in pi.serials:
+                    item = pi.item_set.get()
+                    s, created = ItemSerial.objects.get_or_create(item=item, serial=serial)
+                    s.purchase = pi
+                    s.save()
+                    ti = TransactionItem.objects.create(purchase=self, transaction=t, category=pi.category,
+                                                        quantity=1, serial=s, _chunks=pi._chunks)  # noqa
+
 
         t.is_prepared = self.is_prepared
         t.is_negotiated_source = True
