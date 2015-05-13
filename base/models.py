@@ -400,6 +400,7 @@ class Purchase(Movement):
         if self.is_completed:
             return
         self.prepare()
+        prepared = self.is_prepared
         t = Transaction.objects.create(source=self.source, destination=self.destination)
         for pi in self.purchase_items.all():
 
@@ -412,10 +413,7 @@ class Purchase(Movement):
                     item.reserved_by = ti
                     item.save()
             else:
-                for item in pi.item_set.all():
-                    item.is_reserved = True
-                    item.reserved_by = None
-                    item.save()
+                prepared = False
 
                 for serial in pi.serials:
                     item = pi.item_set.get()
@@ -425,8 +423,7 @@ class Purchase(Movement):
                     ti = TransactionItem.objects.create(purchase=self, transaction=t, category=pi.category,
                                                         quantity=1, serial=s, _chunks=pi._chunks)  # noqa
 
-
-        t.is_prepared = self.is_prepared
+        t.is_prepared = prepared
         t.is_negotiated_source = True
         t.is_negotiated_destination = True
         t.is_confirmed_source = True
