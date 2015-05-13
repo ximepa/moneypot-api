@@ -1,29 +1,32 @@
 language: python
 python:
-  - "2.7"
-  - "3.4"
-
+- '2.7'
+- '3.4'
 install:
-  - "pip install -U pip"
-  - "pip install -r requirements-frozen.txt"
-
+- pip install -U pip
+- pip install -r requirements-frozen.txt
 branches:
   only:
-    - master
-
+  - master
 before_script:
-  - "python manage.py syncdb --noinput"
-  - "python manage.py migrate --noinput"
-
+- psql -c 'CREATE USER moneypot WITH PASSWORD "'$PG_PASSWORD'";' -U postgres
+- psql -c 'ALTER USER moneypot WITH SUPERUSER;' -U postgres
+- psql -c 'CREATE DATABASE moneypot_dist;' -U postgres
+- psql -c 'GRANT ALL PRIVILEGES ON DATABASE moneypot; to moneypot;' -U postgres
+- cp moneypot/settings/local-dist.py moneypot/settings/local.py
+- python manage.py syncdb --noinput
+- python manage.py migrate --noinput
 script:
-  - "python manage.py test"
-
+- python manage.py test
 addons:
+  postgresql: "9.3"
   code_climate:
     repo_token:
-      secure: "G55bZ4aEUhyCIZ4IeYokTVL47rbkltLdjA93ch3woHpZ3FV7EWuBlYFTNWIvyJgePhuO4I1sNk2HxyRb/RoIH65hHeqNADISDt8U+efjpS55oTV7xcmfDAASwPVuC36a0tJejDLt7cdTUka9eZXDso4VT7I711jUKLu7FGTmDWI="
-
+      secure: G55bZ4aEUhyCIZ4IeYokTVL47rbkltLdjA93ch3woHpZ3FV7EWuBlYFTNWIvyJgePhuO4I1sNk2HxyRb/RoIH65hHeqNADISDt8U+efjpS55oTV7xcmfDAASwPVuC36a0tJejDLt7cdTUka9eZXDso4VT7I711jUKLu7FGTmDWI=
 notifications:
   email:
     recipients:
-      - shamanu4+travis.moneypot-api@gmail.com
+    - shamanu4+travis.moneypot-api@gmail.com
+env:
+  global:
+    secure: UiX7xssDrncZ+b7wQ/14QEIcR/3xit9yrqFXZqGO5HAqpCF5KNrycX6VTRGVuIIPDftQVKw0gnDyquLeD4ErsBTBT9wc7xA9mYlyFpQ/9lJTSImurqd45XvMc3K5O3PXQ/sq53jjMGVX38h6d0eWomR18tSJpqmgVIcDu75XrtM=

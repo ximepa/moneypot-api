@@ -6,23 +6,47 @@ These settings overrides what's in settings/base.py
 import os
 
 from . import base
-
+import sys
 
 
 # To extend any settings from settings/base.py here's an example.
 # If you don't need to extend any settings from base.py, you do not need
 # to import base above
-INSTALLED_APPS = base.INSTALLED_APPS + ('django_nose',)
+INSTALLED_APPS = base.INSTALLED_APPS + (
+    # 'django_nose',
+    'debug_toolbar',
+    'debug_panel',
+    'django_extensions'
+)
+
+MIDDLEWARE_CLASSES = base.MIDDLEWARE_CLASSES + (
+    'debug_panel.middleware.DebugPanelMiddleware',
+)
 
 # Database
 # https://docs.djangoproject.com/en/1.7/ref/settings/#databases
 
-DATABASES = {
+DATABASES_TEST = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(base.BASE_DIR, 'db.sqlite3'),
+        'ATOMIC_REQUESTS': True,
     }
 }
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'moneypot_dist',
+        'USER': 'moneypot',
+        'PASSWORD': os.getenv("PG_PASSWORD", ""),
+        'HOST': '',
+        'ATOMIC_REQUESTS': True
+    }
+}
+
+if 'test' in sys.argv:
+    DATABASES = DATABASES_TEST
 
 # Recipients of traceback emails and other notifications.
 ADMINS = (
@@ -52,16 +76,7 @@ DEV = True
 ALLOWED_HOSTS = []
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'f!lhfeeqduid_7*1nz2j(9*s2izqr)ft^99lov*y-nuc5ly-g7'  # noqa
-
-# Uncomment these to activate and customize Celery:
-# CELERY_ALWAYS_EAGER = False  # required to activate celeryd
-# BROKER_HOST = 'localhost'
-# BROKER_PORT = 5672
-# BROKER_USER = 'django'
-# BROKER_PASSWORD = 'django'                                        # noqa
-# BROKER_VHOST = 'django'
-# CELERY_RESULT_BACKEND = 'amqp'
+SECRET_KEY = os.getenv("SECRET_KEY", "")
 
 ## Log settings
 
@@ -77,3 +92,6 @@ LOGGING = {
 }
 
 INTERNAL_IPS = ('127.0.0.1',)
+
+LANGUAGE_CODE = 'uk'
+# LANGUAGE_CODE = 'en'
