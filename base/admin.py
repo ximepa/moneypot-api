@@ -178,9 +178,21 @@ class PurchaseAdmin(admin.ModelAdmin):
     def get_fields(self, request, obj=None):
         fields = super(PurchaseAdmin, self).get_fields(request, obj)
         if obj and obj.is_completed:
-            self.inlines = [PurchaseItemInlineReadonly, ]
             fields.remove('force_complete')
         return fields
+
+    def get_inline_instances(self, request, obj=None):
+        inline_instances = []
+
+        if obj and obj.is_completed:
+            inlines = [PurchaseItemInlineReadonly, ]
+        else:
+            inlines = self.inlines
+
+        for inline_class in inlines:
+            inline = inline_class(self.model, self.admin_site)
+            inline_instances.append(inline)
+        return inline_instances
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
@@ -304,15 +316,26 @@ class TransactionAdmin(admin.ModelAdmin):
         readonly_fields = list(self.readonly_fields)
         if obj and obj.is_completed:
             readonly_fields.extend(['source', 'destination', 'completed_at'])
-            dir(self.form)
         return readonly_fields
 
     def get_fields(self, request, obj=None):
         fields = super(TransactionAdmin, self).get_fields(request, obj)
         if obj and obj.is_completed:
-            self.inlines = [TransactionItemInlineReadonly, ]
             fields.remove('force_complete')
         return fields
+
+    def get_inline_instances(self, request, obj=None):
+        inline_instances = []
+
+        if obj and obj.is_completed:
+            inlines = [TransactionItemInlineReadonly, ]
+        else:
+            inlines = self.inlines
+
+        for inline_class in inlines:
+            inline = inline_class(self.model, self.admin_site)
+            inline_instances.append(inline)
+        return inline_instances
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
