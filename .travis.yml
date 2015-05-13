@@ -8,10 +8,10 @@ branches:
   only:
   - master
 before_script:
-- psql -c 'CREATE USER moneypot WITH PASSWORD \''$PG_PASSWORD'\';' -U postgres
-- psql -c 'ALTER USER moneypot WITH SUPERUSER;' -U postgres
-- psql -c 'CREATE DATABASE moneypot_dist;' -U postgres
-- psql -c 'GRANT ALL PRIVILEGES ON DATABASE moneypot; to moneypot;' -U postgres
+- psql -c "CREATE USER moneypot WITH PASSWORD '"$PG_PASSWORD"';" -U postgres
+- psql -c "ALTER USER moneypot WITH SUPERUSER;" -U postgres
+- psql -c "CREATE DATABASE moneypot_dist;" -U postgres
+- psql -c "GRANT ALL PRIVILEGES ON DATABASE moneypot; to moneypot;" -U postgres
 - cp moneypot/settings/local-dist.py moneypot/settings/local.py
 - python manage.py syncdb --noinput
 - python manage.py migrate --noinput
