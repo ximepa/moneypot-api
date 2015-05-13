@@ -28,5 +28,5 @@ notifications:
     - shamanu4+travis.moneypot-api@gmail.com
 env:
   global:
-  - secure: UiX7xssDrncZ+b7wQ/14QEIcR/3xit9yrqFXZqGO5HAqpCF5KNrycX6VTRGVuIIPDftQVKw0gnDyquLeD4ErsBTBT9wc7xA9mYlyFpQ/9lJTSImurqd45XvMc3K5O3PXQ/sq53jjMGVX38h6d0eWomR18tSJpqmgVIcDu75XrtM=
   - secure: h1F90gXcLzDzTLj/dhXUARYdsl0CsPrRdFWn4Ur+O1LDMczg0M588FNrSmyj5yq0cbvxJNbCUxS9bXt6BY81FCFSOqXb4YapxWpCa0FZQ2bDTs/hfJu5QZOW3+RahFeHBCP/EQfPbo+NYHujHGgoMNdetZmTFmfzsrLPx8/lwKQ=
+  - secure: oBcJ4Es4wu0S1NNkXAmfRehoTSKEfVP3DAer/n9LC0YkWNJ6g5LX1IPm64+WJ7VjN74d08LmgjUPHQJhLmor7RwpCKJrGQ2Ty8rkgV7IR2fOVSr1p3RmeZPxjmjE9x9Is3q3KIXXTxh0r0xffscC9W2jSUv/KvSVVCEwBBUlqOA=
