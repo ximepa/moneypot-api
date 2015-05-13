@@ -150,40 +150,15 @@ class Place(MPTTModel):
         return reverse('admin:base_place_item_changelist', args=[self.pk])
 
     def deposit(self, item):
-        print "================================"
-        print "         Place.deposit          "
-        print "          source item           "
-        print item
-        print item.pk
-        print item.place
-        print item.reserved_by
-        print "================================"
         try:
             i = self.items.get(category=item.category, is_reserved=False)
         except Item.DoesNotExist:
-            print " [W] item not found. saving in place "
             item.place = self
             item.is_reserved = False
             item.reserved_by = None
             item.parent = None
             item.save()
-            print "================================"
-            print "         Place.deposit          "
-            print "          item result           "
-            print item
-            print item.pk
-            print item.place
-            print item.reserved_by
-            print "================================"
         else:
-            print "================================"
-            print "         Place.deposit          "
-            print "        destination item        "
-            print i
-            print i.pk
-            print i.place
-            print i.reserved_by
-            print "================================"
             i.deposit(item)
 
     def withdraw(self, item):
@@ -630,22 +605,6 @@ class Item(models.Model):
         :returns: updated item (self)
         :rtype: base.models.Item()
         """
-        print "================================"
-        print "         item.deposit           "
-        print "          item source           "
-        print item
-        print item.pk
-        print item.place
-        print item.reserved_by
-        print "================================"
-        print "================================"
-        print "         Place.deposit          "
-        print "        item destination        "
-        print self
-        print self.pk
-        print self.place
-        print self.reserved_by
-        print "================================"
 
         if not isinstance(item, Item):
             raise InvalidParameters(_("item parameter must be instance of base.models.Item"))
@@ -779,48 +738,25 @@ class Transaction(Movement):
     @transaction.atomic
     def prepare(self):
         self.items_prepared = []
-        print "   PREPARE   "
-        print self
         for trans_item in self.transaction_items.all():
-            print "   ---    prepare    ---   "
-            print trans_item
             try:
                 item = Item.objects.get(reserved_by=trans_item)
-                print "   item already found   "
-                print item
-                print item.pk
             except Item.DoesNotExist:
-                print "   item withdrawing new  "
-                print "   source: %s" % self.source
                 item = self.source.withdraw(trans_item)
                 item.is_reserved = True
                 item.reserved_by = trans_item
                 item.save()
-                print item
-                print item.pk
-            print "   ---    prepare OK  ---   "
         self.is_prepared = True
-        print "   PREPARE OK   "
 
     def check_prepared(self):
         self.items_prepared = []
-        from pprint import pprint
-
-        print "   CHECK PREPARED   "
-        print self
         for ti in self.transaction_items.all():
-            print "   --- check prepared ---   "
-            print "  ti: %s" % ti
             item = ti.item_set.get()
-            print "  item: %s" % item
             assert (ti.transaction == self)
             assert (item.quantity == ti.quantity)
             assert (item.category == ti.category)
             assert (item.place == ti.transaction.source)
             self.items_prepared.append(item)
-            print "   --- check prepared OK ---   "
-        print "   CHECK PREPARED OK    "
-        pprint(self.items_prepared)
 
     def force_complete(self):
         self.is_negotiated_source = True
@@ -833,12 +769,7 @@ class Transaction(Movement):
     def complete(self):
         if self.is_completed:
             return
-        print "==============================="
-        print "     transaction complete      "
-        print self
-        print self.pk
         if not self.is_prepared:
-            print "         not prepared          "
             self.prepare()
         self.check_prepared()
         if not self.is_negotiated_source:
@@ -909,7 +840,6 @@ class ContractItemSerialManager(models.Manager):
             item__category_id__in=get_descendants_ids(ItemCategory, 88),
             item__place_id__in=get_descendants_ids(Place, 14)
         )
-
 
 
 class ContractItemSerial(ItemSerial, ProcessSerialMixin):
