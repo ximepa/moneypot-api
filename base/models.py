@@ -829,7 +829,7 @@ def get_descendants_ids(model, pk, include_self=False):
 
 class OrderItemSerialManager(models.Manager):
     def get_queryset(self):
-        qs = super(OrderItemSerialManager, self).get_queryset()
+        qs = super(OrderItemSerialManager, self).get_queryset()  # noqa
         return qs.filter(
             item__category_id__in=get_descendants_ids(ItemCategory, 89),
             item__place_id__in=get_descendants_ids(Place, 14)
@@ -850,7 +850,7 @@ class OrderItemSerial(ItemSerial, ProcessSerialMixin):
 
 class ContractItemSerialManager(models.Manager):
     def get_queryset(self):
-        qs = super(ContractItemSerialManager, self).get_queryset()
+        qs = super(ContractItemSerialManager, self).get_queryset()  # noqa
         return qs.filter(
             item__category_id__in=get_descendants_ids(ItemCategory, 88),
             item__place_id__in=get_descendants_ids(Place, 14)
