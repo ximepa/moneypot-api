@@ -866,3 +866,70 @@ class ContractItemSerial(ItemSerial, ProcessSerialMixin):
 
     def owner(self):
         return self.item.place
+
+
+class VItemMovement(models.Model):
+    """
+     item_category_name | character varying(100)   |           | extended |
+     source_name        | character varying(100)   |           | extended |
+     destination_name   | character varying(100)   |           | extended |
+     quantity           | numeric                  |           | main     |
+     destination_id     | integer                  |           | plain    |
+     source_id          | integer                  |           | plain    |
+     category_id        | integer                  |           | plain    |
+     transaction_id     | integer                  |           | plain    |
+     created_at         | timestamp with time zone |           | plain    |
+     completed_at       | timestamp with time zone |           | plain    |
+    """
+    item_category_name = models.CharField(_("item_category"), max_length=100)
+    source_name = models.CharField(_("source"), max_length=100)
+    destination_name = models.CharField(_("destination"), max_length=100)
+    quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
+    source = models.ForeignKey("Place", verbose_name=_("source"), related_name="source_item_movements")
+    destination = models.ForeignKey("Place", verbose_name=_("destination"), related_name="destination_item_movements")
+    category = models.ForeignKey("ItemCategory", verbose_name=_("item category"))
+    transaction = models.ForeignKey("Transaction", verbose_name=_("transaction"))
+    created_at = models.DateTimeField(_("created at"), default=timezone.now)
+    completed_at = models.DateTimeField(_("completed at"), default=None, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = "base_v_item_movement"
+        verbose_name = _("item movement")
+        verbose_name_plural = _("items movements")
+
+
+class VSerialMovement(models.Model):
+    """
+     source         | character varying(100)   |           | extended |
+     destination    | character varying(100)   |           | extended |
+     item_category  | character varying(100)   |           | extended |
+     quantity       | numeric(9,3)             |           | main     |
+     destination_id | integer                  |           | plain    |
+     source_id      | integer                  |           | plain    |
+     category_id    | integer                  |           | plain    |
+     transaction_id | integer                  |           | plain    |
+     serial         | character varying(32)    |           | extended |
+     serial_id      | integer                  |           | plain    |
+     created_at     | timestamp with time zone |           | plain    |
+     completed_at   | timestamp with time zone |           | plain    |
+    """
+
+    item_category_name = models.CharField(_("item_category"), max_length=100)
+    source_name = models.CharField(_("source"), max_length=100)
+    destination_name = models.CharField(_("destination"), max_length=100)
+    quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
+    serial = models.CharField(_("serial"), max_length=32)
+    serial_id = models.ForeignKey("ItemSerial", verbose_name=_("serial"), db_column="serial_id")
+    source = models.ForeignKey("Place", verbose_name=_("source"), related_name="source_serial_movements")
+    destination = models.ForeignKey("Place", verbose_name=_("destination"), related_name="destination_serial_movements")
+    category = models.ForeignKey("ItemCategory", verbose_name=_("item category"))
+    transaction = models.ForeignKey("Transaction", verbose_name=_("transaction"))
+    created_at = models.DateTimeField(_("created at"), default=timezone.now)
+    completed_at = models.DateTimeField(_("completed at"), default=None, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = "base_v_serial_movement"
+        verbose_name = _("serial movement")
+        verbose_name_plural = _("serialss movements")

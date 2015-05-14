@@ -45,8 +45,8 @@ DATABASES = {
     }
 }
 
-if 'test' in sys.argv:
-    DATABASES = DATABASES_TEST
+# if 'test' in sys.argv:
+#     DATABASES = DATABASES_TEST
 
 # Recipients of traceback emails and other notifications.
 ADMINS = (
