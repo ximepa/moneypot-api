@@ -870,6 +870,7 @@ class VItemMovement(models.Model):
         db_table = "base_v_item_movement"
         verbose_name = _("item movement")
         verbose_name_plural = _("items movements")
+        ordering = ['-created_at']
 
     def __unicode__(self):
         return self.item_category_name
@@ -909,6 +910,7 @@ class VSerialMovement(models.Model):
         db_table = "base_v_serial_movement"
         verbose_name = _("serial movement")
         verbose_name_plural = _("serials movements")
+        ordering = ['-created_at']
 
     def __unicode__(self):
         return self.item_category_name

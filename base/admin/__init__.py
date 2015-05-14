@@ -9,6 +9,7 @@ from django.utils.translation import ugettext_lazy as _, ugettext
 from django.utils.html import mark_safe
 from django.core.urlresolvers import reverse
 from django.conf.urls import url
+from django.db.models import Q
 from daterange_filter.filter import DateRangeFilter
 
 from actions import process_to_void
@@ -116,9 +117,13 @@ class ItemSerialAdmin(AdminReadOnly):
     def owner(self, instance):
         return instance.item.place.name
 
+    def serial_movement_changelist_link(self, obj):
+        link = reverse("admin:base_serial_movement_filtered_changelist", args=[obj.id])
+        return mark_safe(u'<a href="%s">%s</a>' % (link, _("movement history")))
+
     search_fields = ['item__category__name', 'serial']
     list_filter = ['item__category', ]
-    list_display = ['__unicode__', 'category_name', 'owner']
+    list_display = ['__unicode__', 'category_name', 'owner', 'serial_movement_changelist_link']
 
 
 @admin.register(ItemChunk)
@@ -186,7 +191,8 @@ class TransactionAdmin(admin.ModelAdmin):
 
 class PlaceItemAdmin(ItemAdmin):
     place_id = None
-    list_display = ['obj_link', 'quantity', 'place', 'items_serials_changelist_link', 'items_chunks_changelist_link']
+    list_display = ['obj_link', 'quantity', 'place', 'items_serials_changelist_link',
+                    'items_chunks_changelist_link', 'item_movement_changelist_link']
 
     def obj_link(self, obj):
         # link = reverse("admin:base_item_change", args=[obj.id])
@@ -202,6 +208,10 @@ class PlaceItemAdmin(ItemAdmin):
         link = "#%s" % obj.id
         return mark_safe(u'<a href="%s">%s</a>' % (link, _("chunks list")))
 
+    def item_movement_changelist_link(self, obj):
+        link = reverse("admin:base_item_movement_filtered_changelist", args=[self.place_id, obj.category_id])
+        return mark_safe(u'<a href="%s">%s</a>' % (link, _("movement history")))
+
     def get_queryset(self, request):
         qs = super(PlaceItemAdmin, self).get_queryset(request)
         return qs.filter(place_id=self.place_id)
@@ -214,7 +224,7 @@ class PlaceItemAdmin(ItemAdmin):
         except Place.DoesNotExist:
             extra_context.update({'cl_header': _('Place does not exist')})
         else:
-            extra_context.update({'cl_header': _(u"Items for {name}".format(name=unicode(place.name)))})
+            extra_context.update({'cl_header': _(u"Items for <{name}>".format(name=unicode(place.name)))})
         view = super(PlaceItemAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
 
@@ -238,7 +248,7 @@ class PlaceItemAdmin(ItemAdmin):
         except Place.DoesNotExist:
             extra_context.update({'cl_header': _('Place does not exist')})
         else:
-            extra_context.update({'cl_header': _(u"Items for {name}".format(name=unicode(place.name)))})
+            extra_context.update({'cl_header': _(u"Items for <{name}>".format(name=unicode(place.name)))})
         return super(PlaceItemAdmin, self).change_view(request, object_id, form_url='', extra_context=extra_context)
 
     def get_urls(self):
@@ -264,11 +274,15 @@ create_model_admin(PlaceItemAdmin, name='place_item', model=Item)
 
 class ItemSerialsFilteredAdmin(ItemSerialAdmin):
     item_id = None
-    list_display = ['obj_link', 'category_name']
+    list_display = ['obj_link', 'category_name', 'serial_movement_changelist_link']
 
     def obj_link(self, obj):
         link = reverse("admin:base_item_serials_filtered_change", args=[self.item_id, obj.id])
         return mark_safe(u'<a href="%s">%s</a>' % (link, obj.__unicode__()))
+
+    def serial_movement_changelist_link(self, obj):
+        link = reverse("admin:base_serial_movement_filtered_changelist", args=[obj.id])
+        return mark_safe(u'<a href="%s">%s</a>' % (link, _("movement history")))
 
     def get_queryset(self, request):
         qs = super(ItemSerialsFilteredAdmin, self).get_queryset(request)
@@ -282,7 +296,7 @@ class ItemSerialsFilteredAdmin(ItemSerialAdmin):
         except Item.DoesNotExist:
             extra_context.update({'cl_header': _('Item does not exist')})
         else:
-            extra_context.update({'cl_header': _(u"Serials for {name} in {place}".format(
+            extra_context.update({'cl_header': _(u"Serials for <{name}> in <{place}>".format(
                 name=unicode(item.category.name),
                 place=unicode(item.place.name)
             ))})
@@ -309,7 +323,7 @@ class ItemSerialsFilteredAdmin(ItemSerialAdmin):
         except Item.DoesNotExist:
             extra_context.update({'cl_header': _('Item does not exist')})
         else:
-            extra_context.update({'cl_header': _(u"Serials for {name} in {place}".format(
+            extra_context.update({'cl_header': _(u"Serials for <{name}> in <{place}>".format(
                 name=unicode(item.category.name),
                 place=unicode(item.place.name)
             ))})
@@ -406,3 +420,119 @@ class SerialMovementAdmin(AdminReadOnly):
     )
     list_display = ['serial', 'item_category_name', 'created_at', 'completed_at', 'source', 'destination', 'quantity']
     fields = ['serial', 'item_category_name', 'created_at', 'completed_at', 'source', 'destination', 'quantity']
+
+
+class ItemMovementFilteredAdmin(ItemMovementAdmin):
+    place_id = None
+    category_id = None
+
+    def get_queryset(self, request):
+        qs = super(ItemMovementFilteredAdmin, self).get_queryset(request)
+        qs = qs.filter(Q(source_id=self.place_id) | Q(destination_id=self.place_id))
+        if self.category_id:
+            qs = qs.filter(category_id=self.category_id)
+        return qs
+
+    def changelist_view(self, request, place_id, category_id=None, extra_context=None):  # pylint:disable=arguments-differ
+        self.place_id = place_id
+        self.category_id = category_id
+        extra_context = extra_context or {}
+        try:
+            place = Place.objects.get(pk=place_id)
+        except Place.DoesNotExist:
+            place_name = "unknown place"
+        else:
+            place_name = place.name
+        if category_id:
+            try:
+                category = ItemCategory.objects.get(pk=category_id)
+            except ItemCategory.DoesNotExist:
+                category_name = "unknown category"
+            else:
+                category_name = category.name
+            extra_context.update({'cl_header': _(u"Movement history for <{category_name}> in <{place_name}>".format(
+                    category_name=unicode(category_name),
+                    place_name=unicode(place_name)
+                ))})
+        else:
+            extra_context.update({'cl_header': _(u"Movement history for <{place_name}>".format(
+                    place_name=unicode(place_name)
+                ))})
+        view = super(ItemMovementFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
+        return view
+
+    def get_urls(self):
+
+        def wrap(view):
+            def wrapper(*args, **kwargs):
+                return self.admin_site.admin_view(view)(*args, **kwargs)
+
+            return update_wrapper(wrapper, view)
+
+        urlpatterns = [
+            url(r'^(\d+)/(\d+)/$', wrap(self.changelist_view), name='base_item_movement_filtered_changelist'),
+            url(r'^(\d+)/$', wrap(self.changelist_view), name='base_item_movement_filtered_changelist'),
+        ]
+        return urlpatterns
+
+    change_list_template = 'admin/proxy_change_list.html'
+
+create_model_admin(ItemMovementFilteredAdmin, name='item_movement_filtered', model=VItemMovement)
+
+
+class SerialMovementFilteredAdmin(SerialMovementAdmin):
+    place_id = None
+    serial_id = None
+
+    def get_queryset(self, request):
+        qs = super(SerialMovementFilteredAdmin, self).get_queryset(request)
+        qs = qs.filter(serial_id=self.serial_id)
+        if self.place_id:
+            qs = qs.filter(Q(source_id=self.place_id) | Q(destination_id=self.place_id))
+        return qs
+
+    def changelist_view(self, request, serial_id, place_id=None,  extra_context=None):  # pylint:disable=arguments-differ
+        self.place_id = place_id
+        self.serial_id = serial_id
+        extra_context = extra_context or {}
+        try:
+            serial = ItemSerial.objects.get(pk=serial_id)
+        except ItemCategory.DoesNotExist:
+            serial_name = "unknown serial"
+        else:
+            serial_name = serial.serial
+        if place_id:
+            try:
+                place = Place.objects.get(pk=place_id)
+            except Place.DoesNotExist:
+                place_name = "unknown place"
+            else:
+                place_name = place.name
+            extra_context.update({'cl_header': _(u"Movement history for <{serial_name}> in <{place_name}>".format(
+                    serial_name=unicode(serial_name),
+                    place_name=unicode(place_name)
+                ))})
+        else:
+            extra_context.update({'cl_header': _(u"Movement history for <{serial_name}>".format(
+                    serial_name=unicode(serial_name),
+                ))})
+        view = super(SerialMovementFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
+        return view
+
+    def get_urls(self):
+
+        def wrap(view):
+            def wrapper(*args, **kwargs):
+                return self.admin_site.admin_view(view)(*args, **kwargs)
+
+            return update_wrapper(wrapper, view)
+
+        urlpatterns = [
+            url(r'^(\d+)/(\d+)/$', wrap(self.changelist_view), name='base_serial_movement_filtered_changelist'),
+            url(r'^(\d+)/$', wrap(self.changelist_view), name='base_serial_movement_filtered_changelist'),
+        ]
+        return urlpatterns
+
+    change_list_template = 'admin/proxy_change_list.html'
+
+create_model_admin(SerialMovementFilteredAdmin, name='serial_movement_filtered', model=VSerialMovement)
