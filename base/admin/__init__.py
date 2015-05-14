@@ -1,73 +1,28 @@
 # coding=utf-8
 
 from functools import update_wrapper
+
 from django.contrib import admin
 from django import forms
-from django.db import models
 from django_mptt_admin.admin import DjangoMpttAdmin
 from django.utils.translation import ugettext_lazy as _, ugettext
 from django.utils.html import mark_safe
 from django.core.urlresolvers import reverse
 from django.conf.urls import url
-from django.contrib import messages
-import autocomplete_light
-import re
 
+from actions import process_to_void
+from overrides import AdminReadOnly, InlineReadOnly
+from functions import create_model_admin
+from forms import ItemCategoryForm, PlaceForm, PurchaseItemForm, TransactionItemForm, PurchaseForm, TransactionForm
+from inlines import ItemCategoryCommentInline, PurchaseItemInline, PurchaseItemInlineReadonly, \
+    TransactionItemInlineReadonly, TransactionItemInline, TransactionCommentPlaceInline
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
-    TransactionItem, Transaction, ItemCategoryComment, OrderItemSerial, ContractItemSerial
-
-
-class InlineReadOnly(admin.TabularInline):
-    can_delete = False
-
-    def has_add_permission(self, request):
-        return False
-
-    def get_readonly_fields(self, request, obj=None):
-        result = list(set(
-                [field.name for field in self.opts.local_fields] +
-                [field.name for field in self.opts.local_many_to_many]
-            ))
-        result.remove('id')
-        return result
-
-
-def create_model_admin(model_admin, model, name=None, v_name=None):
-    v_name = v_name or name
-
-    class Meta:
-        proxy = True
-        app_label = model._meta.app_label  # noqa
-        verbose_name = v_name
-
-    attrs = {'__module__': '', 'Meta': Meta}
-
-    new_model = type(name, (model,), attrs)
-    admin.site.register(new_model, model_admin)
-    return model_admin
+    TransactionItem, Transaction, OrderItemSerial, ContractItemSerial
 
 
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
     pass
-
-
-class ItemCategoryCommentForm(autocomplete_light.ModelForm):
-    class Meta:
-        model = ItemCategoryComment
-        exclude = []
-
-
-class ItemCategoryCommentInline(admin.TabularInline):
-    model = ItemCategoryComment
-    form = ItemCategoryCommentForm
-    extra = 10
-
-
-class ItemCategoryForm(autocomplete_light.ModelForm):
-    class Meta:
-        model = ItemCategory
-        exclude = []
 
 
 @admin.register(ItemCategory)
@@ -78,12 +33,6 @@ class ItemCategoryAdmin(DjangoMpttAdmin):
     inlines = [ItemCategoryCommentInline]
 
 
-class PlaceForm(autocomplete_light.ModelForm):
-    class Meta:
-        model = Place
-        exclude = []
-
-
 @admin.register(Place)
 class PlaceAdmin(DjangoMpttAdmin):
     search_fields = ['name', ]
@@ -92,71 +41,18 @@ class PlaceAdmin(DjangoMpttAdmin):
     list_display = ['__unicode__', 'is_shop', 'items_changelist_link']
 
     def items_changelist_link(self, obj):
-        # link = reverse("admin:base_item_change", args=[obj.id])
         link = reverse("admin:base_place_item_changelist", args=[obj.id])
         return mark_safe(u'<a href="%s">%s</a>' % (link, _("items list")))
 
 
 @admin.register(PurchaseItem)
-class PurchaseItemAdmin(admin.ModelAdmin):
+class PurchaseItemAdmin(AdminReadOnly):
     pass
 
 
 @admin.register(Payer)
 class PayerAdmin(admin.ModelAdmin):
     search_fields = ['name', ]
-
-
-class PurchaseItemForm(autocomplete_light.ModelForm):
-    class Meta:
-        model = PurchaseItem
-        exclude = ['_chunks']
-
-
-class PurchaseItemInlineReadonly(InlineReadOnly):
-    model = PurchaseItem
-    form = PurchaseItemForm
-    extra = 0
-    formfield_overrides = {
-        models.TextField: {'widget': forms.Textarea(
-            attrs={'rows': 1, 'cols': 60}
-        )},
-    }
-
-    def get_readonly_fields(self, request, obj=None):
-        readonly_fields = super(PurchaseItemInlineReadonly, self).get_readonly_fields(request, obj)
-        readonly_fields.remove('_serials')
-        return readonly_fields
-
-
-class PurchaseItemInline(admin.TabularInline):
-    model = PurchaseItem
-    form = PurchaseItemForm
-    extra = 10
-    formfield_overrides = {
-        models.TextField: {'widget': forms.Textarea(
-            attrs={'rows': 1, 'cols': 60, '': 'disable'}
-        )},
-    }
-
-
-class PurchaseForm(autocomplete_light.ModelForm):
-    force_complete = forms.BooleanField(required=False, label=_("force complete"))
-
-    class Meta:
-        model = Purchase
-        exclude = ['is_completed', 'is_prepared']
-
-    def save(self, *args, **kwargs):
-        p = super(PurchaseForm, self).save(*args, **kwargs)
-        if self.cleaned_data['force_complete']:
-            if p.is_completed:
-                raise RuntimeError(_("already completed"))
-            # try:
-            p.complete()
-            # except Exception, e:
-            # raise forms.ValidationError(e)
-        return p
 
 
 @admin.register(Purchase)
@@ -204,95 +100,29 @@ class PurchaseAdmin(admin.ModelAdmin):
 
 
 @admin.register(Item)
-class ItemAdmin(admin.ModelAdmin):
+class ItemAdmin(AdminReadOnly):
     search_fields = ['category__name', 'place__name']
     list_filter = ['category', ]
     list_display = ['__unicode__', 'quantity', 'place']
 
 
 @admin.register(ItemSerial)
-class ItemSerialAdmin(admin.ModelAdmin):
+class ItemSerialAdmin(AdminReadOnly):
     search_fields = ['item__category__name', 'serial']
     list_filter = ['item__category', ]
     list_display = ['__unicode__', 'category_name']
 
 
 @admin.register(ItemChunk)
-class ItemChunkAdmin(admin.ModelAdmin):
+class ItemChunkAdmin(AdminReadOnly):
     search_fields = ['item__category__name']
     list_filter = ['item__category', ]
     list_display = ['__unicode__', 'category_name']
 
 
-class TransactionItemForm(autocomplete_light.ModelForm):
-    class Meta:
-        model = TransactionItem
-        exclude = ['_chunks', 'purchase']
-        autocomplete_fields = ('category', 'serial')
-
-    def save(self, *args, **kwargs):
-        ti = super(TransactionItemForm, self).save(*args, **kwargs)
-        if ti.transaction.is_completed:
-            ti.transaction.reset()
-        return ti
-
-
 @admin.register(TransactionItem)
 class TransactionItemAdmin(admin.ModelAdmin):
     pass
-
-
-class TransactionForm(autocomplete_light.ModelForm):
-    force_complete = forms.BooleanField(required=False, label=_("force complete"))
-
-    class Meta:
-        model = Transaction
-        exclude = ['comment_places', 'is_completed', 'is_prepared', 'is_negotiated_source',
-                   'is_negotiated_destination', 'is_confirmed_source', 'is_confirmed_destination']
-        autocomplete_fields = ('source', 'destination', 'items')
-
-    def save(self, *args, **kwargs):
-        t = super(TransactionForm, self).save(*args, **kwargs)
-        if self.cleaned_data['force_complete']:
-            if t.is_completed:
-                raise RuntimeError(_("already completed"))
-            # try:
-            t.force_complete()
-            # except Exception, e:
-            # raise forms.ValidationError(e)
-        return t
-
-
-class TransactionItemInline(admin.TabularInline):
-    model = TransactionItem
-    form = TransactionItemForm
-    extra = 10
-    formfield_overrides = {
-        models.TextField: {'widget': forms.Textarea(
-            attrs={'rows': 1, 'cols': 60}
-        )},
-    }
-
-
-class TransactionItemInlineReadonly(InlineReadOnly):
-    model = TransactionItem
-    form = TransactionItemForm
-    extra = 0
-    formfield_overrides = {
-        models.TextField: {'widget': forms.Textarea(
-            attrs={'rows': 1, 'cols': 60}
-        )},
-    }
-
-    def get_readonly_fields(self, request, obj=None):
-        readonly_fields = super(TransactionItemInlineReadonly, self).get_readonly_fields(request, obj)
-        return readonly_fields
-
-
-class TransactionCommentPlaceInline(admin.TabularInline):
-    model = Transaction.comment_places.through
-    form = autocomplete_light.modelform_factory(Place, exclude=[])
-    extra = 10
 
 
 @admin.register(Transaction)
@@ -380,7 +210,8 @@ class PlaceItemAdmin(ItemAdmin):
         view = super(PlaceItemAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
 
-    def change_view(self, request, place_id, object_id, form_url='', extra_context=None):  # pylint:disable=arguments-differ
+    def change_view(self, request, place_id, object_id, form_url='',
+                    extra_context=None):  # pylint:disable=arguments-differ
         self.place_id = place_id
         extra_context = extra_context or {}
         extra_context.update({
@@ -450,7 +281,8 @@ class ItemSerialsFilteredAdmin(ItemSerialAdmin):
         view = super(ItemSerialsFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
 
-    def change_view(self, request, item_id, object_id, form_url='', extra_context=None):  # pylint:disable=arguments-differ
+    def change_view(self, request, item_id, object_id, form_url='',
+                    extra_context=None):  # pylint:disable=arguments-differ
         self.item_id = item_id
         extra_context = extra_context or {}
         extra_context.update({
@@ -497,22 +329,12 @@ class ItemSerialsFilteredAdmin(ItemSerialAdmin):
 create_model_admin(ItemSerialsFilteredAdmin, name='item_serials_filtered', model=ItemSerial)
 
 
-def process_to_void(modeladmin, request, queryset):
-    for item in queryset:
-        if item.comment:
-            item.process()
-            messages.add_message(request, messages.SUCCESS, _("processed %s" % item))
-        else:
-            messages.add_message(request, messages.ERROR, _("Error: no comment for %s" % item))
-process_to_void.short_description = _("Process to void")
-
-
 @admin.register(OrderItemSerial)
 class OrderItemSerialAdmin(admin.ModelAdmin):
     search_fields = ['serial']
     list_filter = ['item__place', ]
     list_display = ['__unicode__', 'category_name', 'owner', 'comment']
-    ordering = ['comment',]
+    ordering = ['comment', ]
     readonly_fields = ['item', 'purchase', 'serial', 'owner']
     fields = ['comment', 'serial', 'owner']
     actions = [process_to_void]
@@ -523,7 +345,7 @@ class ContractItemSerialAdmin(admin.ModelAdmin):
     search_fields = ['serial']
     list_filter = ['item__place', ]
     list_display = ['__unicode__', 'category_name', 'owner', 'comment']
-    ordering = ['comment',]
+    ordering = ['comment', ]
     readonly_fields = ['item', 'purchase', 'serial', 'owner']
     fields = ['comment', 'serial', 'owner']
     actions = [process_to_void]
