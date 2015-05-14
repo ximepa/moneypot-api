@@ -9,6 +9,7 @@ from django.utils.translation import ugettext_lazy as _, ugettext
 from django.utils.html import mark_safe
 from django.core.urlresolvers import reverse
 from django.conf.urls import url
+from daterange_filter.filter import DateRangeFilter
 
 from actions import process_to_void
 from overrides import AdminReadOnly, InlineReadOnly
@@ -17,7 +18,7 @@ from forms import ItemCategoryForm, PlaceForm, PurchaseItemForm, TransactionItem
 from inlines import ItemCategoryCommentInline, PurchaseItemInline, PurchaseItemInlineReadonly, \
     TransactionItemInlineReadonly, TransactionItemInline, TransactionCommentPlaceInline
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
-    TransactionItem, Transaction, OrderItemSerial, ContractItemSerial
+    TransactionItem, Transaction, OrderItemSerial, ContractItemSerial, VItemMovement, VSerialMovement, get_descendants_ids
 
 
 @admin.register(Unit)
@@ -108,9 +109,16 @@ class ItemAdmin(AdminReadOnly):
 
 @admin.register(ItemSerial)
 class ItemSerialAdmin(AdminReadOnly):
+
+    def get_queryset(self, request):
+        return super(ItemSerialAdmin, self).get_queryset(request).select_related('item', 'item__category', 'item__place')
+
+    def owner(self, instance):
+        return instance.item.place.name
+
     search_fields = ['item__category__name', 'serial']
     list_filter = ['item__category', ]
-    list_display = ['__unicode__', 'category_name']
+    list_display = ['__unicode__', 'category_name', 'owner']
 
 
 @admin.register(ItemChunk)
@@ -332,20 +340,69 @@ create_model_admin(ItemSerialsFilteredAdmin, name='item_serials_filtered', model
 @admin.register(OrderItemSerial)
 class OrderItemSerialAdmin(admin.ModelAdmin):
     search_fields = ['serial']
-    list_filter = ['item__place', ]
-    list_display = ['__unicode__', 'category_name', 'owner', 'comment']
+    # list_filter = ['item__place', ]
+    list_display = ['serial', 'category_name', 'owner', 'comment']
     ordering = ['comment', ]
     readonly_fields = ['item', 'purchase', 'serial', 'owner']
     fields = ['comment', 'serial', 'owner']
     actions = [process_to_void]
+
+    def get_queryset(self, request):
+        qs = super(OrderItemSerialAdmin, self).get_queryset(request).select_related(
+            'item', 'item__category', 'item__place'
+        )
+        return qs.filter(
+            item__category_id__in=get_descendants_ids(ItemCategory, 89),
+            item__place_id__in=get_descendants_ids(Place, 14)
+        )
+
+    def owner(self, instance):
+        return instance.item.place.name
 
 
 @admin.register(ContractItemSerial)
 class ContractItemSerialAdmin(admin.ModelAdmin):
     search_fields = ['serial']
     list_filter = ['item__place', ]
-    list_display = ['__unicode__', 'category_name', 'owner', 'comment']
+    list_display = ['serial', 'category_name', 'owner', 'comment']
     ordering = ['comment', ]
     readonly_fields = ['item', 'purchase', 'serial', 'owner']
     fields = ['comment', 'serial', 'owner']
     actions = [process_to_void]
+
+    def get_queryset(self, request):
+        qs = super(ContractItemSerialAdmin, self).get_queryset(request).select_related(
+            'item', 'item__category', 'item__place'
+        )
+        return qs.filter(
+            item__category_id__in=get_descendants_ids(ItemCategory, 88),
+            item__place_id__in=get_descendants_ids(Place, 14)
+        )
+
+    def owner(self, instance):
+        return instance.item.place.name
+
+
+
+@admin.register(VItemMovement)
+class ItemMovementAdmin(AdminReadOnly):
+    search_fields = ['destination_name', 'source_name', 'item_category_name']
+    list_filter = (
+        ('created_at', DateRangeFilter),
+        ('completed_at', DateRangeFilter),
+        'category',
+    )
+    list_display = ['item_category_name', 'created_at', 'completed_at', 'source', 'destination', 'quantity']
+    fields = ['item_category_name', 'created_at', 'completed_at', 'source', 'destination', 'quantity']
+
+
+@admin.register(VSerialMovement)
+class SerialMovementAdmin(AdminReadOnly):
+    search_fields = ['destination_name', 'source_name', 'item_category_name', 'serial']
+    list_filter = (
+        ('created_at', DateRangeFilter),
+        ('completed_at', DateRangeFilter),
+        'category',
+    )
+    list_display = ['serial', 'item_category_name', 'created_at', 'completed_at', 'source', 'destination', 'quantity']
+    fields = ['serial', 'item_category_name', 'created_at', 'completed_at', 'source', 'destination', 'quantity']

@@ -826,46 +826,17 @@ def get_descendants_ids(model, pk, include_self=False):
     return ids
 
 
-class OrderItemSerialManager(models.Manager):
-    def get_queryset(self):
-        qs = super(OrderItemSerialManager, self).get_queryset()  # noqa
-        return qs.filter(
-            item__category_id__in=get_descendants_ids(ItemCategory, 89),
-            item__place_id__in=get_descendants_ids(Place, 14)
-        )
-
-
 class OrderItemSerial(ItemSerial, ProcessSerialMixin):
-    objects = OrderItemSerialManager()
-
     class Meta:
         proxy = True
         verbose_name = _("order serial")
         verbose_name_plural = _("order serials")
 
-    def owner(self):
-        return self.item.place
-
-
-class ContractItemSerialManager(models.Manager):
-    def get_queryset(self):
-        qs = super(ContractItemSerialManager, self).get_queryset()  # noqa
-        return qs.filter(
-            item__category_id__in=get_descendants_ids(ItemCategory, 88),
-            item__place_id__in=get_descendants_ids(Place, 14)
-        )
-
-
 class ContractItemSerial(ItemSerial, ProcessSerialMixin):
-    objects = ContractItemSerialManager()
-
     class Meta:
         proxy = True
         verbose_name = _("contract serial")
         verbose_name_plural = _("contract serials")
-
-    def owner(self):
-        return self.item.place
 
 
 class VItemMovement(models.Model):
@@ -876,6 +847,7 @@ class VItemMovement(models.Model):
      quantity           | numeric                  |           | main     |
      destination_id     | integer                  |           | plain    |
      source_id          | integer                  |           | plain    |
+     transaction_item_id | integer                  |           | plain    |
      category_id        | integer                  |           | plain    |
      transaction_id     | integer                  |           | plain    |
      created_at         | timestamp with time zone |           | plain    |
@@ -886,6 +858,7 @@ class VItemMovement(models.Model):
     destination_name = models.CharField(_("destination"), max_length=100)
     quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
     source = models.ForeignKey("Place", verbose_name=_("source"), related_name="source_item_movements", on_delete=models.DO_NOTHING)
+    transaction_item = models.OneToOneField("TransactionItem", verbose_name=_("transaction_item"), on_delete=models.DO_NOTHING, primary_key=True)
     destination = models.ForeignKey("Place", verbose_name=_("destination"), related_name="destination_item_movements", on_delete=models.DO_NOTHING)
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"), on_delete=models.DO_NOTHING)
     transaction = models.ForeignKey("Transaction", verbose_name=_("transaction"), on_delete=models.DO_NOTHING)
@@ -897,6 +870,9 @@ class VItemMovement(models.Model):
         db_table = "base_v_item_movement"
         verbose_name = _("item movement")
         verbose_name_plural = _("items movements")
+
+    def __unicode__(self):
+        return self.item_category_name
 
 
 class VSerialMovement(models.Model):
@@ -920,7 +896,7 @@ class VSerialMovement(models.Model):
     destination_name = models.CharField(_("destination"), max_length=100)
     quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
     serial = models.CharField(_("serial"), max_length=32)
-    serial_id = models.ForeignKey("ItemSerial", verbose_name=_("serial"), db_column="serial_id", on_delete=models.DO_NOTHING)
+    serial_id = models.OneToOneField("ItemSerial", verbose_name=_("serial"), db_column="serial_id", on_delete=models.DO_NOTHING, primary_key=True)
     source = models.ForeignKey("Place", verbose_name=_("source"), related_name="source_serial_movements", on_delete=models.DO_NOTHING)
     destination = models.ForeignKey("Place", verbose_name=_("destination"), related_name="destination_serial_movements", on_delete=models.DO_NOTHING)
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"), on_delete=models.DO_NOTHING)
@@ -932,4 +908,7 @@ class VSerialMovement(models.Model):
         managed = False
         db_table = "base_v_serial_movement"
         verbose_name = _("serial movement")
-        verbose_name_plural = _("serialss movements")
+        verbose_name_plural = _("serials movements")
+
+    def __unicode__(self):
+        return self.item_category_name

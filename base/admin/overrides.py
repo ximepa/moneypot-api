@@ -13,7 +13,8 @@ class ReadOnlyMixin(object):
             [field.name for field in self.opts.local_fields] +
             [field.name for field in self.opts.local_many_to_many]
         ))
-        result.remove('id')
+        if 'id' in result:
+            result.remove('id')
         return result
 
 

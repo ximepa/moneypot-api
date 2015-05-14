@@ -14,9 +14,9 @@ class Migration(migrations.Migration):
         migrations.RunSQL(
             sql="""
                 CREATE VIEW base_v_serial_movement AS
-                SELECT base_place1.name AS source,
-                    base_place.name AS destination,
-                    base_itemcategory.name AS item_category,
+                SELECT base_place1.name AS source_name,
+                    base_place.name AS destination_name,
+                    base_itemcategory.name AS item_category_name,
                     base_transactionitem.quantity,
                     base_transaction.destination_id,
                     base_transaction.source_id,

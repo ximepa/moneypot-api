@@ -19,6 +19,7 @@ class Migration(migrations.Migration):
                     sum(base_transactionitem.quantity) AS quantity,
                     base_transaction.destination_id,
                     base_transaction.source_id,
+                    base_transactionitem.id as transaction_item_id,
                     base_transactionitem.category_id,
                     base_transactionitem.transaction_id,
                     base_transaction.created_at,
@@ -29,7 +30,7 @@ class Migration(migrations.Migration):
                     JOIN base_place base_place1 ON base_transaction.source_id = base_place1.id
                     JOIN base_itemcategory ON base_transactionitem.category_id = base_itemcategory.id
                 GROUP BY
-                    base_place1.name, base_place.name, base_transaction.destination_id,
+                    base_place1.name, base_place.name, base_transaction.destination_id, base_transactionitem.id,
                     base_transaction.source_id, base_transactionitem.category_id, base_transactionitem.transaction_id,
                     base_transaction.created_at, base_transaction.completed_at, base_itemcategory.name;
             """,
