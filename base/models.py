@@ -299,7 +299,7 @@ class PurchaseItem(MovementItem):
 
     def save(self, *args, **kwargs):
         self.full_clean()
-        super(MovementItem, self).save(*args, **kwargs)
+        super(PurchaseItem, self).save(*args, **kwargs)
 
 
 class Payer(models.Model):
