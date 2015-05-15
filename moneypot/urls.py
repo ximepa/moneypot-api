@@ -3,6 +3,8 @@ from django.contrib import admin
 from rest_framework.authtoken import views as authtoken_views
 from django.views.generic import TemplateView
 from filebrowser.sites import site as fb
+from django.conf.urls.static import static
+from django.conf import settings
 
 admin.site.disable_action('delete_selected')
 
@@ -19,3 +21,5 @@ urlpatterns = patterns('',
                        url(r'', include(admin.site.urls)),
                        url(r'^admin/', TemplateView.as_view(template_name="base/redirect.html")),
                        )
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
