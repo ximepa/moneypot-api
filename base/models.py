@@ -699,6 +699,8 @@ class TransactionItem(MovementItem):
     # quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
     # _chunks = models.TextField(blank=True, null=True)
     serial = models.ForeignKey(ItemSerial, blank=True, null=True)
+    destination = models.ForeignKey("Place", verbose_name=_("destination"),
+                                    related_name="transaction_items", blank=True, null=True)
 
     class Meta:
         verbose_name = _("transaction item")
@@ -706,6 +708,11 @@ class TransactionItem(MovementItem):
 
     def __unicode__(self):
         return self.category.name
+
+    def save(self, *args, **kwargs):
+        if self.destination is None:
+            self.destination = self.transaction.destination
+        super(TransactionItem, self).save(*args, **kwargs)
 
 
 class Transaction(Movement):
@@ -795,7 +802,7 @@ class Transaction(Movement):
         if not self.is_confirmed_destination:
             raise TransactionNotReady(_("transaction is not confirmed by destination"))
         for item in self.items_prepared:
-            self.destination.deposit(item)
+            item.reserved_by.destination.deposit(item)
         self.is_completed = True
         self.completed_at = timezone.now()
         self.save()

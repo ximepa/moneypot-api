@@ -35,7 +35,7 @@ class TransactionItemForm(autocomplete_light.ModelForm):
     class Meta:
         model = TransactionItem
         exclude = ['_chunks', 'purchase']
-        autocomplete_fields = ('category', 'serial')
+        autocomplete_fields = ('category', 'serial', 'destination')
 
     def save(self, *args, **kwargs):
         ti = super(TransactionItemForm, self).save(*args, **kwargs)
