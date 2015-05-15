@@ -13,7 +13,7 @@ from django.db.models import Q
 from daterange_filter.filter import DateRangeFilter
 
 from actions import process_to_void
-from overrides import AdminReadOnly, InlineReadOnly
+from overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
 from functions import create_model_admin
 from forms import ItemCategoryForm, PlaceForm, PurchaseItemForm, TransactionItemForm, PurchaseForm, TransactionForm
 from inlines import ItemCategoryCommentInline, PurchaseItemInline, PurchaseItemInlineReadonly, \
@@ -48,7 +48,7 @@ class PlaceAdmin(DjangoMpttAdmin):
 
 
 @admin.register(PurchaseItem)
-class PurchaseItemAdmin(AdminReadOnly):
+class PurchaseItemAdmin(HiddenAdminModelMixin, AdminReadOnly):
     pass
 
 
@@ -127,14 +127,14 @@ class ItemSerialAdmin(AdminReadOnly):
 
 
 @admin.register(ItemChunk)
-class ItemChunkAdmin(AdminReadOnly):
+class ItemChunkAdmin(HiddenAdminModelMixin, AdminReadOnly):
     search_fields = ['item__category__name']
     list_filter = ['item__category', ]
     list_display = ['__unicode__', 'category_name']
 
 
 @admin.register(TransactionItem)
-class TransactionItemAdmin(admin.ModelAdmin):
+class TransactionItemAdmin(HiddenAdminModelMixin, AdminReadOnly):
     pass
 
 
@@ -189,7 +189,7 @@ class TransactionAdmin(admin.ModelAdmin):
         formset.save_m2m()
 
 
-class PlaceItemAdmin(ItemAdmin):
+class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
     place_id = None
     list_display = ['obj_link', 'quantity', 'place', 'items_serials_changelist_link',
                     'items_chunks_changelist_link', 'item_movement_changelist_link']
@@ -272,7 +272,7 @@ class PlaceItemAdmin(ItemAdmin):
 create_model_admin(PlaceItemAdmin, name='place_item', model=Item)
 
 
-class ItemSerialsFilteredAdmin(ItemSerialAdmin):
+class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
     item_id = None
     list_display = ['obj_link', 'category_name', 'serial_movement_changelist_link']
 
@@ -422,7 +422,7 @@ class SerialMovementAdmin(AdminReadOnly):
     fields = ['serial', 'item_category_name', 'created_at', 'completed_at', 'source', 'destination', 'quantity']
 
 
-class ItemMovementFilteredAdmin(ItemMovementAdmin):
+class ItemMovementFilteredAdmin(HiddenAdminModelMixin, ItemMovementAdmin):
     place_id = None
     category_id = None
 
@@ -480,7 +480,7 @@ class ItemMovementFilteredAdmin(ItemMovementAdmin):
 create_model_admin(ItemMovementFilteredAdmin, name='item_movement_filtered', model=VItemMovement)
 
 
-class SerialMovementFilteredAdmin(SerialMovementAdmin):
+class SerialMovementFilteredAdmin(HiddenAdminModelMixin, SerialMovementAdmin):
     place_id = None
     serial_id = None
 

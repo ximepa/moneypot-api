@@ -26,6 +26,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = (
     # core batteries
     'autocomplete_light',
+    # 'grappelli.dashboard',
     'grappelli',
     # django stuff
     'django.contrib.admin',
@@ -110,6 +111,8 @@ USE_TZ = True
 LOCALE_PATHS = (
     os.path.join(PROJECT_ROOT, 'locale'),
 )
+
+# GRAPPELLI_INDEX_DASHBOARD = 'moneypot.dashboard.CustomIndexDashboard'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
