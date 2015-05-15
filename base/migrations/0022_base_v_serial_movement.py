@@ -51,7 +51,7 @@ class Migration(migrations.Migration):
                         base_itemserial.id;
             """,
             reverse_sql="""
-                CREATE VIEW base_v_serial_movement AS
+                CREATE OR REPLACE VIEW base_v_serial_movement AS
                 SELECT base_place1.name AS source_name,
                     base_place.name AS destination_name,
                     base_itemcategory.name AS item_category_name,
