@@ -797,13 +797,16 @@ class Transaction(Movement):
         if not self.is_confirmed_destination:
             raise TransactionNotReady(_("transaction is not confirmed by destination"))
         for item in self.items_prepared:
-            assert item.reserved_by.destination.is_descendant_of(self.destination, include_self=True), ugettext(
-                "<{ti_dest}> must be child node of <{dest}>".format(
-                            ti_dest=unicode(item.reserved_by.destination.name),
-                            dest=unicode(self.destination.name)
-                        )
-            )
-            item.reserved_by.destination.deposit(item)
+            if item.reserved_by.destination:
+                assert item.reserved_by.destination.is_descendant_of(self.destination, include_self=True), ugettext(
+                    "<{ti_dest}> must be child node of <{dest}>".format(
+                                ti_dest=unicode(item.reserved_by.destination.name),
+                                dest=unicode(self.destination.name)
+                            )
+                )
+                item.reserved_by.destination.deposit(item)
+            else:
+                self.destination.deposit(item)
         self.is_completed = True
         self.completed_at = timezone.now()
         self.save()
