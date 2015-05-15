@@ -58,7 +58,16 @@
             } else {
                 delete $widget.yourlabsWidget().autocomplete.data.category_id;
             }
-            console.log($widget.yourlabsWidget().autocomplete.data);
+
+            var source = $("#id_source").val();
+
+            if (source && value) {
+                var $quantity = $(this).closest('.grp-tr').find("input[id^='id_transaction_items-'][name*='quantity']");
+                $.get("/base/ajax/qty/"+source[0]+"/"+value[0]+"/?selector="+$quantity.attr('id'), function(response){
+                    $("#"+response.selector).attr('placeholder', response.qty);
+                })
+            }
+
         });
     });
 
