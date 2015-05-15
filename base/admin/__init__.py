@@ -361,6 +361,9 @@ class OrderItemSerialAdmin(admin.ModelAdmin):
     fields = ['comment', 'serial', 'owner']
     actions = [process_to_void]
 
+    def has_add_permission(self, request):
+        return False
+
     def get_queryset(self, request):
         qs = super(OrderItemSerialAdmin, self).get_queryset(request).select_related(
             'item', 'item__category', 'item__place'
@@ -383,6 +386,9 @@ class ContractItemSerialAdmin(admin.ModelAdmin):
     readonly_fields = ['item', 'purchase', 'serial', 'owner']
     fields = ['comment', 'serial', 'owner']
     actions = [process_to_void]
+
+    def has_add_permission(self, request):
+        return False
 
     def get_queryset(self, request):
         qs = super(ContractItemSerialAdmin, self).get_queryset(request).select_related(
