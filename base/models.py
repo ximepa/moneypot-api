@@ -709,11 +709,6 @@ class TransactionItem(MovementItem):
     def __unicode__(self):
         return self.category.name
 
-    def save(self, *args, **kwargs):
-        if self.destination is None:
-            self.destination = self.transaction.destination
-        super(TransactionItem, self).save(*args, **kwargs)
-
 
 class Transaction(Movement):
     items = models.ManyToManyField("ItemCategory", through="TransactionItem", verbose_name=_("items"))
@@ -802,6 +797,12 @@ class Transaction(Movement):
         if not self.is_confirmed_destination:
             raise TransactionNotReady(_("transaction is not confirmed by destination"))
         for item in self.items_prepared:
+            assert item.reserved_by.destination.is_descendant_of(self.destination, include_self=True), ugettext(
+                "<{ti_dest}> must be child node of <{dest}>".format(
+                            ti_dest=unicode(item.reserved_by.destination.name),
+                            dest=unicode(self.destination.name)
+                        )
+            )
             item.reserved_by.destination.deposit(item)
         self.is_completed = True
         self.completed_at = timezone.now()
