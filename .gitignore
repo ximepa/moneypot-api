@@ -112,3 +112,5 @@ moneypot/settings/local.py
 *.pgdump
 *.dump
 *.dump.*
+media/uploads/*
+media/_versions/*

@@ -8,6 +8,7 @@ from django.core.urlresolvers import reverse
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db import transaction
+from filebrowser.fields import FileBrowseField
 import re
 
 
@@ -60,6 +61,7 @@ class ItemCategory(MPTTModel):
     is_stackable = models.NullBooleanField(_("stackable"), blank=True, null=True)
     parent = models.ForeignKey('self', verbose_name=_("parent"), null=True, blank=True, related_name='children')
     comment = models.TextField(_("comment"), blank=True, null=True)
+    photo = FileBrowseField("Image", max_length=200, directory="uploads", blank=True, null=True)
 
     class Meta:
         verbose_name = _("item category")

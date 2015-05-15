@@ -10,6 +10,7 @@ from django.utils.html import mark_safe
 from django.core.urlresolvers import reverse
 from django.conf.urls import url
 from django.db.models import Q
+from django.db import models
 from daterange_filter.filter import DateRangeFilter
 
 from actions import process_to_void
@@ -20,6 +21,8 @@ from inlines import ItemCategoryCommentInline, PurchaseItemInline, PurchaseItemI
     TransactionItemInlineReadonly, TransactionItemInline, TransactionCommentPlaceInline
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
     TransactionItem, Transaction, OrderItemSerial, ContractItemSerial, VItemMovement, VSerialMovement, get_descendants_ids
+from filebrowser.widgets import ClearableFileInput
+from filebrowser.settings import ADMIN_THUMBNAIL
 
 
 @admin.register(Unit)
@@ -33,6 +36,18 @@ class ItemCategoryAdmin(DjangoMpttAdmin):
     search_fields = ['name', ]
     tree_auto_open = False
     inlines = [ItemCategoryCommentInline]
+    list_display = ['name', 'image_thumbnail']
+
+    def image_thumbnail(self, obj):
+        if obj.photo:
+            if obj.photo.filetype == "Image":
+                return '<a href="%s"><img src="%s" /></a>' % (obj.photo.url, obj.photo.version_generate(ADMIN_THUMBNAIL).url)
+            else:
+                return '<a href="%s">%s</a>' % (obj.photo.url, obj.photo.url)
+        else:
+            return ""
+    image_thumbnail.allow_tags = True
+    image_thumbnail.short_description = "Thumbnail"
 
 
 @admin.register(Place)
