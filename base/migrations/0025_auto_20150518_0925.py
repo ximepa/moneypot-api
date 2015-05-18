@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.db import migrations, transaction
-
+from django.db import models, migrations
+from django.db import transaction
 
 def transaction_items_destinatio_set_default(apps, schema_editor):
 
@@ -17,7 +17,7 @@ def transaction_items_destinatio_set_default(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('base', '0019_transactionitem_destination'),
+        ('base', '0024_auto_20150515_1757'),
     ]
 
     operations = [

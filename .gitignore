@@ -106,7 +106,7 @@ docs/_build/
 target/
 
 
-static
+/static
 moneypot/settings/local.py
 *.sqlte3
 *.pgdump

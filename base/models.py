@@ -384,7 +384,7 @@ class Purchase(Movement):
                             raise IntegrityError("serial %s duplicate. item <%s> place <%s> pk <%s>" % (
                                 serial,
                                 item_serial.item.__unicode__(),
-                                item_serial.item.place.__unicode__(),
+                                item_serial.item.place.__unicode__() if item_serial.item.place else None,
                                 item_serial.item.pk
                             ))
             self.items_prepared.append(i)
@@ -408,7 +408,8 @@ class Purchase(Movement):
 
             if not pi.serials:
                 ti = TransactionItem.objects.create(purchase=self, transaction=t, category=pi.category,
-                                                    quantity=pi.quantity, serial=None, _chunks=pi._chunks)  # noqa
+                                                    quantity=pi.quantity, serial=None,
+                                                    _chunks=pi._chunks, destination=self.destination)  # noqa
 
                 for item in pi.item_set.all():
                     item.is_reserved = True
@@ -768,6 +769,7 @@ class Transaction(Movement):
 
     def check_prepared(self):
         self.items_prepared = []
+        self.transaction_items.filter(destination__isnull=True).update(destination=self.destination)
         for ti in self.transaction_items.all():
             item = ti.item_set.get()
             assert (ti.transaction == self)
