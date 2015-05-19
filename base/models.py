@@ -447,7 +447,7 @@ class Purchase(Movement):
 
 class Item(models.Model):
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"), related_name='items')
-    quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
+    quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3, default=0)
     is_reserved = models.BooleanField(_("is reserved"), blank=True, default=False)
     reserved_by = models.ForeignKey("TransactionItem", verbose_name=_("reserved by transaction"), blank=True, null=True)
     parent = models.ForeignKey('self', verbose_name=_("parent"), blank=True, null=True, related_name="children")
