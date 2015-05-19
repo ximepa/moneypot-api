@@ -81,6 +81,12 @@ class PurchaseAdmin(admin.ModelAdmin):
     list_filter = ['source', 'destination', 'is_completed', 'is_prepared', ]
     search_fields = ['source__name', 'destination__name', 'purchase_items__category__name']
 
+    def has_delete_permission(self, request, obj=None):
+        if obj and obj.is_completed:
+            return False
+        else:
+            return super(PurchaseAdmin, self).has_delete_permission(request, obj)
+
     def get_readonly_fields(self, request, obj=None):
         readonly_fields = list(self.readonly_fields)
         if obj and obj.is_completed:
@@ -109,6 +115,8 @@ class PurchaseAdmin(admin.ModelAdmin):
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
+        for obj in formset.deleted_objects:
+            obj.delete()
         for instance in instances:
             if formset.form.__name__ == PurchaseItemForm.__name__ and instance.purchase.is_completed:
                 raise forms.ValidationError(ugettext("purchase items data is read only!"))
@@ -170,6 +178,12 @@ class TransactionAdmin(admin.ModelAdmin):
         TransactionItemInline, TransactionCommentPlaceInline
     ]
 
+    def has_delete_permission(self, request, obj=None):
+        if obj and obj.is_completed:
+            return False
+        else:
+            return super(TransactionAdmin, self).has_delete_permission(request, obj)
+
     def get_readonly_fields(self, request, obj=None):
         readonly_fields = list(self.readonly_fields)
         if obj and obj.is_completed:
@@ -197,10 +211,14 @@ class TransactionAdmin(admin.ModelAdmin):
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
+        for obj in formset.deleted_objects:
+            obj.delete()
         for instance in instances:
             if formset.form.__name__ == TransactionItemForm.__name__ and instance.transaction.is_completed:
                 raise forms.ValidationError(ugettext("transaction items data is read only!"))
-            instance.save()
+            trash = getattr(instance, "trash", False)
+            if not trash:
+                instance.save()
         formset.save_m2m()
 
 

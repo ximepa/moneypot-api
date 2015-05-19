@@ -1,10 +1,15 @@
 # -*- encoding: utf-8 -*-
 __author__ = 'maxim'
 from django import forms
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _, ugettext
+from copy import deepcopy
+from base.models import InvalidParameters
+from .functions import parse_serials_data
 import autocomplete_light
+import re
 
-from base.models import ItemCategory, ItemCategoryComment, Place, PurchaseItem, TransactionItem, Purchase, Transaction
+from base.models import ItemCategory, ItemCategoryComment, Place, PurchaseItem, TransactionItem, Purchase, \
+    Transaction, Unit, ItemSerial
 
 
 class ItemCategoryCommentForm(autocomplete_light.ModelForm):
@@ -30,17 +35,99 @@ class PurchaseItemForm(autocomplete_light.ModelForm):
         model = PurchaseItem
         exclude = ['_chunks']
 
+    def clean(self):
+
+        cleaned_data = dict(self.cleaned_data)
+
+        _serials = cleaned_data.get('_serials', "")
+        category = cleaned_data.get('category', None)
+
+        if category and category.unit.unit_type == Unit.DECIMAL:
+            raise forms.ValidationError({'_serials': ugettext(
+                'unit type `%s` can not have serials' % self.category.unit.name
+            )})
+
+        try:
+            serials_data = parse_serials_data(_serials)
+        except InvalidParameters, e:
+            raise forms.ValidationError({'_serials': e})
+
+        self.cleaned_data['_serials'] = ", ".join(serials_data)
+
+        return self.cleaned_data
+
 
 class TransactionItemForm(autocomplete_light.ModelForm):
+    _serials = forms.CharField(required=False, label=_("serials"), widget=forms.Textarea(attrs={'cols': 80, 'rows': 1}))
+    serials = []
+
     class Meta:
         model = TransactionItem
         exclude = ['_chunks', 'purchase']
         autocomplete_fields = ('category', 'serial', 'destination')
 
+    def clean(self):
+
+        cleaned_data = dict(self.cleaned_data)
+
+        _serials = cleaned_data.get('_serials', "")
+        serial = cleaned_data.get('serial', None)
+
+        if _serials and serial:
+            raise forms.ValidationError({'serial': ugettext(
+                "can't set serial when serial list not empty"
+            )})
+
+        quantity = cleaned_data.get('quantity', 0)
+        category = cleaned_data.get('category', None)
+        transaction = cleaned_data.get('transaction', None)
+
+        if category and category.unit.unit_type == Unit.DECIMAL:
+            raise forms.ValidationError({'_serials': ugettext(
+                'unit type `%s` can not have serials' % self.category.unit.name
+            )})
+
+        try:
+            serials_data = parse_serials_data(_serials)
+        except InvalidParameters, e:
+            raise forms.ValidationError({'_serials': e})
+
+        self.cleaned_data['_serials'] = ", ".join(serials_data)
+
+        if len(serials_data) and not quantity == len(serials_data):
+            raise forms.ValidationError({'_serials': ugettext(
+                u'serials count error: {count}≠{quantity}'.format(count=len(serials_data), quantity=quantity)
+            )})
+
+        for serial in serials_data:
+            try:
+                sr = ItemSerial.objects.get(serial=serial, item__category=category, item__place=transaction.source)
+            except ItemSerial.DoesNotExist:
+                raise forms.ValidationError({'_serials': ugettext(
+                    u'serial <{serial}> <{category}> not found in <{place}>'.format(
+                        serial=serial,
+                        category=unicode(category),
+                        place=unicode(transaction.source) if transaction else "<unknown place>"
+                    )
+                )})
+            else:
+                self.serials.append(sr)
+
+        self.cleaned_data['_serials'] = self.serials
+        return self.cleaned_data
+
     def save(self, *args, **kwargs):
         ti = super(TransactionItemForm, self).save(*args, **kwargs)
         if ti.transaction.is_completed:
             ti.transaction.reset()
+        if self.serials:
+            for serial in self.serials:
+                nti = deepcopy(ti)
+                nti.pk = None
+                nti.quantity = 1
+                nti.serial = serial
+                nti.save()
+            setattr(ti, "trash", True)
         return ti
 
 
@@ -82,4 +169,3 @@ class TransactionForm(autocomplete_light.ModelForm):
             # except Exception, e:
             # raise forms.ValidationError(e)
         return t
-

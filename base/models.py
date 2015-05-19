@@ -241,7 +241,7 @@ class MovementItem(models.Model):
         if self.category.unit.unit_type == Unit.DECIMAL:
             f = Decimal
 
-        if not f(self.quantity) == self.quantity:
+        if self.quantity and not f(self.quantity) == self.quantity:
             raise ValidationError({'quantity': ugettext(
                 'unit type `%s` can not be decimal' % self.category.unit.name
             )})

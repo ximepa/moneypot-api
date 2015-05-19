@@ -34,7 +34,10 @@ class ItemCategoryAutocomplete(autocomplete_light.AutocompleteModelBase):
         return self.order_choices(choices)[0:self.limit_choices]
 
 
-autocomplete_light.register(ItemCategory, ItemCategoryAutocomplete)
+autocomplete_light.register(ItemCategory, ItemCategoryAutocomplete, attrs={
+                                'placeholder': 'item category name',
+                                'data-autocomplete-minimum-characters': 0,
+                            },)
 
 autocomplete_light.register(Item,
                             search_fields=['category__name'],
@@ -69,7 +72,10 @@ class ItemSerialAutocomplete(autocomplete_light.AutocompleteModelBase):
         return self.order_choices(choices)[0:self.limit_choices]
 
 
-autocomplete_light.register(ItemSerial, ItemSerialAutocomplete)
+autocomplete_light.register(ItemSerial, ItemSerialAutocomplete,attrs={
+                                'placeholder': 'serial ..',
+                                'data-autocomplete-minimum-characters': 0,
+                            },)
 
 
 class SubPlaceAutocomplete(autocomplete_light.AutocompleteModelBase):
