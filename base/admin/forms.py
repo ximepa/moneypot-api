@@ -82,15 +82,15 @@ class TransactionItemForm(autocomplete_light.ModelForm):
         category = cleaned_data.get('category', None)
         transaction = cleaned_data.get('transaction', None)
 
-        if category and category.unit.unit_type == Unit.DECIMAL:
-            raise forms.ValidationError({'_serials': ugettext(
-                'unit type `%s` can not have serials' % self.category.unit.name
-            )})
-
         try:
             serials_data = parse_serials_data(_serials)
         except InvalidParameters, e:
             raise forms.ValidationError({'_serials': e})
+
+        if len(serials_data) and category and category.unit.unit_type == Unit.DECIMAL:
+            raise forms.ValidationError({'_serials': ugettext(
+                'unit type `%s` can not have serials' % self.category.unit.name
+            )})
 
         self.cleaned_data['_serials'] = ", ".join(serials_data)
 
