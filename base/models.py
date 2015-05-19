@@ -370,9 +370,8 @@ class Purchase(Movement):
                 i.purchase = purchase_item
                 i.save()
             else:
-                i.quantity = models.F('quantity') + purchase_item.quantity
-                i.purchase = purchase_item
-                i.save()
+                Item.objects.filter(pk=i.pk).update(quantity = models.F('quantity') + purchase_item.quantity,
+                                                    purchase = purchase_item)
             if purchase_item.chunks:
                 for chunk in purchase_item.chunks:
                     ItemChunk.objects.create(item=i, chunk=chunk, purchase=purchase_item)
