@@ -165,7 +165,7 @@ class Place(MPTTModel):
 
     def withdraw(self, item):
         try:
-            i = self.items.get(category=item.category, is_reserved=False)
+            i = self.items.get(category=item.category, is_reserved=False, quantity__gt=0)
         except Item.DoesNotExist:
             raise ItemNotFound(_("Can not withdraw <{item}> from <{place}>: not found.".format(
                 item=item,
