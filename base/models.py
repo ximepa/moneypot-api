@@ -364,14 +364,14 @@ class Purchase(Movement):
         self.is_prepared = False
         for purchase_item in self.purchase_items.all():
             purchase_item.item_set.all().delete()
-            i, created = Item.objects.get_or_create(category=purchase_item.category, place=self.source)
+            i, created = Item.objects.get_or_create(category=purchase_item.category, place=self.source,
+                                                    purchase=purchase_item)
             if created:
                 i.quantity = purchase_item.quantity
                 i.purchase = purchase_item
                 i.save()
             else:
-                Item.objects.filter(pk=i.pk).update(quantity=models.F('quantity') + purchase_item.quantity,
-                                                    purchase=purchase_item)
+                Item.objects.filter(pk=i.pk).update(quantity=models.F('quantity') + purchase_item.quantity)
                 i.refresh_from_db()
             if purchase_item.chunks:
                 for chunk in purchase_item.chunks:
