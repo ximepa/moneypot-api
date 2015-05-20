@@ -219,6 +219,8 @@ class TransactionAdmin(admin.ModelAdmin):
             trash = getattr(instance, "trash", False)
             if not trash:
                 instance.save()
+            elif instance.pk:
+                instance.delete()
         formset.save_m2m()
 
 
