@@ -413,18 +413,9 @@ class Purchase(Movement):
         t = Transaction.objects.create(source=self.source, destination=self.destination)
         for pi in self.purchase_items.all():
 
-            if not pi.serials:
-                ti = TransactionItem.objects.create(purchase=self, transaction=t, category=pi.category,
-                                                    quantity=pi.quantity, serial=None,
-                                                    _chunks=pi._chunks, destination=self.destination)  # noqa
+            prepared = False
 
-                for item in pi.item_set.all():
-                    item.is_reserved = True
-                    item.reserved_by = ti
-                    item.save()
-            else:
-                prepared = False
-
+            if pi.serials:
                 for serial in pi.serials:
                     item = pi.item_set.get()
                     s, created = ItemSerial.objects.get_or_create(item=item, serial=serial)
