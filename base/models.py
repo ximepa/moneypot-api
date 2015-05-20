@@ -413,9 +413,18 @@ class Purchase(Movement):
         t = Transaction.objects.create(source=self.source, destination=self.destination)
         for pi in self.purchase_items.all():
 
-            prepared = False
+            if not pi.serials:
+                ti = TransactionItem.objects.create(purchase=self, transaction=t, category=pi.category,
+                                                    quantity=pi.quantity, serial=None,
+                                                    _chunks=pi._chunks, destination=self.destination)  # noqa
 
-            if pi.serials:
+                for item in pi.item_set.all():
+                    item.is_reserved = True
+                    item.reserved_by = ti
+                    item.save()
+            else:
+                prepared = False
+
                 for serial in pi.serials:
                     item = pi.item_set.get()
                     s, created = ItemSerial.objects.get_or_create(item=item, serial=serial)
@@ -770,10 +779,10 @@ class Transaction(Movement):
         self.transaction_items.filter(destination__isnull=True).update(destination=self.destination)
         for ti in self.transaction_items.all():
             item = ti.item_set.get()
-            assert (ti.transaction == self)
-            assert (item.quantity == ti.quantity)
-            assert (item.category == ti.category)
-            assert (item.place == ti.transaction.source)
+            assert ti.transaction == self, unicode(ti.transaction)
+            assert item.quantity == ti.quantity, unicode(ti.quantity)
+            assert item.category == ti.category, unicode(ti.category)
+            assert item.place == ti.transaction.source, unicode(ti.transaction.source)
             self.items_prepared.append(item)
 
     def force_complete(self):
