@@ -67,7 +67,7 @@ class TransactionItemForm(autocomplete_light.ModelForm):
         autocomplete_fields = ('category', 'serial', 'destination')
 
     def clean(self):
-
+        self.serials = []
         cleaned_data = dict(self.cleaned_data)
 
         _serials = cleaned_data.get('_serials', "")
