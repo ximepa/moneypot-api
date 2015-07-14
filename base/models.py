@@ -198,6 +198,13 @@ class Place(MPTTModel):
                     TransactionItem.objects.create(transaction=t, category=item.category, quantity=1, serial=serial)
             else:
                 TransactionItem.objects.create(transaction=t, category=item.category, quantity=item.quantity)
+        t.force_complete()
+        Transaction.objects.filter(source=self).update(source=place)
+        Transaction.objects.filter(destination=self).update(destination=place)
+        TransactionItem.objects.filter(destination=self).update(destination=place)
+        self.name = "DEL %s" % self.name
+        self.save()
+        print self.name
 
 
 
