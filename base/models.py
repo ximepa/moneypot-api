@@ -190,6 +190,16 @@ class Place(MPTTModel):
                     )))
             return i.withdraw(quantity=item.quantity, serial=serial)
 
+    def join_to(self, place):
+        t = Transaction.objects.create(source=self, destination=place)
+        for item in self.items.filter(quantity__gt=0):
+            if item.serials.count():
+                for serial in item.serials.all():
+                    TransactionItem.objects.create(transaction=t, category=item.category, quantity=1, serial=serial)
+            else:
+                TransactionItem.objects.create(transaction=t, category=item.category, quantity=item.quantity)
+
+
 
 class MovementItem(models.Model):
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"))
