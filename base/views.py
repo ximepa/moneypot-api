@@ -54,7 +54,7 @@ def ajax_price(request, source_id, category_id):
         p_items.order_by("-purchase__created_at")
         item = p_items[0]
         data.update({
-            'price_uah': "%0.3f" % item.price or 0,
-            'price_usd': "%0.3f" % item.price_usd or 0
+            'price_uah': "%0.3f" % (item.price or 0),
+            'price_usd': "%0.3f" % (item.price_usd or 0)
         })
     return HttpResponse(json.dumps(data), content_type="application/json")
