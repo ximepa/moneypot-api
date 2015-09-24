@@ -74,6 +74,9 @@ class PayerAdmin(admin.ModelAdmin):
 
 @admin.register(Purchase)
 class PurchaseAdmin(admin.ModelAdmin):
+    class Media:
+        js = ('base/js/purchase_source_item_autocomplete.js',)
+
     form = PurchaseForm
     inlines = [PurchaseItemInline, ]
     list_display = ['__unicode__', 'created_at', 'completed_at', 'source', 'destination', 'is_completed',

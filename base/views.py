@@ -1,5 +1,5 @@
 from django.shortcuts import render_to_response
-from base.models import Item
+from base.models import Item, PurchaseItem
 import json
 from django.http import HttpResponse
 
@@ -32,5 +32,29 @@ def ajax_qty(request, place_id, category_id):
     else:
         data.update({
             'qty': "%0.3f" % item.quantity
+        })
+    return HttpResponse(json.dumps(data), content_type="application/json")
+
+
+def ajax_price(request, source_id, category_id):
+    selector_usd = request.GET.get('selector_usd', '')
+    selector_uah = request.GET.get('selector_uah', '')
+    data = {
+        'selector_usd': selector_usd,
+        'selector_uah': selector_uah
+    }
+    
+    p_items = PurchaseItem.objects.filter(purchase__source_id=source_id, category_id=category_id)
+    if not p_items.count():
+        data.update({
+            'price_uah': 'n/a',
+            'price_usd': 'n/a'
+        })
+    else:
+        p_items.order_by("-purchase__created_at")
+        item = p_items[0]
+        data.update({
+            'price_uah': "%0.3f" % item.price,
+            'price_usd': "%0.3f" % item.price_usd
         })
     return HttpResponse(json.dumps(data), content_type="application/json")
