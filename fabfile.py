@@ -55,7 +55,7 @@ def install_dependencies():
     with virtualenv(env.virtualenv):
         with cd(env.code_dir):
             run_venv("pip install -U pip")
-            run_venv("pip install -r requirements-frozen.txt")
+            run_venv("pip install -Ur requirements-frozen.txt")
 
 
 def ensure_virtualenv():
