@@ -229,13 +229,15 @@ class TransactionAdmin(admin.ModelAdmin):
 
 class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
     place_id = None
-    list_display = ['obj_link', 'quantity', 'place', 'items_serials_changelist_link',
+    show_zero = None
+    list_display = ['__unicode__', 'quantity', 'place', 'items_serials_changelist_link',
                     'items_chunks_changelist_link', 'item_movement_changelist_link']
 
-    def obj_link(self, obj):
-        # link = reverse("admin:base_item_change", args=[obj.id])
-        link = reverse("admin:base_place_item_change", args=[self.place_id, obj.id])
-        return mark_safe(u'<a href="%s">%s</a>' % (link, obj.__unicode__()))
+    # def obj_link(self, obj):
+    #     # link = reverse("admin:base_item_change", args=[obj.id])
+    #     # link = reverse("admin:base_place_item_change", args=[self.place_id, obj.id])
+    #     link="#"
+    #     return mark_safe(u'<a href="%s">%s</a>' % (link, obj.__unicode__()))
 
     def items_serials_changelist_link(self, obj):
         link = reverse("admin:base_item_serials_filtered_changelist", args=[obj.id])
@@ -252,9 +254,16 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
 
     def get_queryset(self, request):
         qs = super(PlaceItemAdmin, self).get_queryset(request)
-        return qs.filter(place_id=self.place_id)
+        qs = qs.filter(place_id=self.place_id)
+        if not self.show_zero:
+            qs = qs.filter(quantity__gt=0)
+        return qs
 
     def changelist_view(self, request, place_id, extra_context=None):  # pylint:disable=arguments-differ
+        request.GET._mutable = True
+        self.show_zero = int(request.GET.pop("show_zero", ["0"])[0])
+        request.GET.pop("a", None)
+        rq_qs = "?" + (request.GET.urlencode() or "a=1")
         self.place_id = place_id
         extra_context = extra_context or {}
         try:
@@ -262,32 +271,39 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
         except Place.DoesNotExist:
             extra_context.update({'cl_header': _('Place does not exist')})
         else:
-            extra_context.update({'cl_header': _(u"Items for <{name}>".format(name=unicode(place.name)))})
+            cl_header = _(u"Items for <{name}>".format(name=unicode(place.name)))
+            if self.show_zero:
+                cl_header = '<nobr>%s <a href="%s&show_zero=0">не показувати `0`</a></nobr>' % (cl_header, rq_qs)
+            else:
+                cl_header = '<nobr>%s <a href="%s&show_zero=1">показувати `0`</a></nobr>' % (cl_header, rq_qs)
+            print cl_header
+            extra_context.update({'cl_header': mark_safe(cl_header)})
         view = super(PlaceItemAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
 
-    def change_view(self, request, place_id, object_id, form_url='',
-                    extra_context=None):  # pylint:disable=arguments-differ
-        self.place_id = place_id
-        extra_context = extra_context or {}
-        extra_context.update({
-            'place_id': place_id,
-            'proxy_url': "admin:base_place_item_changelist",
-            'proxy_url_arg': self.place_id,
-        })
-        try:
-            item = Item.objects.get(pk=object_id)
-        except Item.DoesNotExist:
-            extra_context.update({'obj_header': _('Serial does not exist')})
-        else:
-            extra_context.update({'obj_header': unicode(item.category.name)})
-        try:
-            place = Place.objects.get(pk=place_id)
-        except Place.DoesNotExist:
-            extra_context.update({'cl_header': _('Place does not exist')})
-        else:
-            extra_context.update({'cl_header': _(u"Items for <{name}>".format(name=unicode(place.name)))})
-        return super(PlaceItemAdmin, self).change_view(request, object_id, form_url='', extra_context=extra_context)
+    # def change_view(self, request, place_id, object_id, form_url='',
+    #                 extra_context=None):  # pylint:disable=arguments-differ
+    #     self.place_id = place_id
+    #     extra_context = extra_context or {}
+    #     extra_context.update({
+    #         'place_id': place_id,
+    #         'proxy_url': "admin:base_place_item_changelist",
+    #         'proxy_url_arg': self.place_id,
+    #     })
+    #     try:
+    #         item = Item.objects.get(pk=object_id)
+    #     except Item.DoesNotExist:
+    #         extra_context.update({'obj_header': _('Serial does not exist')})
+    #     else:
+    #         extra_context.update({'obj_header': unicode(item.category.name)})
+    #     try:
+    #         place = Place.objects.get(pk=place_id)
+    #     except Place.DoesNotExist:
+    #         extra_context.update({'cl_header': _('Place does not exist')})
+    #     else:
+    #         cl_header = _(u"Items for <{name}>".format(name=unicode(place.name)))
+    #         extra_context.update({'cl_header': cl_header})
+    #     return super(PlaceItemAdmin, self).change_view(request, object_id, form_url='', extra_context=extra_context)
 
     def get_urls(self):
 
@@ -299,7 +315,7 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
 
         urlpatterns = [
             url(r'^(\d+)/$', wrap(self.changelist_view), name='base_place_item_changelist'),
-            url(r'^(\d+)/(\d+)$', wrap(self.change_view), name='base_place_item_change'),
+            # url(r'^(\d+)/(\d+)$', wrap(self.change_view), name='base_place_item_change'),
         ]
         return urlpatterns
 
@@ -312,11 +328,11 @@ create_model_admin(PlaceItemAdmin, name='place_item', model=Item)
 
 class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
     item_id = None
-    list_display = ['obj_link', 'category_name', 'serial_movement_changelist_link']
+    list_display = ['__unicode__', 'category_name', 'serial_movement_changelist_link']
 
-    def obj_link(self, obj):
-        link = reverse("admin:base_item_serials_filtered_change", args=[self.item_id, obj.id])
-        return mark_safe(u'<a href="%s">%s</a>' % (link, obj.__unicode__()))
+    # def obj_link(self, obj):
+    #     link = reverse("admin:base_item_serials_filtered_change", args=[self.item_id, obj.id])
+    #     return mark_safe(u'<a href="%s">%s</a>' % (link, obj.__unicode__()))
 
     def serial_movement_changelist_link(self, obj):
         link = reverse("admin:base_serial_movement_filtered_changelist", args=[obj.id])
@@ -341,32 +357,32 @@ class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
         view = super(ItemSerialsFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
 
-    def change_view(self, request, item_id, object_id, form_url='',
-                    extra_context=None):  # pylint:disable=arguments-differ
-        self.item_id = item_id
-        extra_context = extra_context or {}
-        extra_context.update({
-            'item_id': item_id,
-            'proxy_url': "admin:base_item_serials_filtered_changelist",
-            'proxy_url_arg': self.item_id,
-        })
-        try:
-            serial = ItemSerial.objects.get(pk=object_id)
-        except ItemSerial.DoesNotExist:
-            extra_context.update({'obj_header': _('Serial does not exist')})
-        else:
-            extra_context.update({'obj_header': unicode(serial.serial)})
-        try:
-            item = Item.objects.get(pk=item_id)
-        except Item.DoesNotExist:
-            extra_context.update({'cl_header': _('Item does not exist')})
-        else:
-            extra_context.update({'cl_header': _(u"Serials for <{name}> in <{place}>".format(
-                name=unicode(item.category.name),
-                place=unicode(item.place.name)
-            ))})
-        return super(ItemSerialsFilteredAdmin, self).change_view(request, object_id, form_url='',
-                                                                 extra_context=extra_context)
+    # def change_view(self, request, item_id, object_id, form_url='',
+    #                 extra_context=None):  # pylint:disable=arguments-differ
+    #     self.item_id = item_id
+    #     extra_context = extra_context or {}
+    #     extra_context.update({
+    #         'item_id': item_id,
+    #         'proxy_url': "admin:base_item_serials_filtered_changelist",
+    #         'proxy_url_arg': self.item_id,
+    #     })
+    #     try:
+    #         serial = ItemSerial.objects.get(pk=object_id)
+    #     except ItemSerial.DoesNotExist:
+    #         extra_context.update({'obj_header': _('Serial does not exist')})
+    #     else:
+    #         extra_context.update({'obj_header': unicode(serial.serial)})
+    #     try:
+    #         item = Item.objects.get(pk=item_id)
+    #     except Item.DoesNotExist:
+    #         extra_context.update({'cl_header': _('Item does not exist')})
+    #     else:
+    #         extra_context.update({'cl_header': _(u"Serials for <{name}> in <{place}>".format(
+    #             name=unicode(item.category.name),
+    #             place=unicode(item.place.name)
+    #         ))})
+    #     return super(ItemSerialsFilteredAdmin, self).change_view(request, object_id, form_url='',
+    #                                                              extra_context=extra_context)
 
     def get_urls(self):
 
@@ -378,7 +394,7 @@ class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
 
         urlpatterns = [
             url(r'^(\d+)/$', wrap(self.changelist_view), name='base_item_serials_filtered_changelist'),
-            url(r'^(\d+)/(\d+)$', wrap(self.change_view), name='base_item_serials_filtered_change'),
+            # url(r'^(\d+)/(\d+)$', wrap(self.change_view), name='base_item_serials_filtered_change'),
         ]
         return urlpatterns
 
