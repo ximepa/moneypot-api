@@ -276,7 +276,6 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
                 cl_header = '<nobr>%s <a href="%s&show_zero=0">не показувати `0`</a></nobr>' % (cl_header, rq_qs)
             else:
                 cl_header = '<nobr>%s <a href="%s&show_zero=1">показувати `0`</a></nobr>' % (cl_header, rq_qs)
-            print cl_header
             extra_context.update({'cl_header': mark_safe(cl_header)})
         view = super(PlaceItemAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
