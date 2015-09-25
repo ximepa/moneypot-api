@@ -985,7 +985,7 @@ class FixSerialTransform(models.Model):
             pass
         else:
             raise ValidationError({'new_serial': "Serial number already exists. "
-                                                 "(%s, serial_id: %s, item_id: %s, category_id %s, category_name %s)" %
+                                                 "(%s, serial_id: %s, item_id: %s, category_id: %s, category_name: %s)" %
                                                  (serial.serial, serial.pk, serial.item_id,
                                                   serial.item.category_id, serial.item.category.name)
                                    })
