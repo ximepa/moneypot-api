@@ -23,8 +23,8 @@ def parse_serials_data(serials):
 
     serials_data = re.findall(r"[\w-]+", serials)
     for index, raw_serial in enumerate(serials_data):
-        if '-' in raw_serial:
-            l, r = raw_serial.split('-')
+        if '--' in raw_serial:
+            l, r = raw_serial.split('--')
             if not len(r) == len(l):
                 raise InvalidParameters(ugettext(
                     u'serials range left and rigth parts length mismatch: {raw_serial}'.format(
@@ -61,9 +61,9 @@ def parse_serials_data(serials):
                         li=li,
                     )
                 ))
-            if (ri - li) >= 100:
+            if (ri - li) >= 500:
                 raise InvalidParameters(ugettext(
-                    u'serials range too large: {raw_serial} {size}>100'.format(
+                    u'serials range too large: {raw_serial} {size}>500'.format(
                         raw_serial=raw_serial,
                         size=ri-li+1
                     )
