@@ -282,6 +282,7 @@ class PurchaseItem(MovementItem):
     # quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
     _serials = models.TextField(blank=True, null=True)
     # _chunks = models.TextField(blank=True, null=True)
+    cell = models.CharField(max_length=16, blank=True, null=True)
 
     class Meta:
         verbose_name = _("purchase item")
