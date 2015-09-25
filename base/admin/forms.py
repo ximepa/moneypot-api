@@ -3,13 +3,12 @@ __author__ = 'maxim'
 from django import forms
 from django.utils.translation import ugettext_lazy as _, ugettext
 from copy import deepcopy
-from base.models import InvalidParameters
 from .functions import parse_serials_data
 import autocomplete_light
 import re
 
-from base.models import ItemCategory, ItemCategoryComment, Place, PurchaseItem, TransactionItem, Purchase, \
-    Transaction, Unit, ItemSerial
+from base.models import InvalidParameters, ItemCategory, ItemCategoryComment, Place, PurchaseItem, TransactionItem, Purchase, \
+    Transaction, Unit, ItemSerial, FixCategoryMerge
 
 
 class ItemCategoryCommentForm(autocomplete_light.ModelForm):
@@ -169,3 +168,9 @@ class TransactionForm(autocomplete_light.ModelForm):
             # except Exception, e:
             # raise forms.ValidationError(e)
         return t
+
+
+class FixCategoryMergeForm(autocomplete_light.ModelForm):
+    class Meta:
+        model = FixCategoryMerge
+        exclude = []

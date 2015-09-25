@@ -18,12 +18,13 @@ from django_mptt_admin import util
 from actions import process_to_void
 from overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
 from functions import create_model_admin
-from forms import ItemCategoryForm, PlaceForm, PurchaseItemForm, TransactionItemForm, PurchaseForm, TransactionForm
+from forms import ItemCategoryForm, PlaceForm, PurchaseItemForm, TransactionItemForm, PurchaseForm, TransactionForm, \
+    FixCategoryMergeForm
 from inlines import ItemCategoryCommentInline, PurchaseItemInline, PurchaseItemInlineReadonly, \
     TransactionItemInlineReadonly, TransactionItemInline, TransactionCommentPlaceInline
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
     TransactionItem, Transaction, OrderItemSerial, ContractItemSerial, VItemMovement, VSerialMovement, \
-    get_descendants_ids, FixSerialTransform
+    get_descendants_ids, FixSerialTransform, FixCategoryMerge
 from filebrowser.widgets import ClearableFileInput
 from filebrowser.settings import ADMIN_THUMBNAIL
 
@@ -526,8 +527,8 @@ class OrderItemSerialAdmin(admin.ModelAdmin):
             'item', 'item__category', 'item__place'
         )
         return qs.filter(
-            item__category_id__in=get_descendants_ids(ItemCategory, 89),
-            item__place_id__in=get_descendants_ids(Place, 14)
+            item__category_id__in=get_descendants_ids(ItemCategory, 89),  # FIXME
+            item__place_id__in=get_descendants_ids(Place, 14)             # FIXME
         )
 
     def owner(self, instance):
@@ -552,8 +553,8 @@ class ContractItemSerialAdmin(admin.ModelAdmin):
             'item', 'item__category', 'item__place'
         )
         return qs.filter(
-            item__category_id__in=get_descendants_ids(ItemCategory, 88),
-            item__place_id__in=get_descendants_ids(Place, 14)
+            item__category_id__in=get_descendants_ids(ItemCategory, 88),  # FIXME
+            item__place_id__in=get_descendants_ids(Place, 14)             # FIXME
         )
 
     def owner(self, instance):
@@ -592,7 +593,6 @@ class ItemMovementFilteredAdmin(HiddenAdminModelMixin, ItemMovementAdmin):
     def get_queryset(self, request):
         qs = super(ItemMovementFilteredAdmin, self).get_queryset(request)
         if self.place_id:
-            print [self.place_id, type(self.place_id)]
             qs = qs.filter(Q(source_id=self.place_id) | Q(destination_id=self.place_id))
         if self.category_id:
             qs = qs.filter(category_id=self.category_id)
@@ -714,3 +714,19 @@ class FixSerialTransformAdmin(admin.ModelAdmin):
         if obj and obj.pk:
             readonly_fields.extend(['old_serial', 'new_serial'])
         return readonly_fields
+
+
+@admin.register(FixCategoryMerge)
+class FixCategoryMergeAdmin(admin.ModelAdmin):
+    search_fields = ['old_category__name', 'new_category__name']
+    list_display = ['timestamp', 'old_category', 'new_category']
+    form = FixCategoryMergeForm
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = list(self.readonly_fields)
+        readonly_fields.extend(['data', 'timestamp', 'old_category_sav_id', 'old_category_sav_name'])
+        if obj and obj.pk:
+            readonly_fields.extend(['old_category', 'new_category'])
+        return readonly_fields
+
+

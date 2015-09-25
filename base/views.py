@@ -14,7 +14,6 @@ def get_client_ip(request):
 
 def index(request):
     ip = get_client_ip(request)
-    print "IP: %s" % ip
     return render_to_response('base/index.html')
 
 

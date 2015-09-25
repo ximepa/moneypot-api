@@ -10,6 +10,8 @@ from django.utils import timezone
 from django.db import transaction
 from filebrowser.fields import FileBrowseField
 import re
+import json
+from copy import copy
 
 
 class IncompatibleUnitException(ValueError):
@@ -204,7 +206,6 @@ class Place(MPTTModel):
         TransactionItem.objects.filter(destination=self).update(destination=place)
         self.name = "DEL %s" % self.name
         self.save()
-        print self.name
 
 
 
@@ -1008,3 +1009,71 @@ class FixSerialTransform(models.Model):
     def delete(self, *args, **kwargs):
         rev = FixSerialTransform(old_serial=self.new_serial, new_serial=self.old_serial)
         rev.save()
+
+
+class FixCategoryMerge(models.Model):
+
+    old_category = models.ForeignKey("ItemCategory", verbose_name=_("item category"),
+                                     null=True, on_delete=models.DO_NOTHING, related_name="old_categoriess")
+    new_category = models.ForeignKey("ItemCategory", verbose_name=_("item category"),
+                                     on_delete=models.DO_NOTHING , related_name="new_categoriess")
+    old_category_sav_id = models.PositiveIntegerField(blank=True, null=True)
+    old_category_sav_name = models.CharField(max_length=100, blank=True, null=True)
+    timestamp = models.DateTimeField(default=timezone.now)
+    data = models.TextField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = _("fix: category merge")
+        verbose_name_plural = _("fix: category merges")
+        ordering = ['-timestamp']
+
+    @staticmethod
+    def get_related_models():
+        return [
+            [ItemCategoryComment, 'category_id', None, None],
+            [Item, 'category_id', 'quantity', 'place_id'],
+            [TransactionItem, 'category_id', None, None],
+            [PurchaseItem, 'category_id', None, None],
+            [FixSerialTransform, 'category_id', None, None],
+            [FixCategoryMerge, 'old_category_id', None, None]
+        ]
+
+    def do_merge(self):
+        data = {}
+        for model, field, qf, uniq in self.get_related_models():
+            q = {field: self.old_category_sav_id}
+            u = {field: self.new_category_id}
+            qs = model.objects.filter(**q)
+            qs_list = copy(qs.values_list('id', flat=True))
+            data.update({
+                model.__name__: qs_list
+            })
+
+            if qf:
+                for new_ins in qs:
+                    cu = copy(u)
+                    cu.update({
+                        uniq: getattr(new_ins, uniq)
+                    })
+                    try:
+                        old_ins = model.objects.get(**cu)
+                    except model.DoesNotExist:
+                        model.objects.filter(pk=new_ins.pk).update(**{field: self.new_category_id})
+                    else:
+                        model.objects.filter(pk=old_ins.pk).update(**{qf: models.F(qf) + getattr(new_ins, qf)})
+                        new_ins.delete()
+            else:
+                qs.update(**u)
+        self.__class__.objects.filter(pk=self.pk).update(data=str(data))
+        c = self.old_category
+        c.delete()
+
+    def save(self, *args, **kwargs):
+        if not self.old_category_sav_id:
+            self.old_category_sav_id = self.old_category_id
+            self.old_category_sav_name = self.old_category.name
+        super(FixCategoryMerge, self).save(*args, **kwargs)
+        if not self.data:
+            self.do_merge()
+
+
