@@ -20,7 +20,8 @@ from forms import ItemCategoryForm, PlaceForm, PurchaseItemForm, TransactionItem
 from inlines import ItemCategoryCommentInline, PurchaseItemInline, PurchaseItemInlineReadonly, \
     TransactionItemInlineReadonly, TransactionItemInline, TransactionCommentPlaceInline
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
-    TransactionItem, Transaction, OrderItemSerial, ContractItemSerial, VItemMovement, VSerialMovement, get_descendants_ids
+    TransactionItem, Transaction, OrderItemSerial, ContractItemSerial, VItemMovement, VSerialMovement, \
+    get_descendants_ids, FixSerialTransform
 from filebrowser.widgets import ClearableFileInput
 from filebrowser.settings import ADMIN_THUMBNAIL
 
@@ -595,3 +596,16 @@ class SerialMovementFilteredAdmin(HiddenAdminModelMixin, SerialMovementAdmin):
     change_list_template = 'admin/proxy_change_list.html'
 
 create_model_admin(SerialMovementFilteredAdmin, name='serial_movement_filtered', model=VSerialMovement)
+
+
+@admin.register(FixSerialTransform)
+class FixSerialTransformAdmin(admin.ModelAdmin):
+    search_fields = ['old_serial', 'new_serial']
+    list_display = ['timestamp', 'category', 'old_serial', 'new_serial']
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = list(self.readonly_fields)
+        readonly_fields.extend(['category', 'timestamp'])
+        if obj and obj.pk:
+            readonly_fields.extend(['old_serial', 'new_serial'])
+        return readonly_fields

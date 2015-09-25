@@ -953,3 +953,58 @@ class VSerialMovement(models.Model):
 
     def __unicode__(self):
         return self.item_category_name
+
+
+class FixSerialTransform(models.Model):
+
+    old_serial = models.CharField(_("serial"), max_length=32)
+    new_serial = models.CharField(_("serial"), max_length=32)
+    category = models.ForeignKey("ItemCategory", verbose_name=_("item category"), on_delete=models.DO_NOTHING,
+                                 blank=True, null=True)
+    timestamp = models.DateTimeField(default=timezone.now)
+    old_serial_obj = None
+
+    class Meta:
+        verbose_name = _("fix: serial transform")
+        verbose_name_plural = _("fix: serial transforms")
+        ordering = ['-timestamp']
+
+    def __unicode__(self):
+        return "%s -> %s" % (self.old_serial, self.new_serial)
+
+    def clean_old_serial(self):
+        try:
+            self.old_serial_obj = ItemSerial.objects.get(serial=self.old_serial)
+        except ItemSerial.DoesNotExist:
+            raise ValidationError({'old_serial': "Serial number not found"})
+
+    def clean_new_serial(self):
+        try:
+            serial = ItemSerial.objects.get(serial=self.new_serial)
+        except ItemSerial.DoesNotExist:
+            pass
+        else:
+            raise ValidationError({'new_serial': "Serial number already exists. "
+                                                 "(%s, serial_id: %s, item_id: %s, category_id %s, category_name %s)" %
+                                                 (serial.serial, serial.pk, serial.item_id,
+                                                  serial.item.category_id, serial.item.category.name)
+                                   })
+
+    def clean(self):
+        self.clean_old_serial()
+        self.clean_new_serial()
+
+    def rename_serial(self):
+        assert self.old_serial_obj is not None, "Error! rename_serial called before clean_old_serial?"
+        self.old_serial_obj.serial = self.new_serial
+        self.old_serial_obj.save()
+        self.category = self.old_serial_obj.item.category
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        self.rename_serial()
+        super(FixSerialTransform, self).save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        rev = FixSerialTransform(old_serial=self.new_serial, new_serial=self.old_serial)
+        rev.save()
