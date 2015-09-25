@@ -14,36 +14,39 @@ function initTree($tree, autoopen, autoescape) {
     }
 
     function handleMove(e) {
-        var info = e.move_info;
-        var data = {
-            target_id: info.target_node.id,
-            position: info.position
-        };
+        if(confirm("move node?")) {
+            var info = e.move_info;
+            var data = {
+                target_id: info.target_node.id,
+                position: info.position
+            };
 
-        removeErrorMessage();
+            removeErrorMessage();
 
-        e.preventDefault();
+            e.preventDefault();
 
-        jQuery.ajax({
-            type: 'POST',
-            url: info.moved_node.move_url,
-            data: data,
-            beforeSend: function(xhr, settings) {
-                // Set Django csrf token
-                var csrftoken = jQuery.cookie('csrftoken');
-                xhr.setRequestHeader("X-CSRFToken", csrftoken);
-            },
-            success: function() {
-                info.do_move();
-            },
-            error: function() {
-                var $node = $(info.moved_node.element).find('.jqtree-element');
-                $node.append('<span class="mptt-admin-error">'+ $tree.data('label-move-failed') +'</span>');
+            jQuery.ajax({
+                type: 'POST',
+                url: info.moved_node.move_url,
+                data: data,
+                beforeSend: function (xhr, settings) {
+                    // Set Django csrf token
+                    var csrftoken = jQuery.cookie('csrftoken');
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                },
+                success: function () {
+                    info.do_move();
+                },
+                error: function () {
+                    var $node = $(info.moved_node.element).find('.jqtree-element');
+                    $node.append('<span class="mptt-admin-error">' + $tree.data('label-move-failed') + '</span>');
 
-                error_node = info.moved_node;
-            }
-        });
-
+                    error_node = info.moved_node;
+                }
+            });
+        } else {
+            location.reload();
+        }
         function removeErrorMessage() {
             if (error_node) {
                 $(error_node.element).find('.mptt-admin-error').remove();
@@ -61,7 +64,7 @@ function initTree($tree, autoopen, autoescape) {
         autoEscape: autoescape,
         dragAndDrop: true,
         onCreateLi: createLi,
-        saveState: $tree.data('save_state'),
+        saveState: false,
         useContextMenu: $tree.data('use_context_menu'),
         onLoadFailed: handleLoadFailed,
         closedIcon: $tree.data('rtl') == '1' ? '&#x25c0;' : '&#x25ba;'
@@ -76,4 +79,5 @@ jQuery(function() {
     var autoescape = $tree.data('autoescape');
 
     initTree($tree, autoopen, autoescape);
+
 });
