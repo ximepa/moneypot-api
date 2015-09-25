@@ -1013,9 +1013,9 @@ class FixSerialTransform(models.Model):
 
 class FixCategoryMerge(models.Model):
 
-    old_category = models.ForeignKey("ItemCategory", verbose_name=_("item category"),
+    old_category = models.ForeignKey("ItemCategory", verbose_name=_("old item category"),
                                      null=True, on_delete=models.DO_NOTHING, related_name="old_categoriess")
-    new_category = models.ForeignKey("ItemCategory", verbose_name=_("item category"),
+    new_category = models.ForeignKey("ItemCategory", verbose_name=_("new item category"),
                                      on_delete=models.DO_NOTHING , related_name="new_categoriess")
     old_category_sav_id = models.PositiveIntegerField(blank=True, null=True)
     old_category_sav_name = models.CharField(max_length=100, blank=True, null=True)
