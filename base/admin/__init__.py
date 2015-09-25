@@ -74,6 +74,7 @@ class ItemCategoryAdmin(DjangoMpttAdmin):
 
 @admin.register(Place)
 class PlaceAdmin(DjangoMpttAdmin):
+    change_tree_template = u'admin/mptt_change_list.html'
     search_fields = ['name', ]
     tree_auto_open = False
     form = PlaceForm
@@ -82,6 +83,25 @@ class PlaceAdmin(DjangoMpttAdmin):
     def items_changelist_link(self, obj):
         link = reverse("admin:base_place_item_changelist", args=[obj.id])
         return mark_safe(u'<a href="%s">%s</a>' % (link, _("items list")))
+
+    def get_tree_data(self, qs, max_level):
+        pk_attname = self.model._meta.pk.attname
+
+        def handle_create_node(instance, node_info):
+            pk = quote(getattr(instance, pk_attname))
+
+            if Item.objects.filter(place_id=pk).count():
+                node_info.update(
+                    view_url=reverse("admin:base_place_item_changelist", args=[pk]),
+                    transfer_url=reverse("admin:base_item_movement_filtered_changelist", args=[pk]),
+                )
+            node_info.update(
+                url=self.get_admin_url('change', (quote(pk),)),
+                move_url=self.get_admin_url('move', (quote(pk),))
+            )
+
+        return util.get_tree_from_queryset(qs, handle_create_node, max_level)
+
 
 
 @admin.register(PurchaseItem)
@@ -294,10 +314,8 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
             extra_context.update({'cl_header': _('Place does not exist')})
         else:
             cl_header = _(u"Items for <{name}>".format(name=unicode(place.name)))
-            if self.show_zero:
-                cl_header = '<nobr>%s <a href="%s&show_zero=0">не показувати `0`</a></nobr>' % (cl_header, rq_qs)
-            else:
-                cl_header = '<nobr>%s <a href="%s&show_zero=1">показувати `0`</a></nobr>' % (cl_header, rq_qs)
+            extra_context.update({'show_zero': self.show_zero})
+            extra_context.update({'rq_qs': rq_qs})
             extra_context.update({'cl_header': mark_safe(cl_header)})
         view = super(PlaceItemAdmin, self).changelist_view(request, extra_context=extra_context)
         return view

@@ -17,4 +17,17 @@
 <!-- CONTENT-TITLE -->
 {% block content_title %}
     <h1>{{ cl_header|capfirst }}</h1>
+    <h2>
+    {% if show_zero == 1 %}
+        <a href="?show_zero=0">
+            <img src="{% static "glyphicons/glyphicons-546-eye-minus.png" %}" width="31" height="22">
+            <strike>show zero</strike>
+        </a>
+    {% elif show_zero == 0 %}
+        <a href="?show_zero=1">
+            <img src="{% static "glyphicons/glyphicons-545-eye-plus.png" %}" width="31" height="22">
+            show zero
+        </a>
+    {% endif %}
+    </h2>
 {% endblock %}
