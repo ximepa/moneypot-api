@@ -9,9 +9,11 @@ from django.utils.translation import ugettext_lazy as _, ugettext
 from django.utils.html import mark_safe
 from django.core.urlresolvers import reverse
 from django.conf.urls import url
+from django.contrib.admin.utils import quote
 from django.db.models import Q
 from django.db import models
 from daterange_filter.filter import DateRangeFilter
+from django_mptt_admin import util
 
 from actions import process_to_void
 from overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
@@ -33,6 +35,7 @@ class UnitAdmin(admin.ModelAdmin):
 
 @admin.register(ItemCategory)
 class ItemCategoryAdmin(DjangoMpttAdmin):
+    change_tree_template = u'admin/mptt_change_list.html'
     form = ItemCategoryForm
     search_fields = ['name', ]
     tree_auto_open = False
@@ -49,6 +52,24 @@ class ItemCategoryAdmin(DjangoMpttAdmin):
             return ""
     image_thumbnail.allow_tags = True
     image_thumbnail.short_description = "Thumbnail"
+
+    def get_tree_data(self, qs, max_level):
+        pk_attname = self.model._meta.pk.attname
+
+        def handle_create_node(instance, node_info):
+            pk = quote(getattr(instance, pk_attname))
+
+            if Item.objects.filter(category_id=pk).count():
+                node_info.update(
+                    view_url=reverse("admin:base_category_item_changelist", args=[pk]),
+                    transfer_url=reverse("admin:base_item_movement_filtered_changelist", args=[0, pk]),
+                )
+            node_info.update(
+                url=self.get_admin_url('change', (quote(pk),)),
+                move_url=self.get_admin_url('move', (quote(pk),))
+            )
+
+        return util.get_tree_from_queryset(qs, handle_create_node, max_level)
 
 
 @admin.register(Place)
@@ -326,6 +347,70 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
 create_model_admin(PlaceItemAdmin, name='place_item', model=Item)
 
 
+class CategoryItemAdmin(HiddenAdminModelMixin, ItemAdmin):
+    category_id = None
+    show_zero = None
+    list_display = ['__unicode__', 'quantity', 'place', 'items_serials_changelist_link',
+                    'items_chunks_changelist_link', 'item_movement_changelist_link']
+
+    def items_serials_changelist_link(self, obj):
+        link = reverse("admin:base_item_serials_filtered_changelist", args=[obj.id])
+        return mark_safe(u'<a href="%s">%s</a>' % (link, _("serials list")))
+
+    def items_chunks_changelist_link(self, obj):
+        link = "#%s" % obj.id
+        return mark_safe(u'<a href="%s">%s</a>' % (link, _("chunks list")))
+
+    def item_movement_changelist_link(self, obj):
+        link = reverse("admin:base_item_movement_filtered_changelist", args=[0, obj.category_id])
+        return mark_safe(u'<a href="%s">%s</a>' % (link, _("movement history")))
+
+    def get_queryset(self, request):
+        qs = super(CategoryItemAdmin, self).get_queryset(request)
+        qs = qs.filter(category_id=self.category_id)
+        if not self.show_zero:
+            qs = qs.filter(quantity__gt=0)
+        return qs
+
+    def changelist_view(self, request, category_id, extra_context=None):  # pylint:disable=arguments-differ
+        request.GET._mutable = True
+        self.show_zero = int(request.GET.pop("show_zero", ["0"])[0])
+        request.GET.pop("a", None)
+        rq_qs = "?" + (request.GET.urlencode() or "a=1")
+        self.category_id = category_id
+        extra_context = extra_context or {}
+        try:
+            category = ItemCategory.objects.get(pk=category_id)
+        except ItemCategory.DoesNotExist:
+            extra_context.update({'cl_header': _('Category does not exist')})
+        else:
+            cl_header = _(u"<{name}> items".format(name=unicode(category.name)))
+            extra_context.update({'show_zero': self.show_zero})
+            extra_context.update({'rq_qs': rq_qs})
+            extra_context.update({'cl_header': mark_safe(cl_header)})
+        view = super(CategoryItemAdmin, self).changelist_view(request, extra_context=extra_context)
+        return view
+
+    def get_urls(self):
+
+        def wrap(view):
+            def wrapper(*args, **kwargs):
+                return self.admin_site.admin_view(view)(*args, **kwargs)
+
+            return update_wrapper(wrapper, view)
+
+        urlpatterns = [
+            url(r'^(\d+)/$', wrap(self.changelist_view), name='base_category_item_changelist'),
+        ]
+        return urlpatterns
+
+    change_list_template = 'admin/proxy_change_list.html'
+    change_form_template = 'admin/proxy_change_form.html'
+
+
+create_model_admin(CategoryItemAdmin, name='category_item', model=Item)
+
+
 class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
     item_id = None
     list_display = ['__unicode__', 'category_name', 'serial_movement_changelist_link']
@@ -488,26 +573,28 @@ class ItemMovementFilteredAdmin(HiddenAdminModelMixin, ItemMovementAdmin):
 
     def get_queryset(self, request):
         qs = super(ItemMovementFilteredAdmin, self).get_queryset(request)
-        qs = qs.filter(Q(source_id=self.place_id) | Q(destination_id=self.place_id))
+        if self.place_id:
+            print [self.place_id, type(self.place_id)]
+            qs = qs.filter(Q(source_id=self.place_id) | Q(destination_id=self.place_id))
         if self.category_id:
             qs = qs.filter(category_id=self.category_id)
         return qs
 
-    def changelist_view(self, request, place_id, category_id=None, extra_context=None):  # pylint:disable=arguments-differ
-        self.place_id = place_id
-        self.category_id = category_id
+    def changelist_view(self, request, place_id=None, category_id=None, extra_context=None):  # pylint:disable=arguments-differ
+        self.place_id = int(place_id or "0")
+        self.category_id = int(category_id or "0")
         extra_context = extra_context or {}
         try:
             place = Place.objects.get(pk=place_id)
         except Place.DoesNotExist:
-            place_name = "unknown place"
+            place_name = "any place"
         else:
             place_name = place.name
         if category_id:
             try:
                 category = ItemCategory.objects.get(pk=category_id)
             except ItemCategory.DoesNotExist:
-                category_name = "unknown category"
+                category_name = "any category"
             else:
                 category_name = category.name
             extra_context.update({'cl_header': _(u"Movement history for <{category_name}> in <{place_name}>".format(
