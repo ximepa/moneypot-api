@@ -957,8 +957,8 @@ class VSerialMovement(models.Model):
 
 class FixSerialTransform(models.Model):
 
-    old_serial = models.CharField(_("serial"), max_length=32)
-    new_serial = models.CharField(_("serial"), max_length=32)
+    old_serial = models.CharField(_("old serial"), max_length=32)
+    new_serial = models.CharField(_("new serial"), max_length=32)
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"), on_delete=models.DO_NOTHING,
                                  blank=True, null=True)
     timestamp = models.DateTimeField(default=timezone.now)
