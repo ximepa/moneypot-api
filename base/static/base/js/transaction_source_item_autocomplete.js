@@ -82,9 +82,10 @@
                         var $autocomplete_field = $("#"+response.selector);
                         var $select = $autocomplete_field.next('select');
                         var $widget = $autocomplete_field.parents('.autocomplete-light-widget').yourlabsWidget();
-                        $autocomplete_field.val(response.category_name);
+                        //$autocomplete_field.val(response.category_name);
                         $select.html('<option selected="selected" value="'+response.category_id+'"></option>');
-                        $widget.deck.find(".append-option-html").append(response.category_name)
+                        $widget.deck.find(".append-option-html").html('<span style="display: inline-block;"' +
+                            ' class="remove">ˣ</span>'+response.category_name);
                     }
                 })
             }
