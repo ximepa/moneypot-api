@@ -29,9 +29,6 @@ class ItemCategoryAutocomplete(autocomplete_light.AutocompleteModelBase):
 
         choices = ItemCategory.objects.filter(name__icontains=q)
 
-        print ">>>>"
-        print all_nodes
-
         if not all_nodes:
             choices = choices.filter(children__isnull=True)
 
