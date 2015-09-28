@@ -24,9 +24,16 @@ class ItemCategoryAutocomplete(autocomplete_light.AutocompleteModelBase):
 
     def choices_for_request(self):
         q = self.request.GET.get('q', '')
+        all_nodes = int(self.request.GET.get('all_nodes', "0"))
         source_id = self.request.GET.get('source_id', None)
 
-        choices = ItemCategory.objects.filter(name__icontains=q).filter(children__isnull=True)
+        choices = ItemCategory.objects.filter(name__icontains=q)
+
+        print ">>>>"
+        print all_nodes
+
+        if not all_nodes:
+            choices = choices.filter(children__isnull=True)
 
         if source_id:
             choices = choices.filter(items__place_id=source_id)

@@ -36,6 +36,10 @@ class UnitAdmin(admin.ModelAdmin):
 
 @admin.register(ItemCategory)
 class ItemCategoryAdmin(DjangoMpttAdmin):
+
+    class Media:
+        js = ('base/js/category_parent_autocomplete.js',)
+
     change_tree_template = u'admin/mptt_change_list.html'
     form = ItemCategoryForm
     search_fields = ['name', ]
