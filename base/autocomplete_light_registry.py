@@ -26,7 +26,7 @@ class ItemCategoryAutocomplete(autocomplete_light.AutocompleteModelBase):
         q = self.request.GET.get('q', '')
         source_id = self.request.GET.get('source_id', None)
 
-        choices = ItemCategory.objects.filter(name__icontains=q)
+        choices = ItemCategory.objects.filter(name__icontains=q).filter(children__isnull=True)
 
         if source_id:
             choices = choices.filter(items__place_id=source_id)
@@ -67,7 +67,6 @@ class ItemSerialAutocomplete(autocomplete_light.AutocompleteModelBase):
 
         if category_id:
             choices = choices.filter(item__category_id=category_id)
-
 
         return self.order_choices(choices)[0:self.limit_choices]
 
