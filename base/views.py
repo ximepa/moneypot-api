@@ -1,5 +1,5 @@
 from django.shortcuts import render_to_response
-from base.models import Item, PurchaseItem
+from base.models import Item, PurchaseItem, ItemSerial
 import json
 from django.http import HttpResponse
 
@@ -55,5 +55,22 @@ def ajax_price(request, source_id, category_id):
         data.update({
             'price_uah': "%0.2f" % (item.price or 0),
             'price_usd': "%0.2f" % (item.price_usd or 0)
+        })
+    return HttpResponse(json.dumps(data), content_type="application/json")
+
+
+def ajax_serial_category(request, serial_id):
+    selector = request.GET.get('selector', '')
+    data = {
+        'selector': selector
+    }
+    try:
+        serial = ItemSerial.objects.get(pk=serial_id)
+    except ItemSerial.DoesNotExist:
+        pass
+    else:
+        data.update({
+            'category_name':serial.item.category.name,
+            'category_id':serial.item.category_id,
         })
     return HttpResponse(json.dumps(data), content_type="application/json")

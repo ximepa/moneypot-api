@@ -69,6 +69,28 @@
             }
 
         });
+
+        $inlines.on('change', "select[id^='id_transaction_items-'][name*='-serial']", function() {
+            var value = $(this).val();
+
+            if (value) {
+                var $category = $(this).closest('.grp-tr').find(
+                    "input[id^='id_transaction_items-'][name*='category-autocomplete']"
+                );
+                $.get("/base/ajax/serial_category/"+value[0]+"/?selector="+$category.attr('id'), function(response){
+                    if (response.category_id) {
+                        var $autocomplete_field = $("#"+response.selector);
+                        var $select = $autocomplete_field.next('select');
+                        var $widget = $autocomplete_field.parents('.autocomplete-light-widget').yourlabsWidget();
+                        $autocomplete_field.val(response.category_name);
+                        $select.html('<option selected="selected" value="'+response.category_id+'"></option>');
+                        $widget.deck.find(".append-option-html").append(response.category_name)
+                    }
+                })
+            }
+
+        });
+
     });
 
 })(grp.jQuery);

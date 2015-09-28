@@ -253,6 +253,12 @@ class MovementItem(models.Model):
         self._chunks = ", ".join(value)
 
     def clean_quantity(self):
+        try:
+            self.category
+        except ItemCategory.DoesNotExist:
+            raise ValidationError({'category': ugettext(
+                'this field is required'
+            )})
         f = None
         if self.category.unit.unit_type == Unit.INTEGER:
             f = int
