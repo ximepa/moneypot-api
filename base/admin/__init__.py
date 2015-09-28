@@ -4,6 +4,7 @@ from functools import update_wrapper
 
 from django.contrib import admin
 from django import forms
+from django.core.exceptions import ValidationError
 from django_mptt_admin.admin import DjangoMpttAdmin
 from django.utils.translation import ugettext_lazy as _, ugettext
 from django.utils.html import mark_safe
@@ -19,12 +20,12 @@ from actions import process_to_void
 from overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
 from functions import create_model_admin
 from forms import ItemCategoryForm, PlaceForm, PurchaseItemForm, TransactionItemForm, PurchaseForm, TransactionForm, \
-    FixCategoryMergeForm
+    FixCategoryMergeForm, CellForm, CellItemForm
 from inlines import ItemCategoryCommentInline, PurchaseItemInline, PurchaseItemInlineReadonly, \
     TransactionItemInlineReadonly, TransactionItemInline, TransactionCommentPlaceInline
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
     TransactionItem, Transaction, OrderItemSerial, ContractItemSerial, VItemMovement, VSerialMovement, \
-    get_descendants_ids, FixSerialTransform, FixCategoryMerge
+    get_descendants_ids, FixSerialTransform, FixCategoryMerge, Cell, CellItem
 from filebrowser.widgets import ClearableFileInput
 from filebrowser.settings import ADMIN_THUMBNAIL
 
@@ -169,7 +170,7 @@ class PurchaseAdmin(admin.ModelAdmin):
             obj.delete()
         for instance in instances:
             if formset.form.__name__ == PurchaseItemForm.__name__ and instance.purchase.is_completed:
-                raise forms.ValidationError(ugettext("purchase items data is read only!"))
+                raise ValidationError(ugettext("purchase items data is read only!"))
             instance.save()
         formset.save_m2m()
 
@@ -265,7 +266,7 @@ class TransactionAdmin(admin.ModelAdmin):
             obj.delete()
         for instance in instances:
             if formset.form.__name__ == TransactionItemForm.__name__ and instance.transaction.is_completed:
-                raise forms.ValidationError(ugettext("transaction items data is read only!"))
+                raise ValidationError(ugettext("transaction items data is read only!"))
             trash = getattr(instance, "trash", False)
             if not trash:
                 instance.save()
@@ -734,3 +735,17 @@ class FixCategoryMergeAdmin(admin.ModelAdmin):
         return readonly_fields
 
 
+@admin.register(Cell)
+class CellAdmin(admin.ModelAdmin):
+    search_fields = ['name']
+    list_display = ['name', 'place']
+    list_filter = ['place']
+    form = CellForm
+
+
+@admin.register(CellItem)
+class CellItem(admin.ModelAdmin):
+    search_fields = ['serial__serial']
+    list_filter = ['place', 'cell', 'category']
+    list_display = ['place', 'cell', 'category', 'serial']
+    form = CellItemForm

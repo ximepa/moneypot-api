@@ -1021,9 +1021,9 @@ class FixSerialTransform(models.Model):
 class FixCategoryMerge(models.Model):
 
     old_category = models.ForeignKey("ItemCategory", verbose_name=_("old item category"),
-                                     null=True, on_delete=models.DO_NOTHING, related_name="old_categoriess")
+                                     null=True, related_name="old_categoriess")
     new_category = models.ForeignKey("ItemCategory", verbose_name=_("new item category"),
-                                     on_delete=models.DO_NOTHING , related_name="new_categoriess")
+                                     related_name="new_categoriess")
     old_category_sav_id = models.PositiveIntegerField(blank=True, null=True)
     old_category_sav_name = models.CharField(max_length=100, blank=True, null=True)
     timestamp = models.DateTimeField(default=timezone.now)
@@ -1084,3 +1084,27 @@ class FixCategoryMerge(models.Model):
             self.do_merge()
 
 
+class Cell(models.Model):
+    place = models.ForeignKey("Place", verbose_name=_("place"), related_name="cells")
+    name = models.CharField(max_length=10)
+
+    class Meta:
+        verbose_name = _("cell")
+        verbose_name_plural = _("cells")
+
+    def __unicode__(self):
+        return self.name
+
+
+class CellItem(models.Model):
+    place = models.ForeignKey("Place", verbose_name=_("place"), related_name="cell_items")
+    category = models.ForeignKey("ItemCategory", verbose_name=_("item category"), related_name="cell_items")
+    serial = models.OneToOneField("ItemSerial", verbose_name=_("item serial"), blank=True, null=True)
+    cell = models.ForeignKey("Cell", verbose_name=_("cell"), blank=True, null=True)
+
+    class Meta:
+        verbose_name = _("cell item")
+        verbose_name_plural = _("cell items")
+
+    def __unicode__(self):
+        return self.cell.name
