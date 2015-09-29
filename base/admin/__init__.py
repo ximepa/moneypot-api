@@ -280,9 +280,12 @@ class TransactionAdmin(FiltersMixin, admin.ModelAdmin):
             obj.delete()
         for instance in instances:
             if formset.form.__name__ == TransactionItemForm.__name__ and instance.transaction.is_completed:
+                err = 1
                 for ti in instance.transaction.transaction_items.all():
-                    if not ti.pk == instance.pk:
-                        raise ValidationError(ugettext("transaction items data is read only!"))
+                    if ti.pk == instance.pk:
+                        err = 0
+                if err:
+                    raise ValidationError(ugettext("transaction items data is read only!"))
             else:
                 trash = getattr(instance, "trash", False)
                 if not trash:
