@@ -15,6 +15,7 @@ from django.db.models import Q
 from django.db import models
 from daterange_filter.filter import DateRangeFilter
 from django_mptt_admin import util
+from grappelli_filters import RelatedAutocompleteFilter, FiltersMixin
 
 from actions import process_to_void
 from overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
@@ -121,7 +122,7 @@ class PayerAdmin(admin.ModelAdmin):
 
 
 @admin.register(Purchase)
-class PurchaseAdmin(admin.ModelAdmin):
+class PurchaseAdmin(FiltersMixin, admin.ModelAdmin):
     class Media:
         js = ('base/js/purchase_source_item_autocomplete.js',)
 
@@ -129,7 +130,11 @@ class PurchaseAdmin(admin.ModelAdmin):
     inlines = [PurchaseItemInline, ]
     list_display = ['__unicode__', 'created_at', 'completed_at', 'source', 'destination', 'is_completed',
                     'is_prepared', ]
-    list_filter = ['source', 'destination', 'is_completed', 'is_prepared', ]
+    list_filter = [
+        ('source', RelatedAutocompleteFilter),
+        ('destination', RelatedAutocompleteFilter),
+        'is_completed', 'is_prepared',
+    ]
     search_fields = ['source__name', 'destination__name', 'purchase_items__category__name']
 
     def has_delete_permission(self, request, obj=None):
@@ -213,17 +218,24 @@ class TransactionItemAdmin(HiddenAdminModelMixin, AdminReadOnly):
 
 
 @admin.register(Transaction)
-class TransactionAdmin(admin.ModelAdmin):
+class TransactionAdmin(FiltersMixin, admin.ModelAdmin):
     class Media:
         js = ('base/js/transaction_source_item_autocomplete.js',)
 
     form = TransactionForm
-    list_display = ['__unicode__', 'created_at', 'completed_at', 'source', 'destination', 'is_completed', 'is_prepared',
-                    'is_negotiated_source', 'is_negotiated_destination', 'is_confirmed_source',
-                    'is_confirmed_destination']
-    list_filter = ['source', 'destination', 'is_completed', 'is_prepared',
-                   'is_negotiated_source', 'is_negotiated_destination', 'is_confirmed_source',
-                   'is_confirmed_destination']
+    list_display = [
+        '__unicode__', 'created_at', 'completed_at',
+        'source', 'destination', 'is_completed', 'is_prepared',
+        # 'is_negotiated_source', 'is_negotiated_destination', 'is_confirmed_source',
+        # 'is_confirmed_destination'
+    ]
+    list_filter = [
+        ('source', RelatedAutocompleteFilter),
+        ('destination', RelatedAutocompleteFilter),
+        'is_completed', 'is_prepared',
+        # 'is_negotiated_source', 'is_negotiated_destination', 'is_confirmed_source',
+        # 'is_confirmed_destination'
+    ]
     search_fields = ['source__name', 'destination__name', 'transaction_items__category__name']
     inlines = [
         TransactionItemInline, TransactionCommentPlaceInline
@@ -736,16 +748,20 @@ class FixCategoryMergeAdmin(admin.ModelAdmin):
 
 
 @admin.register(Cell)
-class CellAdmin(admin.ModelAdmin):
+class CellAdmin(FiltersMixin, admin.ModelAdmin):
     search_fields = ['name']
     list_display = ['name', 'place']
-    list_filter = ['place']
+    list_filter = (('place', RelatedAutocompleteFilter), )
     form = CellForm
 
 
 @admin.register(CellItem)
-class CellItem(admin.ModelAdmin):
+class CellItem(FiltersMixin, admin.ModelAdmin):
     search_fields = ['serial__serial']
-    list_filter = ['place', 'cell', 'category']
+    list_filter = (
+        ('place', RelatedAutocompleteFilter),
+        ('category', RelatedAutocompleteFilter),
+        ('cell', RelatedAutocompleteFilter),
+    )
     list_display = ['place', 'cell', 'category', 'serial']
     form = CellItemForm

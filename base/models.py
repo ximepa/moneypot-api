@@ -102,6 +102,10 @@ class ItemCategory(MPTTModel):
         self.full_clean()
         super(ItemCategory, self).save(*args, **kwargs)
 
+    @staticmethod
+    def autocomplete_search_fields():
+        return "id__iexact", "name__icontains",
+
 
 class ItemCategoryComment(models.Model):
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"), related_name="comments")
@@ -207,6 +211,9 @@ class Place(MPTTModel):
         self.name = "DEL %s" % self.name
         self.save()
 
+    @staticmethod
+    def autocomplete_search_fields():
+        return "id__iexact", "name__icontains",
 
 
 class MovementItem(models.Model):
@@ -1094,6 +1101,11 @@ class Cell(models.Model):
 
     def __unicode__(self):
         return self.name
+
+    @staticmethod
+    def autocomplete_search_fields():
+        return "id__iexact", "name__icontains",
+
 
 
 class CellItem(models.Model):

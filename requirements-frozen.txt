@@ -9,6 +9,7 @@ django-extensions==1.5.2
 django-filebrowser==3.5.7
 django-filter==0.9.2
 django-grappelli==2.6.5
+git+https://github.com/frnhr/django-grappelli-filters
 django-gunicorn==0.1.1
 django-mptt==0.7.4
 #django-mptt-admin==0.3.0

@@ -27,6 +27,7 @@ INSTALLED_APPS = (
     # core batteries
     'autocomplete_light',
     'grappelli',
+    'grappelli_filters',
     'filebrowser',
     # django stuff
     'django.contrib.admin',
