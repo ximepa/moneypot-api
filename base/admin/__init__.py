@@ -11,6 +11,7 @@ from django.utils.html import mark_safe
 from django.core.urlresolvers import reverse
 from django.conf.urls import url
 from django.contrib.admin.utils import quote
+from django.contrib import messages
 from django.db.models import Q
 from django.db import models
 from daterange_filter.filter import DateRangeFilter
@@ -21,7 +22,7 @@ from actions import process_to_void
 from overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
 from functions import create_model_admin
 from forms import ItemCategoryForm, PlaceForm, PurchaseItemForm, TransactionItemForm, PurchaseForm, TransactionForm, \
-    FixCategoryMergeForm, CellForm, CellItemForm
+    FixCategoryMergeForm, CellForm, CellItemForm, CellItemActionForm
 from inlines import ItemCategoryCommentInline, PurchaseItemInline, PurchaseItemInlineReadonly, \
     TransactionItemInlineReadonly, TransactionItemInline, TransactionCommentPlaceInline
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
@@ -765,3 +766,29 @@ class CellItem(FiltersMixin, admin.ModelAdmin):
     )
     list_display = ['place', 'cell', 'category', 'serial']
     form = CellItemForm
+    action_form = CellItemActionForm
+
+    def update_cell(self, request, queryset):
+        cell_name = request.POST['cell']
+        place = queryset[0].place
+        try:
+            cell = Cell.objects.get(place=place, name=cell_name)
+        except Cell.DoesNotExist:
+            self.message_user(request, _("Selected cell does not exist"), level=messages.ERROR)
+        else:
+            qs = queryset.filter(place=place)
+            cnt = qs.count()
+            if not cnt == queryset.count():
+                self.message_user(request, _("All items must be in same place"), level=messages.ERROR)
+            else:
+                qs.update(cell=cell)
+                self.message_user(request, _("Updated items count: {cnt}, Cell: {cell}".format(
+                    cnt=cnt,
+                    cell=cell.name
+                )), level=messages.SUCCESS)
+
+    update_cell.short_description = 'Update cell of selected rows'
+
+    actions = [update_cell]
+    actions_on_top = True
+    actions_on_bottom = False

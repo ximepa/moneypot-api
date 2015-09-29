@@ -3,7 +3,7 @@ __author__ = 'maxim'
 
 import autocomplete_light
 
-from .models import Place, ItemCategory, Item, ItemSerial
+from .models import Place, ItemCategory, Item, ItemSerial, Cell
 
 #
 # autocomplete_light.register(Place,
@@ -106,3 +106,19 @@ class SubPlaceAutocomplete(autocomplete_light.AutocompleteModelBase):
 
 
 autocomplete_light.register(Place, SubPlaceAutocomplete)
+
+
+class CellAutocomplete(autocomplete_light.AutocompleteModelBase):
+    autocomplete_js_attributes = {'placeholder': 'cell name ..'}
+
+    def choices_for_request(self):
+        q = self.request.GET.get('q', '')
+
+        choices = Cell.objects.filter(name__icontains=q)
+
+        return self.order_choices(choices)[0:self.limit_choices]
+
+
+autocomplete_light.register(Cell, CellAutocomplete, attrs={
+                                'data-autocomplete-minimum-characters': 0,
+                            },)

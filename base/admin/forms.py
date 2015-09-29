@@ -2,6 +2,7 @@
 __author__ = 'maxim'
 from django import forms
 from django.utils.translation import ugettext_lazy as _, ugettext
+from django.contrib.admin.helpers import ActionForm
 from copy import deepcopy
 from .functions import parse_serials_data
 import autocomplete_light
@@ -180,6 +181,11 @@ class CellForm(autocomplete_light.ModelForm):
     class Meta:
         model = Cell
         exclude = []
+
+
+class CellItemActionForm(ActionForm):
+    # cell = autocomplete_light.ChoiceField('CellAutocomplete')
+    cell = forms.CharField(max_length=10)
 
 
 class CellItemForm(autocomplete_light.ModelForm):
