@@ -7,7 +7,19 @@ from django.db import models, migrations
 def fill_cells(apps, schema_editor):
     CellItem = apps.get_model("base", "CellItem")
     for ci in CellItem.objects.all():
+        if ci.cell:
+            ci.cell_isnull = False
+        else:
+            ci.cell_isnull = True
         ci.save()
+        if not ci.cell_isnull:
+            other = CellItem.objects.filter(
+                place=ci.place,
+                category=ci.category,
+                serial=ci.serial,
+                cell_isnull=True
+            )
+            other.delete()
 
 
 class Migration(migrations.Migration):
