@@ -318,13 +318,17 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
 
     items_chunks_changelist_link.short_description = _("chunks")
 
-    def cell(self, obj):
-        l = obj.category.cell_items.filter(place=obj.place, cell_isnull=False).values_list("cell__name", flat=True)
-        return "/".join(list(set(l)))
-
     def item_movement_changelist_link(self, obj):
         link = reverse("admin:base_item_movement_filtered_changelist", args=[self.place_id, obj.category_id])
         return mark_safe(u'<a href="%s">%s</a>' % (link, _("movement history")))
+
+    item_movement_changelist_link.short_description = _("movement history")
+
+    def cell(self, obj):
+        if not obj.place.has_cells:
+            return ""
+        l = obj.category.cell_items.filter(place=obj.place, cell_isnull=False).values_list("cell__name", flat=True)
+        return "/".join(sorted(list(set(l))))
 
     def get_queryset(self, request):
         qs = super(PlaceItemAdmin, self).get_queryset(request)
@@ -476,11 +480,13 @@ class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
     serial_movement_changelist_link.short_description = _("movement history")
 
     def cell(self, obj):
+        if not obj.item.place.has_cells:
+            return ""
         l = obj.item.category.cell_items.filter(
             place=obj.item.place,
             serial=obj,
             cell_isnull=False).values_list("cell__name", flat=True)
-        return "/".join(list(set(l)))
+        return "/".join(sorted(list(set(l))))
 
     def get_queryset(self, request):
         qs = super(ItemSerialsFilteredAdmin, self).get_queryset(request)
