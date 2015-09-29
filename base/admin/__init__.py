@@ -294,6 +294,25 @@ class TransactionAdmin(FiltersMixin, admin.ModelAdmin):
                     instance.delete()
         formset.save_m2m()
 
+    def rollback(self, request, queryset):
+        for t in queryset:
+            if not t.is_completed:
+                self.message_user(request,
+                                  _("Transaction {trans} not completed. cannot rollback".format(trans=t)),
+                                  level=messages.ERROR)
+            else:
+                for ti in t.transaction_items.all():
+                    t = Transaction.objects.create(source=ti.destination, destination=ti.transaction.source)
+                    ti.pk = None
+                    ti.transaction = t
+                    ti.destination = None
+                    ti.save()
+                    t.force_complete()
+
+    rollback.short_description = _('rollback')
+
+    actions = [rollback]
+
 
 class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
     place_id = None
