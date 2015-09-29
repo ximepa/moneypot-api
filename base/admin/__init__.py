@@ -280,10 +280,9 @@ class TransactionAdmin(FiltersMixin, admin.ModelAdmin):
             obj.delete()
         for instance in instances:
             if formset.form.__name__ == TransactionItemForm.__name__ and instance.transaction.is_completed:
-                # raise ValidationError(ugettext("transaction items data is read only!"))
                 for ti in instance.transaction.transaction_items.all():
                     if not ti.pk == instance.pk:
-                        instance.delete()
+                        raise ValidationError(ugettext("transaction items data is read only!"))
             else:
                 trash = getattr(instance, "trash", False)
                 if not trash:
@@ -296,8 +295,9 @@ class TransactionAdmin(FiltersMixin, admin.ModelAdmin):
 class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
     place_id = None
     show_zero = None
-    list_display = ['__unicode__', 'quantity', 'place', 'items_serials_changelist_link',
-                    'items_chunks_changelist_link', 'item_movement_changelist_link']
+    list_display = ['__unicode__', 'quantity', 'place', 'cell', 'items_serials_changelist_link',
+                    # 'items_chunks_changelist_link',
+                    'item_movement_changelist_link']
 
     # def obj_link(self, obj):
     #     # link = reverse("admin:base_item_change", args=[obj.id])
@@ -309,10 +309,18 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
         link = reverse("admin:base_item_serials_filtered_changelist", args=[obj.id])
         return mark_safe(u'<a href="%s">%s</a>' % (link, _("serials list")))
 
+    items_serials_changelist_link.short_description = _("serials")
+
     def items_chunks_changelist_link(self, obj):
         # link = reverse("admin:base_item_serials_filtered_changelist", args=[obj.id])
         link = "#%s" % obj.id
         return mark_safe(u'<a href="%s">%s</a>' % (link, _("chunks list")))
+
+    items_chunks_changelist_link.short_description = _("chunks")
+
+    def cell(self, obj):
+        l = obj.category.cell_items.filter(place=obj.place, cell_isnull=False).values_list("cell__name", flat=True)
+        return "/".join(list(set(l)))
 
     def item_movement_changelist_link(self, obj):
         link = reverse("admin:base_item_movement_filtered_changelist", args=[self.place_id, obj.category_id])
@@ -455,7 +463,7 @@ create_model_admin(CategoryItemAdmin, name='category_item', model=Item)
 
 class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
     item_id = None
-    list_display = ['__unicode__', 'category_name', 'serial_movement_changelist_link']
+    list_display = ['__unicode__', 'category_name', 'cell', 'serial_movement_changelist_link']
 
     # def obj_link(self, obj):
     #     link = reverse("admin:base_item_serials_filtered_change", args=[self.item_id, obj.id])
@@ -464,6 +472,15 @@ class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
     def serial_movement_changelist_link(self, obj):
         link = reverse("admin:base_serial_movement_filtered_changelist", args=[obj.id])
         return mark_safe(u'<a href="%s">%s</a>' % (link, _("movement history")))
+
+    serial_movement_changelist_link.short_description = _("movement history")
+
+    def cell(self, obj):
+        l = obj.item.category.cell_items.filter(
+            place=obj.item.place,
+            serial=obj,
+            cell_isnull=False).values_list("cell__name", flat=True)
+        return "/".join(list(set(l)))
 
     def get_queryset(self, request):
         qs = super(ItemSerialsFilteredAdmin, self).get_queryset(request)
