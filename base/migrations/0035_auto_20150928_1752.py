@@ -23,26 +23,20 @@ def fill_cells(apps, schema_editor):
                 try:
                     s = ItemSerial.objects.get(serial=serial)
                 except ItemSerial.DoesNotExist:
-                    CellItem.objects.get_or_create(
-                        place_id=place.id,
-                        category_id=category.id,
-                        cell_id=cell.id,
-                        serial=None
-                    )
+                    pass
                 else:
-                    CellItem.objects.create(
+                    CellItem.objects.get_or_create(
                         place_id=place.id,
                         category_id=category.id,
                         serial_id=s.id,
                         cell_id=cell.id
                     )
-        else:
-            CellItem.objects.get_or_create(
-                place_id=place.id,
-                category_id=category.id,
-                cell_id=cell.id,
-                serial=None
-            )
+        CellItem.objects.get_or_create(
+            place_id=place.id,
+            category_id=category.id,
+            cell_id=cell.id,
+            serial=None
+        )
 
 
 def fill_cells_reverse(apps, schema_editor):

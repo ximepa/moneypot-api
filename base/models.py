@@ -126,6 +126,7 @@ class Place(MPTTModel):
     parent = models.ForeignKey('self', verbose_name=_("parent"), null=True, blank=True, related_name='children')
     is_shop = models.BooleanField(_("is shop"), blank=True, default=False)
     comment = models.TextField(_("comment"), blank=True, null=True)
+    has_cells = models.BooleanField(_("has cells"), default=False)
 
     class Meta:
         verbose_name = _("place")
@@ -194,6 +195,12 @@ class Place(MPTTModel):
                         place=self,
                         serial=serial
                     )))
+                try:
+                    cell_item = CellItem.objects.get(serial=serial, place=self)
+                except CellItem.DoesNotExist:
+                    pass
+                else:
+                    cell_item.delete()
             return i.withdraw(quantity=item.quantity, serial=serial)
 
     def join_to(self, place):
@@ -475,6 +482,56 @@ class Purchase(Movement):
         self.completed_at = timezone.now()
         self.is_completed = True
         self.save()
+        self.fill_cells()
+
+    def fill_cells(self):
+        for pi in self.purchase_items.all():
+            category = pi.category
+            place = pi.purchase.destination
+            if not place.has_cells:
+                continue
+            if not pi.cell:
+                cell_id = None
+            else:
+                cell, created = Cell.objects.get_or_create(place_id=place.id, name=pi.cell)
+                cell_id = cell.id
+            serials = pi.serials
+            if len(serials):
+                for serial in serials:
+                    try:
+                        s = ItemSerial.objects.get(serial=serial)
+                    except ItemSerial.DoesNotExist:
+                        pass
+                    else:
+                        try:
+                            ci, created = CellItem.objects.get_or_create(
+                                place_id=place.id,
+                                category_id=category.id,
+                                serial_id=s.id,
+                            )
+                        except:
+                            pass
+                        else:
+                            if not created:
+                                ci.cell_id=cell_id
+                                ci.save()
+            if cell_id:
+                try:
+                    CellItem.objects.get_or_create(
+                        place_id=place.id,
+                        category_id=category.id,
+                        cell_id=cell_id,
+                    )
+                except CellItem.MultipleObjectsReturned:
+                    pass
+            else:
+                try:
+                    CellItem.objects.get_or_create(
+                        place_id=place.id,
+                        category_id=category.id,
+                    )
+                except CellItem.MultipleObjectsReturned:
+                    pass
 
 
 class Item(models.Model):
@@ -743,6 +800,7 @@ class TransactionItem(MovementItem):
     serial = models.ForeignKey(ItemSerial, blank=True, null=True)
     destination = models.ForeignKey("Place", verbose_name=_("destination"),
                                     related_name="transaction_items", blank=True, null=True)
+    cell = models.CharField(_("Cell"), max_length=16, blank=True, null=True)
 
     class Meta:
         verbose_name = _("transaction item")
@@ -775,6 +833,10 @@ class Transaction(Movement):
 
     def __unicode__(self):
         return u'%s → %s' % (self.source.name, self.destination.name)
+
+    def save(self, *args, **kwargs):
+        # print "TRANSACTION SAVED!"
+        super(Transaction, self).save(*args, **kwargs)
 
     def reset(self):
         self.is_prepared = False
@@ -826,6 +888,7 @@ class Transaction(Movement):
 
     @transaction.atomic
     def complete(self):
+        # print "TRANSACTION COMPLETED!"
         if self.is_completed:
             return
         if not self.is_prepared:
@@ -853,6 +916,40 @@ class Transaction(Movement):
         self.is_completed = True
         self.completed_at = timezone.now()
         self.save()
+        self.fill_cells()
+
+    def fill_cells(self):
+        for ti in self.transaction_items.all():
+            category = ti.category
+            place = ti.transaction.destination
+            if not place.has_cells:
+                continue
+            serial = ti.serial
+            try:
+                s = ItemSerial.objects.get(serial=serial)
+            except ItemSerial.DoesNotExist:
+                pass
+            else:
+                try:
+                    ci, created = CellItem.objects.get_or_create(
+                        place_id=place.id,
+                        category_id=category.id,
+                        serial_id=s.id,
+                    )
+                except:
+                    pass
+                else:
+                    if not created:
+                        ci.cell_id=None
+                        ci.save()
+            try:
+                CellItem.objects.get_or_create(
+                    place_id=place.id,
+                    category_id=category.id,
+                )
+            except CellItem.MultipleObjectsReturned:
+                pass
+
 
 
 class ProcessSerialMixin(object):
@@ -1113,10 +1210,29 @@ class CellItem(models.Model):
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"), related_name="cell_items")
     serial = models.OneToOneField("ItemSerial", verbose_name=_("item serial"), blank=True, null=True)
     cell = models.ForeignKey("Cell", verbose_name=_("cell"), blank=True, null=True)
+    cell_isnull = models.BooleanField(blank=True, default=True)
 
     class Meta:
         verbose_name = _("cell item")
         verbose_name_plural = _("cell items")
 
     def __unicode__(self):
-        return self.cell.name
+        return self.category.name
+
+    def save(self, *args, **kwargs):
+        if self.cell:
+            self.cell_isnull = False
+        else:
+            self.cell_isnull = True
+        super(CellItem, self).save(*args, **kwargs)
+
+    def suggested_place(self):
+        if not self.cell_isnull:
+            return ""
+        other = CellItem.objects.filter(place=self.place, category=self.category, cell_isnull=False)
+        if not other.count():
+            return "n/a"
+        else:
+            return other[0].cell.name
+
+    suggested_place.short_description = _("suggested place")

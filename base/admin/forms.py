@@ -60,6 +60,7 @@ class PurchaseItemForm(autocomplete_light.ModelForm):
 class TransactionItemForm(autocomplete_light.ModelForm):
     _serials = forms.CharField(required=False, label=_("serials"), widget=forms.Textarea(attrs={'cols': 80, 'rows': 1}))
     serials = []
+    cell = forms.CharField(widget=forms.TextInput(attrs={'readonly':'readonly'}), label=_("cell"), required=False)
 
     class Meta:
         model = TransactionItem

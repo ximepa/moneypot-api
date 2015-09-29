@@ -274,17 +274,22 @@ class TransactionAdmin(FiltersMixin, admin.ModelAdmin):
         return inline_instances
 
     def save_formset(self, request, form, formset, change):
+        print change
         instances = formset.save(commit=False)
         for obj in formset.deleted_objects:
             obj.delete()
         for instance in instances:
             if formset.form.__name__ == TransactionItemForm.__name__ and instance.transaction.is_completed:
-                raise ValidationError(ugettext("transaction items data is read only!"))
-            trash = getattr(instance, "trash", False)
-            if not trash:
-                instance.save()
-            elif instance.pk:
-                instance.delete()
+                # raise ValidationError(ugettext("transaction items data is read only!"))
+                for ti in instance.transaction.transaction_items.all():
+                    if not ti.pk == instance.pk:
+                        instance.delete()
+            else:
+                trash = getattr(instance, "trash", False)
+                if not trash:
+                    instance.save()
+                elif instance.pk:
+                    instance.delete()
         formset.save_m2m()
 
 
@@ -763,10 +768,12 @@ class CellItem(FiltersMixin, admin.ModelAdmin):
         ('place', RelatedAutocompleteFilter),
         ('category', RelatedAutocompleteFilter),
         ('cell', RelatedAutocompleteFilter),
+        'cell_isnull'
     )
-    list_display = ['place', 'cell', 'category', 'serial']
+    list_display = ['place', 'cell', 'category', 'serial', 'suggested_place']
     form = CellItemForm
     action_form = CellItemActionForm
+    readonly_fields = ['cell_isnull']
 
     def update_cell(self, request, queryset):
         cell_name = request.POST['cell']
@@ -787,8 +794,6 @@ class CellItem(FiltersMixin, admin.ModelAdmin):
                     cell=cell.name
                 )), level=messages.SUCCESS)
 
-    update_cell.short_description = 'Update cell of selected rows'
+    update_cell.short_description = _('Update cell of selected rows')
 
     actions = [update_cell]
-    actions_on_top = True
-    actions_on_bottom = False
