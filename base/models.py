@@ -1225,6 +1225,14 @@ class CellItem(models.Model):
         else:
             self.cell_isnull = True
         super(CellItem, self).save(*args, **kwargs)
+        if not self.cell_isnull:
+            other = CellItem.objects.filter(
+                place=self.place,
+                category=self.category,
+                serial=self.serial,
+                cell_isnull=True
+            )
+            other.delete()
 
     def suggested_place(self):
         if not self.cell_isnull:
