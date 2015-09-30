@@ -1190,11 +1190,12 @@ class FixCategoryMerge(models.Model):
 
 class Cell(models.Model):
     place = models.ForeignKey("Place", verbose_name=_("place"), related_name="cells")
-    name = models.CharField(max_length=10, unique=True)
+    name = models.CharField(max_length=10)
 
     class Meta:
         verbose_name = _("cell")
         verbose_name_plural = _("cells")
+        unique_together = ('place', 'name')
 
     def __unicode__(self):
         return self.name
