@@ -198,6 +198,10 @@ class CellItemActionForm(ActionForm):
 
 
 class CellItemForm(autocomplete_light.ModelForm):
+
+    place = forms.ModelChoiceField(queryset=Place.objects.filter(has_cells=1), empty_label=None)
+
     class Meta:
         model = CellItem
-        exclude = []
+        exclude = ['serial']
+        autocomplete_fields = ('category', 'cell')
