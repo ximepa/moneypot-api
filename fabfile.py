@@ -93,7 +93,7 @@ def push_sources():
     local('git push origin master')
     with cd(env.code_dir):
         run('git fetch')
-        run('git rebase origin/master')
+        run('git reset --hard origin/master')
 
 
 @task
