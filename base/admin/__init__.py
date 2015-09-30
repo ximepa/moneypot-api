@@ -834,17 +834,18 @@ class CellItemAdmin(FiltersMixin, admin.ModelAdmin):
             if not cnt == queryset.count():
                 self.message_user(request, _("All items must be in same place"), level=messages.ERROR)
             else:
-                qs.update(cell=cell, cell_isnull=False)
-                self.message_user(request, _("Updated items count: {cnt}, Cell: {cell}".format(
-                    cnt=cnt,
-                    cell=cell.name
-                )), level=messages.SUCCESS)
-            if all_serials:
-                cat_ids = list(set(qs.values_list('category_id', flat=True)))
-                qs = CellItem.objects.filter(place=place, category_id__in=cat_ids)
-                cnt = qs.count()
-                qs.update(cell=cell, cell_isnull=False)
-                self.message_user(request, _("Updated items count (all serials): {cnt}, Cell: {cell}".format(
+                if all_serials:
+                    cat_ids = list(set(qs.values_list('category_id', flat=True)))
+                    qs = CellItem.objects.filter(place=place, category_id__in=cat_ids)
+                    cnt = qs.count()
+                    qs.update(cell=cell, cell_isnull=False)
+                    self.message_user(request, _("Updated items count (all serials): {cnt}, Cell: {cell}".format(
+                            cnt=cnt,
+                            cell=cell.name
+                        )), level=messages.SUCCESS)
+                else:
+                    qs.update(cell=cell, cell_isnull=False)
+                    self.message_user(request, _("Updated items count: {cnt}, Cell: {cell}".format(
                         cnt=cnt,
                         cell=cell.name
                     )), level=messages.SUCCESS)
