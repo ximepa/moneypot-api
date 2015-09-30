@@ -185,8 +185,16 @@ class CellForm(autocomplete_light.ModelForm):
 
 
 class CellItemActionForm(ActionForm):
-    # cell = autocomplete_light.ChoiceField('CellAutocomplete')
-    cell = forms.CharField(max_length=10)
+
+    @staticmethod
+    def cell_choices():
+        return Cell.objects.all().values_list("id", "name")
+
+    cell = forms.ModelChoiceField(queryset=Cell.objects.all())
+    all_serials = forms.ChoiceField(choices=(
+        (0, '----------',),
+        (1, _('update all serials'))
+    ))
 
 
 class CellItemForm(autocomplete_light.ModelForm):

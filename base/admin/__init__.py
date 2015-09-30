@@ -807,8 +807,8 @@ class CellAdmin(FiltersMixin, admin.ModelAdmin):
 
 
 @admin.register(CellItem)
-class CellItem(FiltersMixin, admin.ModelAdmin):
-    search_fields = ['serial__serial']
+class CellItemAdmin(FiltersMixin, admin.ModelAdmin):
+    search_fields = ['serial__serial', 'category__name']
     list_filter = (
         ('place', RelatedAutocompleteFilter),
         ('category', RelatedAutocompleteFilter),
@@ -821,10 +821,11 @@ class CellItem(FiltersMixin, admin.ModelAdmin):
     readonly_fields = ['cell_isnull']
 
     def update_cell(self, request, queryset):
-        cell_name = request.POST['cell']
+        cell_id = request.POST['cell']
+        all_serials = request.POST['all_serials']
         place = queryset[0].place
         try:
-            cell = Cell.objects.get(place=place, name=cell_name)
+            cell = Cell.objects.get(pk=cell_id)
         except Cell.DoesNotExist:
             self.message_user(request, _("Selected cell does not exist"), level=messages.ERROR)
         else:
@@ -833,11 +834,20 @@ class CellItem(FiltersMixin, admin.ModelAdmin):
             if not cnt == queryset.count():
                 self.message_user(request, _("All items must be in same place"), level=messages.ERROR)
             else:
-                qs.update(cell=cell)
+                qs.update(cell=cell, cell_isnull=False)
                 self.message_user(request, _("Updated items count: {cnt}, Cell: {cell}".format(
                     cnt=cnt,
                     cell=cell.name
                 )), level=messages.SUCCESS)
+            if all_serials:
+                cat_ids = list(set(qs.values_list('category_id', flat=True)))
+                qs = CellItem.objects.filter(place=place, category_id__in=cat_ids)
+                cnt = qs.count()
+                qs.update(cell=cell, cell_isnull=False)
+                self.message_user(request, _("Updated items count (all serials): {cnt}, Cell: {cell}".format(
+                        cnt=cnt,
+                        cell=cell.name
+                    )), level=messages.SUCCESS)
 
     update_cell.short_description = _('Update cell of selected rows')
 

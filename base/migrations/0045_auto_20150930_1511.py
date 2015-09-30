@@ -19,9 +19,10 @@ def fill_cellitem_isnull_reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('base', '0037_cellitem_cell_isnull'),
+        ('base', '0044_auto_20150930_1033'),
     ]
 
     operations = [
         migrations.RunPython(fill_cellitem_isnull, fill_cellitem_isnull_reverse)
     ]
+

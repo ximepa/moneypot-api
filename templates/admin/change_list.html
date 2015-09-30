@@ -126,6 +126,24 @@
             $(document).ready(function() {
                 grappelli.initSearchbar();
                 grappelli.initFilter();
+
+
+                function processForm(e) {
+                    if (!(window.my_actions_submitted)) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    return true;
+                }
+
+                var $form = $('#grp-changelist-form');
+                $form.bind("submit", processForm);
+
+                window.my_actions_submit = function() {
+                    window.my_actions_submitted = 1;
+                    $form.submit();
+                };
+
             });
         })(grp.jQuery);
     </script>
@@ -246,7 +264,7 @@
             <footer id="submit" class="grp-module grp-submit-row grp-fixed-footer">
                 <header style="display:none"><h1>Submit Options</h1></header>
                 <ul>
-                    {% if action_form %}<li class="grp-float-left grp-changelist-actions">{% admin_actions %}</li>{% endif %}
+                    {% if action_form %}<li class="grp-float-left grp-changelist-actions">{% admin_actions %}<input type="submit" onclick="my_actions_submit()"></li>{% endif %}
                     {% if cl.formset %}<li><input type="submit" class="grp-button grp-default" name="_save" value="{% trans "Save" %}"/></li>{% endif %}
                 </ul>
             </footer>
