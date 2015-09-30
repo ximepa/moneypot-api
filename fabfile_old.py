@@ -16,18 +16,13 @@ from fabric.operations import _prefix_commands, _prefix_env_vars
 
 # CHANGEME
 env.hosts = ['maxim@192.168.33.152']
-env.project_name = 'moneypot-api-deploy'
+env.project_name = 'moneypot-api'
 env.project_main_app = 'moneypot'
-env.code_repo = 'git@github.com:shamanu4/moneypot-api.git'
-env.code_branch = 'git@github.com:shamanu4/moneypot-api.git'
-env.origin_hash = run("")
 env.code_dir = '/home/maxim/production/%s' % env.project_name
 env.project_dir = '/home/maxim/production/%s/%s' % (env.project_name, env.project_main_app)
 env.static_root = '/home/maxim/production/%s/static/' % env.project_name
 env.virtualenv = '/home/maxim/production/%s/env' % env.project_name
-env.pg_user = 'moneypot'
-env.pg_db_live = 'moneypot_live'
-env.pg_db_staging = 'moneypot_staging'
+env.code_repo = 'git@github.com:shamanu4/moneypot-api.git'
 env.django_settings_module = '%s.settings' % env.project_main_app
 
 # Python version
