@@ -183,14 +183,14 @@ class PurchaseAdmin(FiltersMixin, admin.ModelAdmin):
 
 
 @admin.register(Item)
-class ItemAdmin(AdminReadOnly):
+class ItemAdmin(FiltersMixin, AdminReadOnly):
     search_fields = ['category__name', 'place__name']
-    list_filter = ['category', ]
+    list_filter = [('category', RelatedAutocompleteFilter), 'cell']
     list_display = ['__unicode__', 'quantity', 'place', 'cell']
 
 
 @admin.register(ItemSerial)
-class ItemSerialAdmin(AdminReadOnly):
+class ItemSerialAdmin(FiltersMixin, AdminReadOnly):
 
     class Media:
         js = ('base/js/place_item_changelist_autocomplete.js',)
@@ -206,7 +206,11 @@ class ItemSerialAdmin(AdminReadOnly):
         return mark_safe(u'<a href="%s">%s</a>' % (link, _("movement history")))
 
     search_fields = ['item__category__name', 'serial']
-    list_filter = ['item__category', ]
+    list_filter = [
+        ('item__category', RelatedAutocompleteFilter),
+        ('item__place', RelatedAutocompleteFilter),
+        'cell'
+    ]
     list_display = ['__unicode__', 'category_name', 'owner', 'cell', 'serial_movement_changelist_link']
 
 
