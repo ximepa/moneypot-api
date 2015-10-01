@@ -283,7 +283,6 @@ class TransactionAdmin(FiltersMixin, admin.ModelAdmin):
         return inline_instances
 
     def save_formset(self, request, form, formset, change):
-        print change
         instances = formset.save(commit=False)
         for obj in formset.deleted_objects:
             obj.delete()
@@ -361,7 +360,6 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
         cell_list = list(set(obj.serials.filter(cell__isnull=False).values_list("cell__name", flat=True)))
         if len(cell_list) > 1:
                 # or (cell_list and obj.cell is not None and not obj.cell.name == cell_list[0]):
-            print [obj, cell_list]
             return "+".join(sorted(cell_list))
         f = ItemInlineForm(instance=obj, auto_id='id_item_'+str(obj.pk)+'_%s')
         html = self.tpl.render(Context({"form": f}))

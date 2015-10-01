@@ -906,14 +906,9 @@ class Transaction(Movement):
         self.save()
 
     def fill_cells(self, ti):
-        print "TRANS FILL CELLS"
-        print ti
         place = ti.destination or ti.transaction.destination
-        print place
         if place.has_cells and ti.cell:
             cell, created = Cell.objects.get_or_create(place_id=place.id, name=ti.cell)
-            print cell, created
-            print ti.item_set.values_list("pk", flat=True)
             ti.item_set.update(cell=cell)
             ItemSerial.objects.filter(item__pk__in=ti.item_set.values_list("pk", flat=True)).update(cell=cell)
             return cell
