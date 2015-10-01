@@ -187,7 +187,7 @@ class PurchaseAdmin(FiltersMixin, admin.ModelAdmin):
 @admin.register(Item)
 class ItemAdmin(FiltersMixin, AdminReadOnly):
     search_fields = ['category__name', 'place__name']
-    list_filter = [('category', MPTTCategoryRelatedAutocompleteFilter), 'cell']
+    list_filter = [('category', RelatedAutocompleteFilter), 'cell']
     list_display = ['__unicode__', 'quantity', 'place', 'cell']
 
 
@@ -328,6 +328,7 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
     class Media:
         js = ('base/js/place_item_changelist_autocomplete.js',)
 
+    list_filter = [('category', MPTTCategoryRelatedAutocompleteFilter), 'cell']
     tpl = Template("{{ form.as_p }}")
     place_id = None
     show_zero = None
