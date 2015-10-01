@@ -19,6 +19,7 @@ from django.db import models
 from daterange_filter.filter import DateRangeFilter
 from django_mptt_admin import util
 from grappelli_filters import RelatedAutocompleteFilter, FiltersMixin
+from .filters import MPTTCategoryRelatedAutocompleteFilter
 
 from actions import process_to_void, update_cell
 from overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
@@ -186,7 +187,7 @@ class PurchaseAdmin(FiltersMixin, admin.ModelAdmin):
 @admin.register(Item)
 class ItemAdmin(FiltersMixin, AdminReadOnly):
     search_fields = ['category__name', 'place__name']
-    list_filter = [('category', RelatedAutocompleteFilter), 'cell']
+    list_filter = [('category', MPTTCategoryRelatedAutocompleteFilter), 'cell']
     list_display = ['__unicode__', 'quantity', 'place', 'cell']
 
 
