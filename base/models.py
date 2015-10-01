@@ -8,6 +8,7 @@ from django.core.urlresolvers import reverse
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db import transaction
+from django.conf import settings
 from filebrowser.fields import FileBrowseField
 import re
 import json
@@ -922,13 +923,13 @@ class Transaction(Movement):
 class ProcessSerialMixin(object):
 
     def __init__(self):
-        self.void = Place.objects.get(pk=74)
+        self.void = Place.objects.get(pk=settings.APP_FILTERS["PLACE_VOID"])
         self.item = self.item or {}
         self.serial = self.serial or ""
 
     @transaction.atomic
     def process(self):
-        assert self.item.place.pk in get_descendants_ids(Place, 14)
+        assert self.item.place.pk in get_descendants_ids(Place, settings.APP_FILTERS["PLACE_WORKERS_ID"])
         tr = Transaction.objects.create(source=self.item.place, destination=self.void)
         TransactionItem.objects.create(transaction=tr, quantity=1, category=self.item.category, serial=self)
         tr.force_complete()

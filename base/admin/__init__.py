@@ -11,6 +11,7 @@ from django.utils.translation import ugettext_lazy as _, ugettext
 from django.utils.html import mark_safe
 from django.core.urlresolvers import reverse
 from django.conf.urls import url
+from django.conf import settings
 from django.contrib.admin.utils import quote
 from django.contrib import messages
 from django.db.models import Q
@@ -564,8 +565,8 @@ class OrderItemSerialAdmin(admin.ModelAdmin):
             'item', 'item__category', 'item__place'
         )
         return qs.filter(
-            item__category_id__in=get_descendants_ids(ItemCategory, 89),  # FIXME
-            item__place_id__in=get_descendants_ids(Place, 14)             # FIXME
+            item__category_id__in=get_descendants_ids(ItemCategory, settings.APP_FILTERS["CAT_ORDERS_ID"]),
+            item__place_id__in=get_descendants_ids(Place, settings.APP_FILTERS["PLACE_WORKERS_ID"])
         )
 
     def owner(self, instance):
@@ -590,8 +591,8 @@ class ContractItemSerialAdmin(admin.ModelAdmin):
             'item', 'item__category', 'item__place'
         )
         return qs.filter(
-            item__category_id__in=get_descendants_ids(ItemCategory, 88),  # FIXME
-            item__place_id__in=get_descendants_ids(Place, 14)             # FIXME
+            item__category_id__in=get_descendants_ids(ItemCategory, settings.APP_FILTERS["CAT_CONTRACTS_ID"]),
+            item__place_id__in=get_descendants_ids(Place, settings.APP_FILTERS["PLACE_WORKERS_ID"])
         )
 
     def owner(self, instance):

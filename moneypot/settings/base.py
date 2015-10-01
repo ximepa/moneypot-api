@@ -129,3 +129,10 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     )
 }
+
+APP_FILTERS = {
+    'CAT_ORDERS_ID': 85,
+    'CAT_CONTRACTS_ID': 74,
+    'PLACE_WORKERS_ID': 3,
+    'PLACE_VOID': 152,
+}
