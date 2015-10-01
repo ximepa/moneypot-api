@@ -543,6 +543,7 @@ class Item(models.Model):
     place = models.ForeignKey("Place", verbose_name=_("place"), blank=True, null=True, related_name='items')
     purchase = models.ForeignKey("PurchaseItem", verbose_name=_("purchase"), blank=True, null=True)
     comment = models.TextField(_("comment"), blank=True, null=True)
+    cell = models.ForeignKey("Cell", blank=True, null=True, on_delete=models.SET_NULL)
 
     class Meta:
         verbose_name = _("item")
@@ -759,6 +760,7 @@ class ItemSerial(models.Model):
     serial = models.CharField(_("serial"), max_length=32, unique=True)
     purchase = models.ForeignKey("PurchaseItem", verbose_name=_("purchase"), blank=True, null=True)
     comment = models.TextField(_("comment"), blank=True, null=True)
+    cell = models.ForeignKey("Cell", blank=True, null=True, on_delete=models.SET_NULL)
 
     class Meta:
         verbose_name = _("serial")

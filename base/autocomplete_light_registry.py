@@ -109,7 +109,6 @@ autocomplete_light.register(Place, SubPlaceAutocomplete)
 
 
 class CellAutocomplete(autocomplete_light.AutocompleteModelBase):
-    autocomplete_js_attributes = {'placeholder': 'cell name ..'}
 
     def choices_for_request(self):
         q = self.request.GET.get('q', '')
@@ -120,5 +119,8 @@ class CellAutocomplete(autocomplete_light.AutocompleteModelBase):
 
 
 autocomplete_light.register(Cell, CellAutocomplete, attrs={
-                                'data-autocomplete-minimum-characters': 0,
+                                'data-autocomplete-minimum-characters': 1,
+                                'placeholder': 'cell name ..',
+                                'size': 10,
+                                'style': "width: 80px"
                             },)

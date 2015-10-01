@@ -5,6 +5,7 @@ from functools import update_wrapper
 from django.contrib import admin
 from django import forms
 from django.core.exceptions import ValidationError
+from django.template import Template, Context
 from django_mptt_admin.admin import DjangoMpttAdmin
 from django.utils.translation import ugettext_lazy as _, ugettext
 from django.utils.html import mark_safe
@@ -22,7 +23,7 @@ from actions import process_to_void
 from overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
 from functions import create_model_admin
 from forms import ItemCategoryForm, PlaceForm, PurchaseItemForm, TransactionItemForm, PurchaseForm, TransactionForm, \
-    FixCategoryMergeForm, CellForm, CellItemForm, CellItemActionForm
+    FixCategoryMergeForm, CellForm, CellItemForm, CellItemActionForm, ItemInlineForm
 from inlines import ItemCategoryCommentInline, PurchaseItemInline, PurchaseItemInlineReadonly, \
     TransactionItemInlineReadonly, TransactionItemInline, TransactionCommentPlaceInline
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
@@ -315,9 +316,14 @@ class TransactionAdmin(FiltersMixin, admin.ModelAdmin):
 
 
 class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
+
+    class Media:
+        js = ('base/js/place_item_changelist_autocomplete.js',)
+
+    tpl = Template("{{ form.as_p }}")
     place_id = None
     show_zero = None
-    list_display = ['__unicode__', 'quantity', 'place', 'cell', 'items_serials_changelist_link',
+    list_display = ['__unicode__', 'quantity', 'place', 'custom_cell', 'items_serials_changelist_link',
                     # 'items_chunks_changelist_link',
                     'item_movement_changelist_link']
 
@@ -346,11 +352,34 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
 
     item_movement_changelist_link.short_description = _("movement history")
 
-    def cell(self, obj):
-        if not obj.place.has_cells:
-            return ""
-        l = obj.category.cell_items.filter(place=obj.place, cell_isnull=False).values_list("cell__name", flat=True)
-        return "/".join(sorted(list(set(l))))
+    def custom_cell(self, obj):
+        cell_list = list(set(obj.serials.filter(cell__isnull=False).values_list("cell__name", flat=True)))
+        if len(cell_list) > 1:
+                # or (cell_list and obj.cell is not None and not obj.cell.name == cell_list[0]):
+            print [obj, cell_list]
+            return "/".join(sorted(cell_list))
+        f = ItemInlineForm(instance=obj, auto_id='id_item_'+str(obj.pk)+'_%s')
+        html = self.tpl.render(Context({"form": f}))
+        return mark_safe('<span class="autocomplete-wrapper-js" data-item-id="%s">%s</span>' % (obj.pk, html))
+
+    #
+    # def custom_cell(self, obj):
+    #     cell_list = list(set(obj.serials.filter(cell__isnull=False).values_list("cell__name", flat=True)))
+    #     if len(cell_list) > 1:
+    #             # or (cell_list and obj.cell is not None and not obj.cell.name == cell_list[0]):
+    #         print [obj, cell_list]
+    #         return "/".join(sorted(cell_list))
+    #     if obj.cell is not None:
+    #         return mark_safe(u'<input class="cell-autocomplete-custom" ' +
+    #                          u'data-url="/autocomplete/CellAutocomplete/" data-key="place_id" data-value="%s" ' % obj.pk +
+    #                          u'value="%s"' % (obj.cell.name) +
+    #                          u'</inputt>')
+    #     else:
+    #         return mark_safe(u'<select class="cell-autocomplete-custom" ' +
+    #                          u'data-url="/autocomplete/CellAutocomplete/" data-key="place_id" data-value="%s">' % obj.pk +
+    #                          u'<option value="0" selected>---</option>'
+    #                          u'</select>')
+
 
     def get_queryset(self, request):
         qs = super(PlaceItemAdmin, self).get_queryset(request)
@@ -371,36 +400,14 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
         except Place.DoesNotExist:
             extra_context.update({'cl_header': _('Place does not exist')})
         else:
+            if not place.has_cells:
+                self.list_display.remove('cell')
             cl_header = _(u"Items for <{name}>".format(name=unicode(place.name)))
             extra_context.update({'show_zero': self.show_zero})
             extra_context.update({'rq_qs': rq_qs})
             extra_context.update({'cl_header': mark_safe(cl_header)})
         view = super(PlaceItemAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
-
-    # def change_view(self, request, place_id, object_id, form_url='',
-    #                 extra_context=None):  # pylint:disable=arguments-differ
-    #     self.place_id = place_id
-    #     extra_context = extra_context or {}
-    #     extra_context.update({
-    #         'place_id': place_id,
-    #         'proxy_url': "admin:base_place_item_changelist",
-    #         'proxy_url_arg': self.place_id,
-    #     })
-    #     try:
-    #         item = Item.objects.get(pk=object_id)
-    #     except Item.DoesNotExist:
-    #         extra_context.update({'obj_header': _('Serial does not exist')})
-    #     else:
-    #         extra_context.update({'obj_header': unicode(item.category.name)})
-    #     try:
-    #         place = Place.objects.get(pk=place_id)
-    #     except Place.DoesNotExist:
-    #         extra_context.update({'cl_header': _('Place does not exist')})
-    #     else:
-    #         cl_header = _(u"Items for <{name}>".format(name=unicode(place.name)))
-    #         extra_context.update({'cl_header': cl_header})
-    #     return super(PlaceItemAdmin, self).change_view(request, object_id, form_url='', extra_context=extra_context)
 
     def get_urls(self):
 
@@ -412,7 +419,6 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
 
         urlpatterns = [
             url(r'^(\d+)/$', wrap(self.changelist_view), name='base_place_item_changelist'),
-            # url(r'^(\d+)/(\d+)$', wrap(self.change_view), name='base_place_item_change'),
         ]
         return urlpatterns
 

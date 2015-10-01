@@ -9,7 +9,7 @@ import autocomplete_light
 import re
 
 from base.models import InvalidParameters, ItemCategory, ItemCategoryComment, Place, PurchaseItem, TransactionItem, Purchase, \
-    Transaction, Unit, ItemSerial, FixCategoryMerge, Cell, CellItem
+    Transaction, Unit, ItemSerial, FixCategoryMerge, Cell, CellItem, Item
 
 
 class ItemCategoryCommentForm(autocomplete_light.ModelForm):
@@ -208,3 +208,10 @@ class CellItemForm(autocomplete_light.ModelForm):
         model = CellItem
         exclude = ['serial']
         autocomplete_fields = ('category', 'cell')
+
+
+class ItemInlineForm(autocomplete_light.ModelForm):
+
+    class Meta:
+        model = Item
+        fields = ['cell']
