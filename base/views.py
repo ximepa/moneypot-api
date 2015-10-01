@@ -129,3 +129,33 @@ def ajax_item_cell(request, item_id, cell_id):
             item.save()
             item.serials.update(cell_id=cell_id)
     return HttpResponse(json.dumps(data), content_type="application/json")
+
+
+def ajax_serial_cell(request, serial_id, cell_id):
+    selector = request.GET.get('selector', '')
+    cell_id = int(cell_id) or None
+    data = {
+        'selector': selector,
+        'success': True,
+    }
+
+    try:
+        itemserial = ItemSerial.objects.get(pk=serial_id)
+    except Item.DoesNotExist:
+        data.update({
+            'success': False,
+            'msg': "item serial does not exist"
+        })
+    else:
+        if cell_id:
+            try:
+                cell = Cell.objects.get(pk=cell_id)
+            except Cell.DoesNotExist:
+                data.update({
+                    'success': False,
+                    'msg': "cell does not exist"
+                })
+        if data['success']:
+            itemserial.cell_id = cell_id
+            itemserial.save()
+    return HttpResponse(json.dumps(data), content_type="application/json")

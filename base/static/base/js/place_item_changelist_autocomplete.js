@@ -12,6 +12,7 @@
         }
 
         function bind_events() {
+            var url = $(".autocomplete-wrapper-js").data("url");
             $(".autocomplete-wrapper-js select").on("change", function(e, choice, autocomplete) {
                 var $select = $(e.target);
                 var cell = $select.val();
@@ -21,7 +22,7 @@
                     cell = 0;
                 }
                 var item = $select.closest(".autocomplete-wrapper-js").data("item-id");
-                $.get("/base/ajax/item_cell/" + item + "/" + cell +"/" +
+                $.get(url +"/" + item + "/" + cell +"/" +
                     "?selector=" + $select.attr('id'), function(response){
                     console.log(response);
                 })

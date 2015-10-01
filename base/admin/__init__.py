@@ -19,7 +19,7 @@ from daterange_filter.filter import DateRangeFilter
 from django_mptt_admin import util
 from grappelli_filters import RelatedAutocompleteFilter, FiltersMixin
 
-from actions import process_to_void
+from actions import process_to_void, update_cell
 from overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
 from functions import create_model_admin
 from forms import ItemCategoryForm, PlaceForm, PurchaseItemForm, TransactionItemForm, PurchaseForm, TransactionForm, \
@@ -186,11 +186,14 @@ class PurchaseAdmin(FiltersMixin, admin.ModelAdmin):
 class ItemAdmin(AdminReadOnly):
     search_fields = ['category__name', 'place__name']
     list_filter = ['category', ]
-    list_display = ['__unicode__', 'quantity', 'place']
+    list_display = ['__unicode__', 'quantity', 'place', 'cell']
 
 
 @admin.register(ItemSerial)
 class ItemSerialAdmin(AdminReadOnly):
+
+    class Media:
+        js = ('base/js/place_item_changelist_autocomplete.js',)
 
     def get_queryset(self, request):
         return super(ItemSerialAdmin, self).get_queryset(request).select_related('item', 'item__category', 'item__place')
@@ -204,7 +207,7 @@ class ItemSerialAdmin(AdminReadOnly):
 
     search_fields = ['item__category__name', 'serial']
     list_filter = ['item__category', ]
-    list_display = ['__unicode__', 'category_name', 'owner', 'serial_movement_changelist_link']
+    list_display = ['__unicode__', 'category_name', 'owner', 'cell', 'serial_movement_changelist_link']
 
 
 @admin.register(ItemChunk)
@@ -323,15 +326,12 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
     tpl = Template("{{ form.as_p }}")
     place_id = None
     show_zero = None
-    list_display = ['__unicode__', 'quantity', 'place', 'custom_cell', 'items_serials_changelist_link',
+    list_display = ['__unicode__', 'quantity', 'place', 'items_serials_changelist_link',
                     # 'items_chunks_changelist_link',
-                    'item_movement_changelist_link']
+                    'item_movement_changelist_link', 'custom_cell']
 
-    # def obj_link(self, obj):
-    #     # link = reverse("admin:base_item_change", args=[obj.id])
-    #     # link = reverse("admin:base_place_item_change", args=[self.place_id, obj.id])
-    #     link="#"
-    #     return mark_safe(u'<a href="%s">%s</a>' % (link, obj.__unicode__()))
+    action_form = CellItemActionForm
+    actions = [update_cell]
 
     def items_serials_changelist_link(self, obj):
         link = reverse("admin:base_item_serials_filtered_changelist", args=[obj.id])
@@ -360,26 +360,8 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
             return "/".join(sorted(cell_list))
         f = ItemInlineForm(instance=obj, auto_id='id_item_'+str(obj.pk)+'_%s')
         html = self.tpl.render(Context({"form": f}))
-        return mark_safe('<span class="autocomplete-wrapper-js" data-item-id="%s">%s</span>' % (obj.pk, html))
-
-    #
-    # def custom_cell(self, obj):
-    #     cell_list = list(set(obj.serials.filter(cell__isnull=False).values_list("cell__name", flat=True)))
-    #     if len(cell_list) > 1:
-    #             # or (cell_list and obj.cell is not None and not obj.cell.name == cell_list[0]):
-    #         print [obj, cell_list]
-    #         return "/".join(sorted(cell_list))
-    #     if obj.cell is not None:
-    #         return mark_safe(u'<input class="cell-autocomplete-custom" ' +
-    #                          u'data-url="/autocomplete/CellAutocomplete/" data-key="place_id" data-value="%s" ' % obj.pk +
-    #                          u'value="%s"' % (obj.cell.name) +
-    #                          u'</inputt>')
-    #     else:
-    #         return mark_safe(u'<select class="cell-autocomplete-custom" ' +
-    #                          u'data-url="/autocomplete/CellAutocomplete/" data-key="place_id" data-value="%s">' % obj.pk +
-    #                          u'<option value="0" selected>---</option>'
-    #                          u'</select>')
-
+        return mark_safe('<span class="autocomplete-wrapper-js" '
+                         'data-url="/base/ajax/item_cell" data-item-id="%s">%s</span>' % (obj.pk, html))
 
     def get_queryset(self, request):
         qs = super(PlaceItemAdmin, self).get_queryset(request)
@@ -400,8 +382,10 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
         except Place.DoesNotExist:
             extra_context.update({'cl_header': _('Place does not exist')})
         else:
-            if not place.has_cells:
-                self.list_display.remove('cell')
+            if not place.has_cells and 'custom_cell' in self.list_display:
+                self.list_display.remove('custom_cell')
+            if place.has_cells and not 'custom_cell' in self.list_display:
+                self.list_display.append('custom_cell')
             cl_header = _(u"Items for <{name}>".format(name=unicode(place.name)))
             extra_context.update({'show_zero': self.show_zero})
             extra_context.update({'rq_qs': rq_qs})
@@ -495,11 +479,8 @@ create_model_admin(CategoryItemAdmin, name='category_item', model=Item)
 
 class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
     item_id = None
-    list_display = ['__unicode__', 'category_name', 'cell', 'serial_movement_changelist_link']
-
-    # def obj_link(self, obj):
-    #     link = reverse("admin:base_item_serials_filtered_change", args=[self.item_id, obj.id])
-    #     return mark_safe(u'<a href="%s">%s</a>' % (link, obj.__unicode__()))
+    list_display = ['__unicode__', 'category_name', 'serial_movement_changelist_link', 'custom_cell']
+    tpl = Template("{{ form.as_p }}")
 
     def serial_movement_changelist_link(self, obj):
         link = reverse("admin:base_serial_movement_filtered_changelist", args=[obj.id])
@@ -528,6 +509,10 @@ class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
         except Item.DoesNotExist:
             extra_context.update({'cl_header': _('Item does not exist')})
         else:
+            if not item.place.has_cells and "custom_cell" in self.list_display:
+                self.list_display.remove("custom_cell")
+            if item.place.has_cells and not "custom_cell" in self.list_display:
+                self.list_display.append("custom_cell")
             extra_context.update({'cl_header': _(u"Serials for <{name}> in <{place}>".format(
                 name=unicode(item.category.name),
                 place=unicode(item.place.name)
@@ -535,32 +520,16 @@ class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
         view = super(ItemSerialsFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
 
-    # def change_view(self, request, item_id, object_id, form_url='',
-    #                 extra_context=None):  # pylint:disable=arguments-differ
-    #     self.item_id = item_id
-    #     extra_context = extra_context or {}
-    #     extra_context.update({
-    #         'item_id': item_id,
-    #         'proxy_url': "admin:base_item_serials_filtered_changelist",
-    #         'proxy_url_arg': self.item_id,
-    #     })
-    #     try:
-    #         serial = ItemSerial.objects.get(pk=object_id)
-    #     except ItemSerial.DoesNotExist:
-    #         extra_context.update({'obj_header': _('Serial does not exist')})
-    #     else:
-    #         extra_context.update({'obj_header': unicode(serial.serial)})
-    #     try:
-    #         item = Item.objects.get(pk=item_id)
-    #     except Item.DoesNotExist:
-    #         extra_context.update({'cl_header': _('Item does not exist')})
-    #     else:
-    #         extra_context.update({'cl_header': _(u"Serials for <{name}> in <{place}>".format(
-    #             name=unicode(item.category.name),
-    #             place=unicode(item.place.name)
-    #         ))})
-    #     return super(ItemSerialsFilteredAdmin, self).change_view(request, object_id, form_url='',
-    #                                                              extra_context=extra_context)
+    action_form = CellItemActionForm
+    actions = [update_cell]
+
+    def custom_cell(self, obj):
+        if not obj.item.place.has_cells:
+            return obj.cell
+        f = ItemInlineForm(instance=obj, auto_id='id_item_'+str(obj.pk)+'_%s')
+        html = self.tpl.render(Context({"form": f}))
+        return mark_safe('<span class="autocomplete-wrapper-js" '
+                         'data-url="/base/ajax/serial_cell" data-item-id="%s">%s</span>' % (obj.pk, html))
 
     def get_urls(self):
 
@@ -572,7 +541,6 @@ class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
 
         urlpatterns = [
             url(r'^(\d+)/$', wrap(self.changelist_view), name='base_item_serials_filtered_changelist'),
-            # url(r'^(\d+)/(\d+)$', wrap(self.change_view), name='base_item_serials_filtered_change'),
         ]
         return urlpatterns
 

@@ -194,10 +194,10 @@ class CellItemActionForm(ActionForm):
         return Cell.objects.all().values_list("id", "name")
 
     cell = forms.ModelChoiceField(queryset=Cell.objects.all())
-    all_serials = forms.ChoiceField(choices=(
-        (0, '----------',),
-        (1, _('update all serials'))
-    ))
+    # all_serials = forms.ChoiceField(choices=(
+    #     (0, '----------',),
+    #     (1, _('update all serials'))
+    # ))
 
 
 class CellItemForm(autocomplete_light.ModelForm):
