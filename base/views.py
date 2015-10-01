@@ -1,5 +1,5 @@
 from django.shortcuts import render_to_response
-from base.models import Item, PurchaseItem, ItemSerial, CellItem, Cell
+from base.models import Item, PurchaseItem, ItemSerial, Cell
 import json
 from django.http import HttpResponse
 
@@ -84,15 +84,20 @@ def ajax_cell(request, place_id, category_id, serial_id=None):
     cell_name = ''
 
     if not serial_id:
-        cell_items = CellItem.objects.filter(place_id=place_id, category_id=category_id)
-        cell_name = "/".join(list(set(cell_items.values_list('cell__name', flat=True))))
+        item = Item.objects.filter(place_id=place_id, category_id=category_id)
+        if item.count():
+            cell = item[0].cell
+            if cell:
+                cell_name = item[0].cell.name
     else:
         try:
-            cell_item = CellItem.objects.get(place_id=place_id, serial_id=serial_id)
-        except CellItem.DoesNotExist:
+            serial = ItemSerial.objects.get(id=serial_id)
+        except ItemSerial.DoesNotExist:
             pass
         else:
-            cell_name = cell_item.cell.name
+            cell = serial.cell
+            if cell:
+                cell_name = serial.cell.name
 
     data.update({
         'cell': cell_name

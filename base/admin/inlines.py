@@ -50,7 +50,15 @@ class TransactionItemInline(admin.TabularInline):
         models.TextField: {'widget': forms.Textarea(
             attrs={'rows': 1, 'cols': 60}
         )},
+        models.CharField: {'widget': forms.TextInput(
+            attrs={'width': "120px"}
+        )},
     }
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = list(super(TransactionItemInline, self).get_readonly_fields(request, obj))
+        readonly_fields.append("cell_from")
+        return readonly_fields
 
 
 class TransactionItemInlineReadonly(InlineReadOnly):

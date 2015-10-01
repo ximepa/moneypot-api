@@ -158,7 +158,7 @@ class Place(MPTTModel):
     def get_absolute_url(self):
         return reverse('admin:base_place_item_changelist', args=[self.pk])
 
-    def deposit(self, item):
+    def deposit(self, item, cell=None):
         try:
             i = self.items.get(category=item.category, is_reserved=False)
         except Item.DoesNotExist:
@@ -166,9 +166,10 @@ class Place(MPTTModel):
             item.is_reserved = False
             item.reserved_by = None
             item.parent = None
+            item.cell = cell
             item.save()
         else:
-            i.deposit(item)
+            i.deposit(item, cell=cell)
 
     def withdraw(self, item):
         try:
@@ -195,12 +196,8 @@ class Place(MPTTModel):
                         place=self,
                         serial=serial
                     )))
-                try:
-                    cell_item = CellItem.objects.get(serial=serial, place=self)
-                except CellItem.DoesNotExist:
-                    pass
-                else:
-                    cell_item.delete()
+                serial.cell = None
+                serial.save()
             return i.withdraw(quantity=item.quantity, serial=serial)
 
     def join_to(self, place):
@@ -454,7 +451,7 @@ class Purchase(Movement):
 
             if not pi.serials:
                 ti = TransactionItem.objects.create(purchase=self, transaction=t, category=pi.category,
-                                                    quantity=pi.quantity, serial=None,
+                                                    quantity=pi.quantity, serial=None, cell=pi.cell,
                                                     _chunks=pi._chunks, destination=self.destination)  # noqa
 
                 for item in pi.item_set.all():
@@ -470,7 +467,7 @@ class Purchase(Movement):
                     s.purchase = pi
                     s.save()
                     ti = TransactionItem.objects.create(purchase=self, transaction=t, category=pi.category,
-                                                        quantity=1, serial=s, _chunks=pi._chunks)  # noqa
+                                                        quantity=1, serial=s, _chunks=pi._chunks, cell=pi.cell)  # noqa
 
         t.is_prepared = prepared
         t.is_negotiated_source = True
@@ -482,56 +479,17 @@ class Purchase(Movement):
         self.completed_at = timezone.now()
         self.is_completed = True
         self.save()
-        self.fill_cells()
+        # self.fill_cells()
 
     def fill_cells(self):
         for pi in self.purchase_items.all():
-            category = pi.category
             place = pi.purchase.destination
-            if not place.has_cells:
+            if not place.has_cells or not pi.cell:
                 continue
-            if not pi.cell:
-                cell_id = None
             else:
                 cell, created = Cell.objects.get_or_create(place_id=place.id, name=pi.cell)
-                cell_id = cell.id
-            serials = pi.serials
-            if len(serials):
-                for serial in serials:
-                    try:
-                        s = ItemSerial.objects.get(serial=serial)
-                    except ItemSerial.DoesNotExist:
-                        pass
-                    else:
-                        try:
-                            ci, created = CellItem.objects.get_or_create(
-                                place_id=place.id,
-                                category_id=category.id,
-                                serial_id=s.id,
-                            )
-                        except:
-                            pass
-                        else:
-                            if not created:
-                                ci.cell_id=cell_id
-                                ci.save()
-            if cell_id:
-                try:
-                    CellItem.objects.get_or_create(
-                        place_id=place.id,
-                        category_id=category.id,
-                        cell_id=cell_id,
-                    )
-                except CellItem.MultipleObjectsReturned:
-                    pass
-            else:
-                try:
-                    CellItem.objects.get_or_create(
-                        place_id=place.id,
-                        category_id=category.id,
-                    )
-                except CellItem.MultipleObjectsReturned:
-                    pass
+                pi.item_set.update(cell=cell)
+                ItemSerial.objects.filter(item__pk__in=pi.item_set.values_list("pk", flat=True)).update(cell=cell)
 
 
 class Item(models.Model):
@@ -712,7 +670,7 @@ class Item(models.Model):
         return item
 
     @transaction.atomic
-    def deposit(self, item, dry_run=False):
+    def deposit(self, item, dry_run=False, cell=None):
         """
         :param item: item to join with current, categiry must match
         :type item: base.models.Item()
@@ -741,7 +699,15 @@ class Item(models.Model):
             if not self.chunks.count():
                 ItemChunk.objects.create(item=self, chunk=self.quantity, purchase=self.purchase)
 
-        self.qs.update(quantity=models.F('quantity') + item.quantity)
+        if cell:
+            if not item.cell == cell:
+                if item.cell:
+                    new_cell = Cell.objects.get_or_create(place=cell.place, name="%s+%s" % (item.cell.name, cell.name))
+                else:
+                    new_cell = cell
+                self.qs.update(cell=new_cell)
+
+        self.qs.update(quantity=models.F('quantity') + item.quantity, )
         self.refresh_from_db()
 
         item.chunks.update(item=self)
@@ -802,7 +768,8 @@ class TransactionItem(MovementItem):
     serial = models.ForeignKey(ItemSerial, blank=True, null=True)
     destination = models.ForeignKey("Place", verbose_name=_("destination"),
                                     related_name="transaction_items", blank=True, null=True)
-    cell = models.CharField(_("Cell"), max_length=16, blank=True, null=True)
+    cell_from = models.CharField(max_length=16, blank=True, null=True)
+    cell = models.CharField(max_length=16, blank=True, null=True)
 
     class Meta:
         verbose_name = _("transaction item")
@@ -810,6 +777,21 @@ class TransactionItem(MovementItem):
 
     def __unicode__(self):
         return self.category.name
+
+    def save(self, *args, **kwargs):
+        if not self.cell_from:
+            if self.serial:
+                self.cell_from = self.serial.cell
+            else:
+                try:
+                    item = Item.objects.get(place=self.transaction.source, category=self.category)
+                except Item.DoesNotExist:
+                    pass
+                except Item.MultipleObjectsReturned:
+                    pass
+                else:
+                    self.cell_from = item.cell
+        super(TransactionItem, self).save(*args, **kwargs)
 
 
 class Transaction(Movement):
@@ -905,6 +887,9 @@ class Transaction(Movement):
         if not self.is_confirmed_destination:
             raise TransactionNotReady(_("transaction is not confirmed by destination"))
         for item in self.items_prepared:
+
+            cell = self.fill_cells(item.reserved_by)
+
             if item.reserved_by.destination:
                 assert item.reserved_by.destination.is_descendant_of(self.destination, include_self=True), ugettext(
                     "<{ti_dest}> must be child node of <{dest}>".format(
@@ -912,46 +897,26 @@ class Transaction(Movement):
                                 dest=unicode(self.destination.name)
                             )
                 )
-                item.reserved_by.destination.deposit(item)
+                item.reserved_by.destination.deposit(item, cell=cell)
             else:
-                self.destination.deposit(item)
+                self.destination.deposit(item, cell=cell)
         self.is_completed = True
         self.completed_at = timezone.now()
         self.save()
-        self.fill_cells()
 
-    def fill_cells(self):
-        for ti in self.transaction_items.all():
-            category = ti.category
-            place = ti.transaction.destination
-            if not place.has_cells:
-                continue
-            serial = ti.serial
-            try:
-                s = ItemSerial.objects.get(serial=serial)
-            except ItemSerial.DoesNotExist:
-                pass
-            else:
-                try:
-                    ci, created = CellItem.objects.get_or_create(
-                        place_id=place.id,
-                        category_id=category.id,
-                        serial_id=s.id,
-                    )
-                except:
-                    pass
-                else:
-                    if not created:
-                        ci.cell_id=None
-                        ci.save()
-            try:
-                CellItem.objects.get_or_create(
-                    place_id=place.id,
-                    category_id=category.id,
-                )
-            except CellItem.MultipleObjectsReturned:
-                pass
-
+    def fill_cells(self, ti):
+        print "TRANS FILL CELLS"
+        print ti
+        place = ti.destination or ti.transaction.destination
+        print place
+        if place.has_cells and ti.cell:
+            cell, created = Cell.objects.get_or_create(place_id=place.id, name=ti.cell)
+            print cell, created
+            print ti.item_set.values_list("pk", flat=True)
+            ti.item_set.update(cell=cell)
+            ItemSerial.objects.filter(item__pk__in=ti.item_set.values_list("pk", flat=True)).update(cell=cell)
+            return cell
+        return None
 
 
 class ProcessSerialMixin(object):
@@ -1205,45 +1170,3 @@ class Cell(models.Model):
     @staticmethod
     def autocomplete_search_fields():
         return "id__iexact", "name__icontains",
-
-
-
-class CellItem(models.Model):
-    place = models.ForeignKey("Place", verbose_name=_("place"), related_name="cell_items")
-    category = models.ForeignKey("ItemCategory", verbose_name=_("item category"), related_name="cell_items")
-    serial = models.OneToOneField("ItemSerial", verbose_name=_("item serial"), blank=True, null=True)
-    cell = models.ForeignKey("Cell", verbose_name=_("cell"), blank=True, null=True)
-    cell_isnull = models.BooleanField(blank=True, default=True)
-
-    class Meta:
-        verbose_name = _("cell item")
-        verbose_name_plural = _("cell items")
-
-    def __unicode__(self):
-        return self.category.name
-
-    def save(self, *args, **kwargs):
-        if self.cell:
-            self.cell_isnull = False
-        else:
-            self.cell_isnull = True
-        super(CellItem, self).save(*args, **kwargs)
-        if not self.cell_isnull:
-            other = CellItem.objects.filter(
-                place=self.place,
-                category=self.category,
-                serial=self.serial,
-                cell_isnull=True
-            )
-            other.delete()
-
-    def suggested_place(self):
-        if not self.cell_isnull:
-            return ""
-        other = CellItem.objects.filter(place=self.place, category=self.category, cell_isnull=False)
-        if not other.count():
-            return "n/a"
-        else:
-            return other[0].cell.name
-
-    suggested_place.short_description = _("suggested place")

@@ -23,12 +23,12 @@ from actions import process_to_void, update_cell
 from overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
 from functions import create_model_admin
 from forms import ItemCategoryForm, PlaceForm, PurchaseItemForm, TransactionItemForm, PurchaseForm, TransactionForm, \
-    FixCategoryMergeForm, CellForm, CellItemForm, CellItemActionForm, ItemInlineForm
+    FixCategoryMergeForm, CellForm, CellItemActionForm, ItemInlineForm
 from inlines import ItemCategoryCommentInline, PurchaseItemInline, PurchaseItemInlineReadonly, \
     TransactionItemInlineReadonly, TransactionItemInline, TransactionCommentPlaceInline
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
     TransactionItem, Transaction, OrderItemSerial, ContractItemSerial, VItemMovement, VSerialMovement, \
-    get_descendants_ids, FixSerialTransform, FixCategoryMerge, Cell, CellItem
+    get_descendants_ids, FixSerialTransform, FixCategoryMerge, Cell
 from filebrowser.widgets import ClearableFileInput
 from filebrowser.settings import ADMIN_THUMBNAIL
 
@@ -357,7 +357,7 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
         if len(cell_list) > 1:
                 # or (cell_list and obj.cell is not None and not obj.cell.name == cell_list[0]):
             print [obj, cell_list]
-            return "/".join(sorted(cell_list))
+            return "+".join(sorted(cell_list))
         f = ItemInlineForm(instance=obj, auto_id='id_item_'+str(obj.pk)+'_%s')
         html = self.tpl.render(Context({"form": f}))
         return mark_safe('<span class="autocomplete-wrapper-js" '
@@ -487,15 +487,6 @@ class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
         return mark_safe(u'<a href="%s">%s</a>' % (link, _("movement history")))
 
     serial_movement_changelist_link.short_description = _("movement history")
-
-    def cell(self, obj):
-        if not obj.item.place.has_cells:
-            return ""
-        l = obj.item.category.cell_items.filter(
-            place=obj.item.place,
-            serial=obj,
-            cell_isnull=False).values_list("cell__name", flat=True)
-        return "/".join(sorted(list(set(l))))
 
     def get_queryset(self, request):
         qs = super(ItemSerialsFilteredAdmin, self).get_queryset(request)
@@ -778,52 +769,3 @@ class CellAdmin(FiltersMixin, admin.ModelAdmin):
     list_display = ['name', 'place']
     list_filter = (('place', RelatedAutocompleteFilter), )
     form = CellForm
-
-
-@admin.register(CellItem)
-class CellItemAdmin(FiltersMixin, admin.ModelAdmin):
-    search_fields = ['serial__serial', 'category__name']
-    list_filter = (
-        ('place', RelatedAutocompleteFilter),
-        ('category', RelatedAutocompleteFilter),
-        ('cell', RelatedAutocompleteFilter),
-        'cell_isnull'
-    )
-    list_display = ['place', 'cell', 'category', 'serial', 'suggested_place']
-    form = CellItemForm
-    action_form = CellItemActionForm
-    readonly_fields = ['cell_isnull']
-
-    def update_cell(self, request, queryset):
-        cell_id = request.POST['cell']
-        all_serials = request.POST['all_serials']
-        place = queryset[0].place
-        try:
-            cell = Cell.objects.get(pk=cell_id)
-        except Cell.DoesNotExist:
-            self.message_user(request, _("Selected cell does not exist"), level=messages.ERROR)
-        else:
-            qs = queryset.filter(place=place)
-            cnt = qs.count()
-            if not cnt == queryset.count():
-                self.message_user(request, _("All items must be in same place"), level=messages.ERROR)
-            else:
-                if all_serials:
-                    cat_ids = list(set(qs.values_list('category_id', flat=True)))
-                    qs = CellItem.objects.filter(place=place, category_id__in=cat_ids)
-                    cnt = qs.count()
-                    qs.update(cell=cell, cell_isnull=False)
-                    self.message_user(request, _("Updated items count (all serials): {cnt}, Cell: {cell}".format(
-                            cnt=cnt,
-                            cell=cell.name
-                        )), level=messages.SUCCESS)
-                else:
-                    qs.update(cell=cell, cell_isnull=False)
-                    self.message_user(request, _("Updated items count: {cnt}, Cell: {cell}".format(
-                        cnt=cnt,
-                        cell=cell.name
-                    )), level=messages.SUCCESS)
-
-    update_cell.short_description = _('Update cell of selected rows')
-
-    actions = [update_cell]

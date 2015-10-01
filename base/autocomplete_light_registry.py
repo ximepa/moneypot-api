@@ -20,7 +20,6 @@ from .models import Place, ItemCategory, Item, ItemSerial, Cell
 
 
 class ItemCategoryAutocomplete(autocomplete_light.AutocompleteModelBase):
-    autocomplete_js_attributes = {'placeholder': 'region name ..'}
 
     def choices_for_request(self):
         q = self.request.GET.get('q', '')
@@ -40,6 +39,7 @@ class ItemCategoryAutocomplete(autocomplete_light.AutocompleteModelBase):
 
 autocomplete_light.register(ItemCategory, ItemCategoryAutocomplete, attrs={
                                 'placeholder': 'item category name',
+                                'style': "width: 200px",
                                 'data-autocomplete-minimum-characters': 0,
                             },)
 
@@ -57,7 +57,6 @@ autocomplete_light.register(Item,
 
 
 class ItemSerialAutocomplete(autocomplete_light.AutocompleteModelBase):
-    autocomplete_js_attributes = {'placeholder': 'serial ..'}
 
     def choices_for_request(self):
         q = self.request.GET.get('q', '')
@@ -78,11 +77,11 @@ class ItemSerialAutocomplete(autocomplete_light.AutocompleteModelBase):
 autocomplete_light.register(ItemSerial, ItemSerialAutocomplete,attrs={
                                 'placeholder': 'serial ..',
                                 'data-autocomplete-minimum-characters': 0,
+                                'style': "width: 140px"
                             },)
 
 
 class SubPlaceAutocomplete(autocomplete_light.AutocompleteModelBase):
-    autocomplete_js_attributes = {'placeholder': 'sub place ..'}
 
     def choices_for_request(self):
         q = self.request.GET.get('q', '')
@@ -105,7 +104,10 @@ class SubPlaceAutocomplete(autocomplete_light.AutocompleteModelBase):
         return self.order_choices(choices)[0:self.limit_choices]
 
 
-autocomplete_light.register(Place, SubPlaceAutocomplete)
+autocomplete_light.register(Place, SubPlaceAutocomplete, attrs={
+    'placeholder': 'place ..',
+    'style': "width: 140px"
+},)
 
 
 class CellAutocomplete(autocomplete_light.AutocompleteModelBase):
@@ -119,8 +121,8 @@ class CellAutocomplete(autocomplete_light.AutocompleteModelBase):
 
 
 autocomplete_light.register(Cell, CellAutocomplete, attrs={
-                                'data-autocomplete-minimum-characters': 1,
-                                'placeholder': 'cell name ..',
-                                'size': 10,
-                                'style': "width: 80px"
-                            },)
+    'data-autocomplete-minimum-characters': 1,
+    'placeholder': 'cell name ..',
+    'size': 10,
+    'style': "width: 80px"
+},)

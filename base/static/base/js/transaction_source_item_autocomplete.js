@@ -63,14 +63,17 @@
 
             if (source && value) {
                 var $quantity = $(this).closest('.grp-tr').find("input[id^='id_transaction_items-'][name*='quantity']");
-                var $cell = $(this).closest('.grp-tr').find("input[id^='id_transaction_items-'][name*='cell']");
 
                 $.get("/base/ajax/qty/"+source[0]+"/"+value[0]+"/?selector="+$quantity.attr('id'), function(response){
                     $("#"+response.selector).attr('placeholder', response.qty);
                 });
 
-                $.get("/base/ajax/cell/"+source[0]+"/"+value[0]+"/?selector="+$cell.attr('id'), function(response){
-                    $("#"+response.selector).val(response.cell);
+                var $cell = $(this).closest('.grp-tr').find(".cell_from");
+                var rnd = parseInt(Math.random()*10000);
+                $cell.attr("id", "id_cell_from_"+rnd);
+
+                $.get("/base/ajax/cell/"+source[0]+"/"+value[0]+"/?rnd="+rnd+"&selector="+$cell.attr('id'), function(response){
+                    $("#"+response.selector).html(response.cell);
                 });
             }
 
@@ -100,10 +103,12 @@
             var source = $("#id_source").val();
 
             if (source && value) {
-                var $cell = $(this).closest('.grp-tr').find("input[id^='id_transaction_items-'][name*='cell']");
+                var $cell = $(this).closest('.grp-tr').find(".cell_from");
+                var rnd = parseInt(Math.random()*10000);
+                $cell.attr("id", "id_cell_from_"+rnd);
 
-                $.get("/base/ajax/cell/"+source[0]+"/0/"+value[0]+"/?selector="+$cell.attr('id'), function(response){
-                    $("#"+response.selector).val(response.cell);
+                $.get("/base/ajax/cell/"+source[0]+"/0/"+value[0]+"/?rnd="+rnd+"&selector="+$cell.attr('id'), function(response){
+                    $("#"+response.selector).html(response.cell);
                 });
             }
 

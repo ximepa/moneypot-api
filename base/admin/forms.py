@@ -9,7 +9,7 @@ import autocomplete_light
 import re
 
 from base.models import InvalidParameters, ItemCategory, ItemCategoryComment, Place, PurchaseItem, TransactionItem, Purchase, \
-    Transaction, Unit, ItemSerial, FixCategoryMerge, Cell, CellItem, Item
+    Transaction, Unit, ItemSerial, FixCategoryMerge, Cell, Item
 
 
 class ItemCategoryCommentForm(autocomplete_light.ModelForm):
@@ -60,7 +60,6 @@ class PurchaseItemForm(autocomplete_light.ModelForm):
 class TransactionItemForm(autocomplete_light.ModelForm):
     _serials = forms.CharField(required=False, label=_("serials"), widget=forms.Textarea(attrs={'cols': 80, 'rows': 1}))
     serials = []
-    cell = forms.CharField(widget=forms.TextInput(attrs={'readonly':'readonly'}), label=_("cell"), required=False)
 
     class Meta:
         model = TransactionItem
@@ -198,16 +197,6 @@ class CellItemActionForm(ActionForm):
     #     (0, '----------',),
     #     (1, _('update all serials'))
     # ))
-
-
-class CellItemForm(autocomplete_light.ModelForm):
-
-    place = forms.ModelChoiceField(queryset=Place.objects.filter(has_cells=1), empty_label=None)
-
-    class Meta:
-        model = CellItem
-        exclude = ['serial']
-        autocomplete_fields = ('category', 'cell')
 
 
 class ItemInlineForm(autocomplete_light.ModelForm):
