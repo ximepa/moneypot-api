@@ -1,11 +1,18 @@
 {% extends "admin/base.html" %}
 {% load i18n grp_tags %}
+{% load static %}
 
 {% block title %}{{ title }} | {% trans "Sklad" %}{% endblock %}
 
 {% block branding %}
     {# Use the div#grp-branding for branding elements, e.g. a logo #}
-    {# <div id="grp-branding"></div> #}
+    <div id="grp-branding">
+        <div style="padding: 5px">
+            <a href="/base/place_item/6/">
+                <img src="{% static "base/img/warehouse-128.png" %}" height="28" width="40"/>
+            </a>
+        </div>
+    </div>
 {% endblock %}
 
 {% block extrahead %}
