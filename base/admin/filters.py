@@ -3,6 +3,7 @@ __author__ = 'maxim'
 
 from grappelli_filters import RelatedAutocompleteFilter
 from mptt.models import MPTTModel
+from django.utils.translation import ugettext_lazy as _
 
 
 class MPTTRelatedAutocompleteFilter(RelatedAutocompleteFilter):
@@ -22,19 +23,26 @@ class MPTTRelatedAutocompleteFilter(RelatedAutocompleteFilter):
             param = self.used_param()
             field_paths = self.field_path.split("__")
             mptt_model = queryset.model
+            error = False
+            last_field_path = ''
             for field_path in field_paths:
                 try:
                     mptt_model = getattr(mptt_model, field_path).field.rel.to
                 except AttributeError, e:
-                    print e
+                    error = True
+                else:
+                    last_field_path = field_path
 
-            if issubclass(mptt_model, MPTTModel):
+            if issubclass(mptt_model, MPTTModel) and not error:
                 try:
                     obj = mptt_model.objects.get(pk=param[0])
                 except mptt_model.DoesNotExist:
                     pass
                 else:
-                    request.mptt_filter = obj
+                    if hasattr(request, "mptt_filter"):
+                        request.mptt_filter = '%s | %s:"%s"' % (request.mptt_filter, _(last_field_path), unicode(obj))
+                    else:
+                        request.mptt_filter = '%s:"%s"' % (_(last_field_path), unicode(obj))
                     tree = obj.get_descendants(include_self=True)
                     param = tree.values_list("id", flat=True)
 
