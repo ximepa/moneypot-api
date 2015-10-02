@@ -15,14 +15,14 @@
                     "&selector_usd=" + $($price[1]).attr('id'), function(response){
                     var $usd=$("#"+response.selector_usd);
                     var $uah=$("#"+response.selector_uah);
-                    $usd.val("");
-                    $uah.val("");
-                    if(!(response.price_usd=="n/a")) {
+                    //$usd.val("");
+                    //$uah.val("");
+                    if(!(response.price_usd=="n/a") && !($usd.val())) {
                         $usd.val(response.price_usd);
                     } else {
                         $usd.attr('placeholder', response.price_usd);
                     }
-                    if(!(response.price_uah=="n/a")) {
+                    if(!(response.price_uah=="n/a") && !($uah.val())) {
                         $uah.val(response.price_uah);
                     } else {
                         $uah.attr('placeholder', response.price_uah);
