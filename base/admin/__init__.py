@@ -78,6 +78,10 @@ class ItemCategoryAdmin(DjangoMpttAdmin):
                 )
             node_info.update(
                 url=self.get_admin_url('change', (quote(pk),)),
+                storage_url=reverse(
+                    'admin:base_place_item_changelist',
+                    args=(settings.APP_FILTERS["PLACE_STORAGE_ID"],)
+                )+"?category__id__in=%s" % pk,
                 move_url=self.get_admin_url('move', (quote(pk),))
             )
 

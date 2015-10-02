@@ -1,3 +1,4 @@
+# coding=utf-8
 from __future__ import unicode_literals, print_function
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -130,9 +131,12 @@ REST_FRAMEWORK = {
     )
 }
 
+GRAPPELLI_ADMIN_TITLE = "Склад. версія 1.0"
+
 APP_FILTERS = {
     'CAT_ORDERS_ID': 85,
     'CAT_CONTRACTS_ID': 74,
+    'PLACE_STORAGE_ID': 6,
     'PLACE_WORKERS_ID': 3,
     'PLACE_VOID': 152,
 }

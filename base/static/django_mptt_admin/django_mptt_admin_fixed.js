@@ -5,6 +5,9 @@ function initTree($tree, autoopen, autoescape) {
         // Create edit link
         var $title = $li.find('.jqtree-title');
         $title.after('<a href="'+ node.url +'" class="edit">['+ $tree.data('label-edit') +']</a>');
+        if(node.storage_url) {
+            $title.after('<a href="'+ node.storage_url +'" class="edit">['+ $tree.data('label-cargo') +']</a>');
+        }
         if(node.transfer_url) {
             $title.after('<a href="'+ node.transfer_url +'" class="edit">['+ $tree.data('label-transfer') +']</a>');
         }
