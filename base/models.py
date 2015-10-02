@@ -386,8 +386,9 @@ class Purchase(Movement):
         # return u'%s -> %s' % (self.source.name, self.destination.name)
 
     def clean_is_auto_source(self):
-        if self.is_auto_source and not self.source.is_shop:
-            raise ValidationError({'is_auto_source': ugettext('auto source is allowed for shops only')})
+        if self.source_id:
+            if self.is_auto_source and not self.source.is_shop:
+                raise ValidationError({'is_auto_source': ugettext('auto source is allowed for shops only')})
 
     def clean(self):
         self.clean_is_auto_source()
@@ -442,7 +443,12 @@ class Purchase(Movement):
             self.prepare_items_auto()
 
     @transaction.atomic
-    def complete(self):
+    def complete(self, pending=False):
+        if pending:
+            print "purchase complete defer"
+            setattr(self, "is_pending", True)
+            return
+        print "purchase complete run"
         if self.is_completed:
             return
         self.prepare()
@@ -864,16 +870,21 @@ class Transaction(Movement):
             assert item.place == ti.transaction.source, unicode(ti.transaction.source)
             self.items_prepared.append(item)
 
-    def force_complete(self):
+    def force_complete(self, pending=False):
         self.is_negotiated_source = True
         self.is_negotiated_destination = True
         self.is_confirmed_source = True
         self.is_confirmed_destination = True
-        self.complete()
+        self.complete(pending)
 
     @transaction.atomic
-    def complete(self):
+    def complete(self, pending=False):
         # print "TRANSACTION COMPLETED!"
+        if pending:
+            print "transaction complete defer"
+            setattr(self, "is_pending", True)
+            return
+        print "transaction complete run"
         if self.is_completed:
             return
         if not self.is_prepared:

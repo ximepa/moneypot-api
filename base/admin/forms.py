@@ -144,7 +144,7 @@ class PurchaseForm(autocomplete_light.ModelForm):
             if p.is_completed:
                 raise RuntimeError(_("already completed"))
             # try:
-            p.complete()
+            p.complete(pending=True)
             # except Exception, e:
             # raise forms.ValidationError(e)
         return p
@@ -165,7 +165,7 @@ class TransactionForm(autocomplete_light.ModelForm):
             if t.is_completed:
                 raise RuntimeError(_("already completed"))
             # try:
-            t.force_complete()
+            t.force_complete(pending=True)
             # except Exception, e:
             # raise forms.ValidationError(e)
         return t
