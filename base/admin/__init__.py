@@ -136,8 +136,8 @@ class PurchaseAdmin(FiltersMixin, admin.ModelAdmin):
     list_display = ['__unicode__', 'created_at', 'completed_at', 'source', 'destination', 'is_completed',
                     'is_prepared', ]
     list_filter = [
-        ('source', RelatedAutocompleteFilter),
-        ('destination', RelatedAutocompleteFilter),
+        ('source', MPTTRelatedAutocompleteFilter),
+        ('destination', MPTTRelatedAutocompleteFilter),
         'is_completed', 'is_prepared',
     ]
     search_fields = ['source__name', 'destination__name', 'purchase_items__category__name']
@@ -188,7 +188,7 @@ class PurchaseAdmin(FiltersMixin, admin.ModelAdmin):
 @admin.register(Item)
 class ItemAdmin(FiltersMixin, AdminReadOnly):
     search_fields = ['category__name', 'place__name']
-    list_filter = [('category', RelatedAutocompleteFilter), 'cell']
+    list_filter = [('category', MPTTRelatedAutocompleteFilter), 'cell']
     list_display = ['__unicode__', 'quantity', 'place', 'cell']
 
 
@@ -210,17 +210,17 @@ class ItemSerialAdmin(FiltersMixin, AdminReadOnly):
 
     search_fields = ['item__category__name', 'serial']
     list_filter = [
-        ('item__category', RelatedAutocompleteFilter),
-        ('item__place', RelatedAutocompleteFilter),
+        ('item__category', MPTTRelatedAutocompleteFilter),
+        ('item__place', MPTTRelatedAutocompleteFilter),
         'cell'
     ]
     list_display = ['__unicode__', 'category_name', 'owner', 'cell', 'serial_movement_changelist_link']
 
 
 @admin.register(ItemChunk)
-class ItemChunkAdmin(HiddenAdminModelMixin, AdminReadOnly):
+class ItemChunkAdmin(FiltersMixin, HiddenAdminModelMixin, AdminReadOnly):
     search_fields = ['item__category__name']
-    list_filter = ['item__category', ]
+    list_filter = [('item__category', MPTTRelatedAutocompleteFilter), ]
     list_display = ['__unicode__', 'category_name']
 
 
@@ -242,8 +242,8 @@ class TransactionAdmin(FiltersMixin, admin.ModelAdmin):
         # 'is_confirmed_destination'
     ]
     list_filter = [
-        ('source', RelatedAutocompleteFilter),
-        ('destination', RelatedAutocompleteFilter),
+        ('source', MPTTRelatedAutocompleteFilter),
+        ('destination', MPTTRelatedAutocompleteFilter),
         'is_completed', 'is_prepared',
         # 'is_negotiated_source', 'is_negotiated_destination', 'is_confirmed_source',
         # 'is_confirmed_destination'
@@ -551,9 +551,9 @@ create_model_admin(ItemSerialsFilteredAdmin, name='item_serials_filtered', model
 
 
 @admin.register(OrderItemSerial)
-class OrderItemSerialAdmin(admin.ModelAdmin):
+class OrderItemSerialAdmin(FiltersMixin, admin.ModelAdmin):
     search_fields = ['serial']
-    # list_filter = ['item__place', ]
+    list_filter = [('item__place', MPTTRelatedAutocompleteFilter), ]
     list_display = ['serial', 'category_name', 'owner', 'comment']
     ordering = ['comment', ]
     readonly_fields = ['item', 'purchase', 'serial', 'owner']
@@ -577,9 +577,9 @@ class OrderItemSerialAdmin(admin.ModelAdmin):
 
 
 @admin.register(ContractItemSerial)
-class ContractItemSerialAdmin(admin.ModelAdmin):
+class ContractItemSerialAdmin(FiltersMixin, admin.ModelAdmin):
     search_fields = ['serial']
-    list_filter = ['item__place', ]
+    list_filter = [('item__place', MPTTRelatedAutocompleteFilter), ]
     list_display = ['serial', 'category_name', 'owner', 'comment']
     ordering = ['comment', ]
     readonly_fields = ['item', 'purchase', 'serial', 'owner']
@@ -604,24 +604,24 @@ class ContractItemSerialAdmin(admin.ModelAdmin):
 
 
 @admin.register(VItemMovement)
-class ItemMovementAdmin(AdminReadOnly):
+class ItemMovementAdmin(FiltersMixin, AdminReadOnly):
     search_fields = ['destination_name', 'source_name', 'item_category_name']
     list_filter = (
         ('created_at', DateRangeFilter),
         ('completed_at', DateRangeFilter),
-        'category',
+        ('category', MPTTRelatedAutocompleteFilter),
     )
     list_display = ['item_category_name', 'created_at', 'completed_at', 'source', 'destination', 'quantity']
     fields = ['item_category_name', 'created_at', 'completed_at', 'source', 'destination', 'quantity']
 
 
 @admin.register(VSerialMovement)
-class SerialMovementAdmin(AdminReadOnly):
+class SerialMovementAdmin(FiltersMixin, AdminReadOnly):
     search_fields = ['destination_name', 'source_name', 'item_category_name', 'serial']
     list_filter = (
         ('created_at', DateRangeFilter),
         ('completed_at', DateRangeFilter),
-        'category',
+        ('category', MPTTRelatedAutocompleteFilter),
     )
     list_display = ['serial', 'item_category_name', 'created_at', 'completed_at', 'source', 'destination', 'quantity']
     fields = ['serial', 'item_category_name', 'created_at', 'completed_at', 'source', 'destination', 'quantity']

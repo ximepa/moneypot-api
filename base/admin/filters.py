@@ -20,20 +20,23 @@ class MPTTRelatedAutocompleteFilter(RelatedAutocompleteFilter):
     def queryset(self, request, queryset):
         if self.used_param():
             param = self.used_param()
-            try:
-                mptt_model = getattr(queryset.model, self.field_path).field.rel.to
-            except AttributeError, e:
-                pass
-            else:
-                if issubclass(mptt_model, MPTTModel):
-                    try:
-                        obj = mptt_model.objects.get(pk=param[0])
-                    except mptt_model.DoesNotExist:
-                        pass
-                    else:
-                        request.mptt_filter = obj
-                        tree = obj.get_descendants(include_self=True)
-                        param = tree.values_list("id", flat=True)
+            field_paths = self.field_path.split("__")
+            mptt_model = queryset.model
+            for field_path in field_paths:
+                try:
+                    mptt_model = getattr(mptt_model, field_path).field.rel.to
+                except AttributeError, e:
+                    print e
+
+            if issubclass(mptt_model, MPTTModel):
+                try:
+                    obj = mptt_model.objects.get(pk=param[0])
+                except mptt_model.DoesNotExist:
+                    pass
+                else:
+                    request.mptt_filter = obj
+                    tree = obj.get_descendants(include_self=True)
+                    param = tree.values_list("id", flat=True)
 
             filter_parameter = self.filter_parameter if self.filter_parameter else self.get_parameter_name(self.field_path)
             return queryset.filter(**{filter_parameter: param})

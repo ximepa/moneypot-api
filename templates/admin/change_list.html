@@ -164,9 +164,18 @@
     {% endif %}
 {% endblock %}
 
+{#<!-- CONTENT-TITLE -->#}
+{#{% block content_title %}#}
+{#    <h1>{{ cl.opts.verbose_name_plural|capfirst }}</h1>#}
+{#{% endblock %}#}
+
 <!-- CONTENT-TITLE -->
 {% block content_title %}
-    <h1>{{ cl.opts.verbose_name_plural|capfirst }}</h1>
+    {% if request.mptt_filter %}
+        <h1>{{ cl.opts.verbose_name_plural|capfirst }} > {{ request.mptt_filter }}</h1>
+    {% else %}
+        <h1>{{ cl.opts.verbose_name_plural|capfirst }} {{ cl_header_addon }}</h1>
+    {% endif %}
 {% endblock %}
 
 <!-- OBJECT-TOOLS -->
