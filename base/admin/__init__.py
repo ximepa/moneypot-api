@@ -173,6 +173,8 @@ class PurchaseAdmin(FiltersMixin, admin.ModelAdmin):
         else:
             inlines = self.inlines
 
+        self._obj = obj
+
         for inline_class in inlines:
             inline = inline_class(self.model, self.admin_site)
             inline_instances.append(inline)
@@ -187,8 +189,8 @@ class PurchaseAdmin(FiltersMixin, admin.ModelAdmin):
                 raise ValidationError(ugettext("purchase items data is read only!"))
             instance.save()
         formset.save_m2m()
-        if instances:
-            p = instances[0].purchase
+        if self._obj:
+            p = self._obj
             if hasattr(p, "is_pending") and p.is_pending:
                 # print "complete pending purchase"
                 p.is_pending = False
@@ -289,6 +291,8 @@ class TransactionAdmin(FiltersMixin, admin.ModelAdmin):
         else:
             inlines = self.inlines
 
+        self._obj = obj
+
         for inline_class in inlines:
             inline = inline_class(self.model, self.admin_site)
             inline_instances.append(inline)
@@ -313,8 +317,8 @@ class TransactionAdmin(FiltersMixin, admin.ModelAdmin):
                 elif instance.pk:
                     instance.delete()
         formset.save_m2m()
-        if instances:
-            t = instances[0].transaction
+        if self._obj:
+            t = self._obj
             if hasattr(t, "is_pending") and t.is_pending:
                 # print "complete pending transaction"
                 t.is_pending = False
