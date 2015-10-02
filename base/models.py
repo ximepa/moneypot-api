@@ -445,10 +445,10 @@ class Purchase(Movement):
     @transaction.atomic
     def complete(self, pending=False):
         if pending:
-            print "purchase complete defer"
+            # print "purchase complete defer"
             setattr(self, "is_pending", True)
             return
-        print "purchase complete run"
+        # print "purchase complete run"
         if self.is_completed:
             return
         self.prepare()
@@ -881,10 +881,10 @@ class Transaction(Movement):
     def complete(self, pending=False):
         # print "TRANSACTION COMPLETED!"
         if pending:
-            print "transaction complete defer"
+            # print "transaction complete defer"
             setattr(self, "is_pending", True)
             return
-        print "transaction complete run"
+        # print "transaction complete run"
         if self.is_completed:
             return
         if not self.is_prepared:

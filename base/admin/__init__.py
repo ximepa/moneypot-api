@@ -190,7 +190,7 @@ class PurchaseAdmin(FiltersMixin, admin.ModelAdmin):
         if instances:
             p = instances[0].purchase
             if hasattr(p, "is_pending") and p.is_pending:
-                print "complete pending purchase"
+                # print "complete pending purchase"
                 p.is_pending = False
                 p.complete()
 
@@ -316,7 +316,7 @@ class TransactionAdmin(FiltersMixin, admin.ModelAdmin):
         if instances:
             t = instances[0].transaction
             if hasattr(t, "is_pending") and t.is_pending:
-                print "complete pending transaction"
+                # print "complete pending transaction"
                 t.is_pending = False
                 t.complete()
 
