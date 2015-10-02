@@ -19,7 +19,7 @@ from django.db import models
 from daterange_filter.filter import DateRangeFilter
 from django_mptt_admin import util
 from grappelli_filters import RelatedAutocompleteFilter, FiltersMixin
-from .filters import MPTTCategoryRelatedAutocompleteFilter
+from .filters import MPTTRelatedAutocompleteFilter
 
 from actions import process_to_void, update_cell
 from overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
@@ -33,6 +33,7 @@ from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase
     get_descendants_ids, FixSerialTransform, FixCategoryMerge, Cell
 from filebrowser.widgets import ClearableFileInput
 from filebrowser.settings import ADMIN_THUMBNAIL
+from urllib import urlencode
 
 
 @admin.register(Unit)
@@ -328,7 +329,7 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
     class Media:
         js = ('base/js/place_item_changelist_autocomplete.js',)
 
-    list_filter = [('category', MPTTCategoryRelatedAutocompleteFilter), 'cell']
+    list_filter = [('category', MPTTRelatedAutocompleteFilter), 'cell']
     tpl = Template("{{ form.as_p }}")
     place_id = None
     show_zero = None
@@ -379,7 +380,6 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
         request.GET._mutable = True
         self.show_zero = int(request.GET.pop("show_zero", ["0"])[0])
         request.GET.pop("a", None)
-        rq_qs = "?" + (request.GET.urlencode() or "a=1")
         self.place_id = place_id
         extra_context = extra_context or {}
         try:
@@ -391,9 +391,12 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
                 self.list_display.remove('custom_cell')
             if place.has_cells and not 'custom_cell' in self.list_display:
                 self.list_display.append('custom_cell')
-            cl_header = _(u"Items for <{name}>".format(name=unicode(place.name)))
+            cl_header = unicode(place.name)
+            params_get = request.GET.copy()
+            params_get.update({'show_zero': int(not self.show_zero)})
+            extra_context.update({'show_zero_params': urlencode(params_get)})
             extra_context.update({'show_zero': self.show_zero})
-            extra_context.update({'rq_qs': rq_qs})
+            extra_context.update({'cl_header_addon': _("> ALL")})
             extra_context.update({'cl_header': mark_safe(cl_header)})
         view = super(PlaceItemAdmin, self).changelist_view(request, extra_context=extra_context)
         return view

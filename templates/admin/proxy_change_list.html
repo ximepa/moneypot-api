@@ -16,18 +16,20 @@
 
 <!-- CONTENT-TITLE -->
 {% block content_title %}
-    <h1>{{ cl_header|capfirst }}</h1>
-    <h2>
-    {% if show_zero == 1 %}
-        <a href="?show_zero=0">
-            <img src="{% static "glyphicons/glyphicons-546-eye-minus.png" %}" width="31" height="22">
-            <strike>show zero</strike>
-        </a>
-    {% elif show_zero == 0 %}
-        <a href="?show_zero=1">
-            <img src="{% static "glyphicons/glyphicons-545-eye-plus.png" %}" width="31" height="22">
-            show zero
-        </a>
+    {% if request.mptt_filter %}
+    <h1>{{ cl_header|capfirst }} > {{ request.mptt_filter }}</h1>
+    {% else %}
+    <h1>{{ cl_header|capfirst }} {{ cl_header_addon }}</h1>
     {% endif %}
+    <h2>
+        <a href="?{{ show_zero_params }}">
+        {% if show_zero == 1 %}
+            <img src="{% static "glyphicons/glyphicons-546-eye-minus.png" %}" width="31" height="22">
+            <strike>{% trans "show zero" %}</strike>
+        {% else %}
+            <img src="{% static "glyphicons/glyphicons-545-eye-plus.png" %}" width="31" height="22">
+            {% trans "show zero" %}
+        {% endif %}
+        </a>
     </h2>
 {% endblock %}
