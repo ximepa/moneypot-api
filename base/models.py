@@ -415,9 +415,9 @@ class Purchase(Movement):
             else:
                 Item.objects.filter(pk=i.pk).update(quantity=models.F('quantity') + purchase_item.quantity)
                 i.refresh_from_db()
-            if purchase_item.chunks:
-                for chunk in purchase_item.chunks:
-                    ItemChunk.objects.create(item=i, chunk=chunk, purchase=purchase_item)
+            # if purchase_item.chunks:
+            #     for chunk in purchase_item.chunks:
+            #         ItemChunk.objects.create(item=i, chunk=chunk, purchase=purchase_item)
             if purchase_item.serials:
                 purchase_item.serials.sort()
                 for serial in purchase_item.serials:
