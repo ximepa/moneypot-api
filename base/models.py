@@ -693,6 +693,8 @@ class Item(models.Model):
         :rtype: base.models.Item()
         """
 
+        print [self, item, cell]
+
         if not isinstance(item, Item):
             raise InvalidParameters(_("item parameter must be instance of base.models.Item"))
 
@@ -710,9 +712,9 @@ class Item(models.Model):
 
         if not item.is_stackable:
             if not item.chunks.count():
-                ItemChunk.objects.create(item=item, chunk=item.quantity, purchase=item.purchase)
+                ItemChunk.objects.create(item=item, chunk=item.quantity, purchase=item.purchase, cell=cell)
             if not self.chunks.count():
-                ItemChunk.objects.create(item=self, chunk=self.quantity, purchase=self.purchase)
+                ItemChunk.objects.create(item=self, chunk=self.quantity, purchase=self.purchase, cell=cell)
 
         if cell:
             if not item.cell == cell:
@@ -759,6 +761,7 @@ class ItemChunk(models.Model):
     chunk = models.DecimalField(max_digits=9, decimal_places=3)
     label = models.CharField(_("label"), max_length=32, unique=True, blank=True, null=True)
     purchase = models.ForeignKey("PurchaseItem", verbose_name=_("purchase"), blank=True, null=True)
+    cell = models.ForeignKey("Cell", blank=True, null=True, on_delete=models.SET_NULL)
     comment = models.TextField(_("comment"), blank=True, null=True)
 
     class Meta:

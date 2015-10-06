@@ -25,7 +25,7 @@ from actions import process_to_void, update_cell
 from overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
 from functions import create_model_admin
 from forms import ItemCategoryForm, PlaceForm, PurchaseItemForm, TransactionItemForm, PurchaseForm, TransactionForm, \
-    FixCategoryMergeForm, CellForm, CellItemActionForm, ItemInlineForm
+    FixCategoryMergeForm, CellForm, CellItemActionForm, ItemInlineForm, ItemChunkForm
 from inlines import ItemCategoryCommentInline, PurchaseItemInline, PurchaseItemInlineReadonly, \
     TransactionItemInlineReadonly, TransactionItemInline, TransactionCommentPlaceInline
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
@@ -34,6 +34,7 @@ from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase
 from filebrowser.widgets import ClearableFileInput
 from filebrowser.settings import ADMIN_THUMBNAIL
 from urllib import urlencode
+
 
 
 @admin.register(Unit)
@@ -236,7 +237,15 @@ class ItemChunkAdmin(FiltersMixin, AdminReadOnly):
         ('item__category', MPTTRelatedAutocompleteFilter),
         ('item__place', MPTTRelatedAutocompleteFilter),
     ]
-    list_display = ['__unicode__', 'category_name', 'place_name']
+    list_display = ['__unicode__', 'category_name', 'place_name', 'cell']
+    form = ItemChunkForm
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = super(ItemChunkAdmin, self).get_readonly_fields(request, obj)
+        fields.remove('cell')
+        return fields
+
+
 
 
 @admin.register(TransactionItem)
