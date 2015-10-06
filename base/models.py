@@ -463,7 +463,7 @@ class Purchase(Movement):
             if not pi.serials:
                 ti = TransactionItem.objects.create(purchase=self, transaction=t, category=pi.category,
                                                     quantity=pi.quantity, serial=None, cell=pi.cell,
-                                                    _chunks=pi._chunks, destination=self.destination)  # noqa
+                                                    destination=self.destination)  # noqa
 
                 for item in pi.item_set.all():
                     item.is_reserved = True
@@ -478,7 +478,7 @@ class Purchase(Movement):
                     s.purchase = pi
                     s.save()
                     ti = TransactionItem.objects.create(purchase=self, transaction=t, category=pi.category,
-                                                        quantity=1, serial=s, _chunks=pi._chunks, cell=pi.cell)  # noqa
+                                                        quantity=1, serial=s, cell=pi.cell)  # noqa
 
         t.is_prepared = prepared
         t.is_negotiated_source = True
