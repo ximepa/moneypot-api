@@ -230,7 +230,7 @@ class ItemSerialAdmin(FiltersMixin, AdminReadOnly):
 
 
 @admin.register(ItemChunk)
-class ItemChunkAdmin(FiltersMixin, HiddenAdminModelMixin, AdminReadOnly):
+class ItemChunkAdmin(FiltersMixin, AdminReadOnly):
     search_fields = ['item__category__name']
     list_filter = [('item__category', MPTTRelatedAutocompleteFilter), ]
     list_display = ['__unicode__', 'category_name']

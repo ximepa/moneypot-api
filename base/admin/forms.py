@@ -64,7 +64,7 @@ class TransactionItemForm(autocomplete_light.ModelForm):
     class Meta:
         model = TransactionItem
         exclude = ['_chunks', 'purchase']
-        autocomplete_fields = ('category', 'serial', 'destination')
+        autocomplete_fields = ('category', 'serial', 'chunk', 'destination')
 
     def clean(self):
         self.serials = []

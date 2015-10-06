@@ -126,8 +126,9 @@ class Place(MPTTModel):
     name = models.CharField(_("name"), max_length=100, unique=True)
     parent = models.ForeignKey('self', verbose_name=_("parent"), null=True, blank=True, related_name='children')
     is_shop = models.BooleanField(_("is shop"), blank=True, default=False)
-    comment = models.TextField(_("comment"), blank=True, null=True)
     has_cells = models.BooleanField(_("has cells"), default=False)
+    has_chunks = models.BooleanField(_("has chunks"), default=False)
+    comment = models.TextField(_("comment"), blank=True, null=True)
 
     class Meta:
         verbose_name = _("place")
@@ -170,7 +171,10 @@ class Place(MPTTModel):
             item.cell = cell
             item.save()
         else:
-            i.deposit(item, cell=cell)
+            new_item = i.deposit(item, cell=cell)
+
+            if not self.has_chunks:
+                new_item.chunks.all().delete()
 
     def withdraw(self, item):
         try:
@@ -199,7 +203,7 @@ class Place(MPTTModel):
                     )))
                 serial.cell = None
                 serial.save()
-            return i.withdraw(quantity=item.quantity, serial=serial)
+            return i.withdraw(quantity=item.quantity, serial=serial, chunk=item.chunk)
 
     def join_to(self, place):
         t = Transaction.objects.create(source=self, destination=place)
@@ -224,45 +228,45 @@ class Place(MPTTModel):
 class MovementItem(models.Model):
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"))
     quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
-    _chunks = models.TextField(blank=True, null=True)
+    # _chunks = models.TextField(blank=True, null=True)
 
     class Meta:
         abstract = True
 
-    def clean_chunks(self):
-        if not self._chunks:
-            return []
-
-        chunks_str = re.findall(r"[\d\.]+", self._chunks)
-        f = None
-        if self.category.unit.unit_type == Unit.INTEGER:
-            f = int
-        if self.category.unit.unit_type == Unit.DECIMAL:
-            f = Decimal
-        if not f:
-            raise ValidationError(ugettext("Category unit type is unknown"))
-        try:
-            chunks_data = map(f, chunks_str)
-        except Exception, e:
-            raise ValidationError({'_chunks': ugettext('data error: %s' % e)})
-        total = reduce(lambda x, y: f(x + y), chunks_data, 0)
-        if not total == self.quantity:
-            raise ValidationError({
-                '_chunks': ugettext(u'chunks sum error: {total}≠{quantity}'.format(
-                    total=total,
-                    quantity=self.quantity
-                ))
-            })
-        self._chunks = ", ".join(map(str, chunks_data))
-        return chunks_data
-
-    @property
-    def chunks(self):
-        return self.clean_chunks()
-
-    @chunks.setter
-    def chunks(self, value):
-        self._chunks = ", ".join(value)
+    # def clean_chunks(self):
+    #     if not self._chunks:
+    #         return []
+    #
+    #     chunks_str = re.findall(r"[\d\.]+", self._chunks)
+    #     f = None
+    #     if self.category.unit.unit_type == Unit.INTEGER:
+    #         f = int
+    #     if self.category.unit.unit_type == Unit.DECIMAL:
+    #         f = Decimal
+    #     if not f:
+    #         raise ValidationError(ugettext("Category unit type is unknown"))
+    #     try:
+    #         chunks_data = map(f, chunks_str)
+    #     except Exception, e:
+    #         raise ValidationError({'_chunks': ugettext('data error: %s' % e)})
+    #     total = reduce(lambda x, y: f(x + y), chunks_data, 0)
+    #     if not total == self.quantity:
+    #         raise ValidationError({
+    #             '_chunks': ugettext(u'chunks sum error: {total}≠{quantity}'.format(
+    #                 total=total,
+    #                 quantity=self.quantity
+    #             ))
+    #         })
+    #     self._chunks = ", ".join(map(str, chunks_data))
+    #     return chunks_data
+    #
+    # @property
+    # def chunks(self):
+    #     return self.clean_chunks()
+    #
+    # @chunks.setter
+    # def chunks(self, value):
+    #     self._chunks = ", ".join(value)
 
     def clean_quantity(self):
         try:
@@ -284,7 +288,7 @@ class MovementItem(models.Model):
 
     def clean(self):
         self.clean_quantity()
-        self.clean_chunks()
+        # self.clean_chunks()
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -605,24 +609,18 @@ class Item(models.Model):
         serial.save()
         return item
 
-    def withdraw_chunk(self, quantity, chunks):
+    def withdraw_chunk(self, quantity, chunk):
         """
         :param quantity: Amount of items to withdraw
         :type quantity: int or Decimal
-        :param chunks: Queryset of base.models.ItemChunk
-        :type chunks: django.db.models.Queryset()
+        :param chunk: instance of base.models.ItemChunk
+        :type chunk: base.models.ItemChunk()
         :returns: Item created in result of withdrawal spit request.
                   Marked as reserved until transaction will be completed or cancelled
         :rtype: base.models.Item()
         """
-        for chunk in chunks:
-            if not chunk.item == self:
-                raise InvalidParameters(_("Chunk {chunk} doesn't belong to item {item}".format(
-                    chunk=chunk.__unicode__(),
-                    item=self.__unicode__()
-                )))
-        if not chunks.aggregate(models.Sum('chunk'))['chunk__sum'] == quantity:
-            raise InvalidParameters(_("Chunks total sum does not match requested quantity"))
+        if chunk.chunk < quantity:
+            raise InvalidParameters(_("Chunks lenght lesser than requested quantity"))
         item = Item.objects.create(
             quantity=quantity,
             is_reserved=True,
@@ -631,18 +629,28 @@ class Item(models.Model):
             place=self.place,
             parent=self,
         )
-        chunks.update(item=item)
+        if chunk.chunk == quantity:
+            chunk.qs.update(item=item)
+        else:
+            chunk.qs.update(chunk=models.F('chunk')-quantity)
+
+            ItemChunk.objects.create(
+                item=item,
+                chunk=quantity,
+                purchase=chunk.purchase
+            )
+
         return item
 
     @transaction.atomic
-    def withdraw(self, quantity, serial=None, chunks=None, dry_run=False):
+    def withdraw(self, quantity, serial=None, chunk=None, dry_run=False):
         """
         :param quantity: Amount of items to withdraw
         :type quantity: int or Decimal
         :param serial: optional, instance of base.models.ItemSerial
         :type serial: base.models.ItemSerial()
-        :param chunks: optional, Queryset of base.models.ItemChunk
-        :type chunks: django.db.models.Queryset()
+        :param chunk: optional, instance of base.models.ItemChunk
+        :type chunk: base.models.ItemChunk()
         :returns: Item created in result of withdrawal spit request.
                   Marked as reserved until transaction will be completed or cancelled
         :rtype: base.models.Item()
@@ -659,8 +667,8 @@ class Item(models.Model):
 
         if serial:
             item = self.withdraw_serial(quantity, serial)
-        elif chunks:
-            item = self.withdraw_chunk(quantity, chunks)
+        elif chunk:
+            item = self.withdraw_chunk(quantity, chunk)
         else:
             item = self.withdraw_any(quantity)
 
@@ -763,6 +771,10 @@ class ItemChunk(models.Model):
     def category_name(self):
         return self.item.category.name
 
+    @property
+    def qs(self):
+        return self.__class__.objects.filter(pk=self.pk)
+
 
 class TransactionItem(MovementItem):
     transaction = models.ForeignKey("Transaction", verbose_name=_("item transaction"), related_name="transaction_items")
@@ -772,9 +784,10 @@ class TransactionItem(MovementItem):
     # category = models.ForeignKey("ItemCategory", verbose_name=_("item category"))
     # quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
     # _chunks = models.TextField(blank=True, null=True)
-    serial = models.ForeignKey(ItemSerial, blank=True, null=True)
+    serial = models.ForeignKey(ItemSerial, blank=True, null=True, on_delete=models.SET_NULL)
+    chunk = models.ForeignKey(ItemChunk, blank=True, null=True, on_delete=models.SET_NULL)
     destination = models.ForeignKey("Place", verbose_name=_("destination"),
-                                    related_name="transaction_items", blank=True, null=True)
+                                    related_name="transaction_items", blank=True, null=True, on_delete=models.SET_NULL)
     cell_from = models.CharField(max_length=16, blank=True, null=True)
     cell = models.CharField(max_length=16, blank=True, null=True)
 

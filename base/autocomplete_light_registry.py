@@ -2,8 +2,9 @@
 __author__ = 'maxim'
 
 import autocomplete_light
+from decimal import Decimal, InvalidOperation
 
-from .models import Place, ItemCategory, Item, ItemSerial, Cell
+from .models import Place, ItemCategory, Item, ItemSerial, ItemChunk, Cell
 
 #
 # autocomplete_light.register(Place,
@@ -79,6 +80,37 @@ autocomplete_light.register(ItemSerial, ItemSerialAutocomplete,attrs={
                                 'data-autocomplete-minimum-characters': 0,
                                 'style': "width: 140px"
                             },)
+
+
+
+class ItemChunkAutocomplete(autocomplete_light.AutocompleteModelBase):
+
+    def choices_for_request(self):
+        q = self.request.GET.get('q', '0')
+        try:
+            q = Decimal(q)
+        except InvalidOperation:
+            q = Decimal("0")
+        source_id = self.request.GET.get('source_id', None)
+        category_id = self.request.GET.get('category_id', None)
+
+        choices = ItemChunk.objects.filter(chunk__gte=q)
+
+        if source_id:
+            choices = choices.filter(item__place_id=source_id)
+
+        if category_id:
+            choices = choices.filter(item__category_id=category_id)
+
+        return self.order_choices(choices)[0:self.limit_choices]
+
+
+autocomplete_light.register(ItemChunk, ItemChunkAutocomplete,attrs={
+                                'placeholder': 'chunk ..',
+                                'data-autocomplete-minimum-characters': 0,
+                                'style': "width: 140px"
+                            },)
+
 
 
 class SubPlaceAutocomplete(autocomplete_light.AutocompleteModelBase):

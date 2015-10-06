@@ -6,9 +6,11 @@
         $body.on('change', '.autocomplete-light-widget #id_source', function () {
             var itemCategoryElements = $("select[id^='id_transaction_items-'][name*='category']");
             var itemSerialElements = $("select[id^='id_transaction_items-'][name*='serial']");
+            var itemChunkElements = $("select[id^='id_transaction_items-'][name*='chunk']");
             var itemSelectElements = $("#invalid_selector");
             itemSelectElements = itemSelectElements.add(itemSerialElements);
             itemSelectElements = itemSelectElements.add(itemCategoryElements);
+            itemSelectElements = itemSelectElements.add(itemChunkElements);
             var itemWidgetElements = itemSelectElements.parents('.autocomplete-light-widget');
 
             // When the country select changes
@@ -51,6 +53,16 @@
 
             var $widget = $(this).closest('.grp-tr')
                 .find("select[id^='id_transaction_items-'][name*='serial']")
+                .parents('.autocomplete-light-widget');
+            $widget.yourlabsWidget().autocomplete.data = $widget.yourlabsWidget().autocomplete.data || {};
+            if (value) {
+                $widget.yourlabsWidget().autocomplete.data.category_id = value[0];
+            } else {
+                delete $widget.yourlabsWidget().autocomplete.data.category_id;
+            }
+
+            $widget = $(this).closest('.grp-tr')
+                .find("select[id^='id_transaction_items-'][name*='chunk']")
                 .parents('.autocomplete-light-widget');
             $widget.yourlabsWidget().autocomplete.data = $widget.yourlabsWidget().autocomplete.data || {};
             if (value) {
