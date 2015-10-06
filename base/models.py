@@ -771,6 +771,9 @@ class ItemChunk(models.Model):
     def category_name(self):
         return self.item.category.name
 
+    def place_name(self):
+        return self.item.place.name
+
     @property
     def qs(self):
         return self.__class__.objects.filter(pk=self.pk)

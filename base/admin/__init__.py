@@ -232,8 +232,11 @@ class ItemSerialAdmin(FiltersMixin, AdminReadOnly):
 @admin.register(ItemChunk)
 class ItemChunkAdmin(FiltersMixin, AdminReadOnly):
     search_fields = ['item__category__name']
-    list_filter = [('item__category', MPTTRelatedAutocompleteFilter), ]
-    list_display = ['__unicode__', 'category_name']
+    list_filter = [
+        ('item__category', MPTTRelatedAutocompleteFilter),
+        ('item__place', MPTTRelatedAutocompleteFilter),
+    ]
+    list_display = ['__unicode__', 'category_name', 'place_name']
 
 
 @admin.register(TransactionItem)
