@@ -239,6 +239,8 @@ class ItemChunkAdmin(FiltersMixin, AdminReadOnly):
     ]
     list_display = ['__unicode__', 'category_name', 'place_name', 'cell']
     form = ItemChunkForm
+    actions = [update_cell]
+    action_form = CellItemActionForm
 
     def get_readonly_fields(self, request, obj=None):
         fields = super(ItemChunkAdmin, self).get_readonly_fields(request, obj)
@@ -335,8 +337,6 @@ class TransactionAdmin(FiltersMixin, admin.ModelAdmin):
                 # print "complete pending transaction"
                 t.is_pending = False
                 t.complete()
-
-
 
     def rollback(self, request, queryset):
         for t in queryset:
