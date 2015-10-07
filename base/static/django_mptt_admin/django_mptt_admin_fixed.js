@@ -67,7 +67,7 @@ function initTree($tree, autoopen, autoescape) {
         autoEscape: autoescape,
         dragAndDrop: true,
         onCreateLi: createLi,
-        saveState: false,
+        saveState: $tree.data('save_state'),
         useContextMenu: $tree.data('use_context_menu'),
         onLoadFailed: handleLoadFailed,
         closedIcon: $tree.data('rtl') == '1' ? '&#x25c0;' : '&#x25ba;'
