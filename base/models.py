@@ -329,7 +329,12 @@ class PurchaseItem(MovementItem):
         verbose_name_plural = _("purchase items")
 
     def __unicode__(self):
-        return u"%s, %s → %s" % (self.category.name, self.purchase.source, self.purchase.destination)
+        return u"%s: %s, %s → %s" % (
+            self.purchase.completed_at.strftime("%Y-%m-%d"),
+            self.category.name,
+            self.purchase.source,
+            self.purchase.destination
+        )
 
     def clean_serials(self):
         if not self._serials:
@@ -404,7 +409,7 @@ class Purchase(Movement):
         verbose_name_plural = _("purchases")
 
     def __unicode__(self):
-        return u'%s → %s' % (self.source.name, self.destination.name)
+        return u'%s: %s → %s' % (self.completed_at.strftime("%Y-%m-%d"), self.source.name, self.destination.name)
         # return u'%s -> %s' % (self.source.name, self.destination.name)
 
     def clean_is_auto_source(self):

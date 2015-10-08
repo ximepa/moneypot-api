@@ -63,6 +63,7 @@ class ItemSerialForm(autocomplete_light.ModelForm):
         if not purchase_item.category == item.category:
             raise forms.ValidationError({"purchase": "invalid purchase for this item"})
         tis = TransactionItem.objects.filter(
+            purchase=purchase,
             transaction__source=purchase.source,
             transaction__destination=purchase.destination,
             category_id=item.category_id,
@@ -89,7 +90,7 @@ class ItemSerialForm(autocomplete_light.ModelForm):
         elif ti.quantity > 1:
             ti.quantity -= 1
             ti.save()
-            TransactionItem.objects.create(
+            data = dict(
                 transaction=ti.transaction,
                 purchase=ti.purchase,
                 category=ti.category,
@@ -98,6 +99,9 @@ class ItemSerialForm(autocomplete_light.ModelForm):
                 destination=ti.transaction.destination,
                 cell=serial.cell
             )
+            from pprint import pprint
+            pprint(data)
+            TransactionItem.objects.create(**data)
         return serial
 
     class Meta:
