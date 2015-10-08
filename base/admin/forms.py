@@ -99,8 +99,6 @@ class ItemSerialForm(autocomplete_light.ModelForm):
                 destination=ti.transaction.destination,
                 cell=serial.cell
             )
-            from pprint import pprint
-            pprint(data)
             TransactionItem.objects.create(**data)
         return serial
 
