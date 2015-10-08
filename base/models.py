@@ -39,6 +39,14 @@ class TransactionNotReady(RuntimeError):
     pass
 
 
+
+# class GeoName(models.Model):
+#     name = models.CharField(max_length=100)
+#
+#     def __unicode__(self):
+#         return self.name
+
+
 class Unit(models.Model):
     INTEGER = 0
     DECIMAL = 1
@@ -217,6 +225,9 @@ class Place(MPTTModel):
         Transaction.objects.filter(source=self).update(source=place)
         Transaction.objects.filter(destination=self).update(destination=place)
         TransactionItem.objects.filter(destination=self).update(destination=place)
+        Purchase.objects.filter(source=self).update(source=place)
+        Purchase.objects.filter(destination=self).update(destination=place)
+        Item.objects.filter(place=self, quantity=0).delete()
         self.name = "DEL %s" % self.name
         self.save()
 
@@ -1118,7 +1129,7 @@ class FixSerialTransform(models.Model):
 class FixCategoryMerge(models.Model):
 
     old_category = models.ForeignKey("ItemCategory", verbose_name=_("old item category"),
-                                     null=True, related_name="old_categoriess")
+                                     null=True, related_name="old_categoriess", on_delete=models.SET_NULL)
     new_category = models.ForeignKey("ItemCategory", verbose_name=_("new item category"),
                                      related_name="new_categoriess")
     old_category_sav_id = models.PositiveIntegerField(blank=True, null=True)
@@ -1179,6 +1190,28 @@ class FixCategoryMerge(models.Model):
         super(FixCategoryMerge, self).save(*args, **kwargs)
         if not self.data:
             self.do_merge()
+
+
+class FixPlaceMerge(models.Model):
+    old_place = models.ForeignKey("Place", related_name="old_places", verbose_name=_("old place"), null=True,
+                                  on_delete=models.SET_NULL)
+    new_place = models.ForeignKey("Place", related_name="new_places", verbose_name=_("new place"))
+    old_place_sav_id = models.PositiveIntegerField(blank=True, null=True)
+    old_place_sav_name = models.CharField(max_length=100, blank=True, null=True)
+    timestamp = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        verbose_name = _("fix: place merge")
+        verbose_name_plural = _("fix: place merges")
+        ordering = ['-timestamp']
+
+    def save(self, *args, **kwargs):
+        if not self.old_place_sav_id and self.old_place:
+            self.old_place_sav_id = self.old_place_id
+            self.old_place_sav_name = self.old_place.name
+            self.old_place.join_to(self.new_place)
+        super(FixPlaceMerge, self).save(*args, **kwargs)
+
 
 
 class Cell(models.Model):

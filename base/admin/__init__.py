@@ -25,12 +25,12 @@ from actions import process_to_void, update_cell
 from overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
 from functions import create_model_admin
 from forms import ItemCategoryForm, PlaceForm, PurchaseItemForm, TransactionItemForm, PurchaseForm, TransactionForm, \
-    FixCategoryMergeForm, CellForm, CellItemActionForm, ItemInlineForm, ItemChunkForm
+    FixCategoryMergeForm, FixPlaceMergeForm, CellForm, CellItemActionForm, ItemInlineForm, ItemChunkForm
 from inlines import ItemCategoryCommentInline, PurchaseItemInline, PurchaseItemInlineReadonly, \
     TransactionItemInlineReadonly, TransactionItemInline, TransactionCommentPlaceInline
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
     TransactionItem, Transaction, OrderItemSerial, ContractItemSerial, VItemMovement, VSerialMovement, \
-    get_descendants_ids, FixSerialTransform, FixCategoryMerge, Cell
+    get_descendants_ids, FixSerialTransform, FixCategoryMerge, FixPlaceMerge, Cell
 from filebrowser.widgets import ClearableFileInput
 from filebrowser.settings import ADMIN_THUMBNAIL
 from urllib import urlencode
@@ -797,8 +797,8 @@ class FixSerialTransformAdmin(admin.ModelAdmin):
 
 @admin.register(FixCategoryMerge)
 class FixCategoryMergeAdmin(admin.ModelAdmin):
-    search_fields = ['old_category__name', 'new_category__name']
-    list_display = ['timestamp', 'old_category', 'new_category']
+    search_fields = ['old_category_sav_name', 'new_category__name']
+    list_display = ['timestamp', 'old_category_sav_name', 'new_category']
     form = FixCategoryMergeForm
 
     def get_readonly_fields(self, request, obj=None):
@@ -807,6 +807,21 @@ class FixCategoryMergeAdmin(admin.ModelAdmin):
         if obj and obj.pk:
             readonly_fields.extend(['old_category', 'new_category'])
         return readonly_fields
+
+
+@admin.register(FixPlaceMerge)
+class FixPlaceMergeAdmin(admin.ModelAdmin):
+    search_fields = ['old_place_sav_name', 'new_place__name']
+    list_display = ['timestamp', 'old_place_sav_name', 'new_place']
+    form = FixPlaceMergeForm
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = list(self.readonly_fields)
+        readonly_fields.extend(['timestamp', 'old_place_sav_id', 'old_place_sav_name'])
+        if obj and obj.pk:
+            readonly_fields.extend(['old_place', 'new_place'])
+        return readonly_fields
+
 
 
 @admin.register(Cell)

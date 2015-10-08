@@ -9,7 +9,7 @@ import autocomplete_light
 import re
 
 from base.models import InvalidParameters, ItemCategory, ItemCategoryComment, Place, PurchaseItem, TransactionItem, Purchase, \
-    Transaction, Unit, ItemSerial, FixCategoryMerge, Cell, Item, ItemChunk
+    Transaction, Unit, ItemSerial, FixCategoryMerge, FixPlaceMerge, Cell, Item, ItemChunk
 
 
 class ItemCategoryCommentForm(autocomplete_light.ModelForm):
@@ -180,6 +180,12 @@ class TransactionForm(autocomplete_light.ModelForm):
 class FixCategoryMergeForm(autocomplete_light.ModelForm):
     class Meta:
         model = FixCategoryMerge
+        exclude = []
+
+
+class FixPlaceMergeForm(autocomplete_light.ModelForm):
+    class Meta:
+        model = FixPlaceMerge
         exclude = []
 
 
