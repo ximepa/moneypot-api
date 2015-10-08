@@ -1,13 +1,13 @@
 # -*- encoding: utf-8 -*-
 __author__ = 'maxim'
+from copy import deepcopy
+
 from django import forms
 from django.utils.translation import ugettext_lazy as _, ugettext
 from django.contrib.admin.helpers import ActionForm
-from copy import deepcopy
-from .functions import parse_serials_data
 import autocomplete_light
-import re
 
+from .functions import parse_serials_data
 from base.models import InvalidParameters, ItemCategory, ItemCategoryComment, Place, PurchaseItem, TransactionItem, Purchase, \
     Transaction, Unit, ItemSerial, FixCategoryMerge, FixPlaceMerge, Cell, Item, ItemChunk
 
@@ -28,6 +28,81 @@ class ItemChunkForm(autocomplete_light.ModelForm):
     class Meta:
         model = ItemChunk
         exclude = []
+
+
+class ItemSerialForm(autocomplete_light.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(ItemSerialForm, self).__init__(*args, **kwargs)
+        if "purchase" in self.fields:
+            self.fields["purchase"].required = True
+
+    def clean_serial(self):
+        serial = self.cleaned_data.get("serial", None)
+        try:
+            s = ItemSerial.objects.get(serial=serial)
+        except ItemSerial.DoesNotExist:
+            return serial
+        else:
+            raise forms.ValidationError("Serial not unique. Item: <%s>" % s.item)
+
+    def clean_item(self):
+        item = self.cleaned_data.get("item", None)
+        if not item or not item.category.unit.unit_type == Unit.INTEGER:
+            raise forms.ValidationError("this item category can not have serial")
+        return item
+
+    def clean(self):
+        purchase_item = self.cleaned_data.get("purchase", None)
+
+        item = self.cleaned_data.get("item", None)
+        serial = self.cleaned_data.get("serial", None)
+        if not purchase_item or not item or not serial:
+            raise forms.ValidationError("fill all required fields")
+        purchase = purchase_item.purchase
+        if not purchase_item.category == item.category:
+            raise forms.ValidationError({"purchase": "invalid purchase for this item"})
+        tis = TransactionItem.objects.filter(
+            transaction__source=purchase.source,
+            transaction__destination=purchase.destination,
+            category_id=item.category_id,
+            serial=None
+        ).order_by('quantity')
+        if not tis.count():
+            raise forms.ValidationError("Can't find transaction to add serial!")
+        else:
+            setattr(self, 'ti', tis[0])
+            setattr(self, 'pi', purchase_item)
+        return self.cleaned_data
+
+    def save(self, commit=True):
+        if not hasattr(self, 'ti') or not hasattr(self, 'pi'):
+            raise RuntimeError("Can't find transaction to add serial!")
+        serial = super(ItemSerialForm, self).save(commit)
+        if not commit:
+            serial.save()
+
+        ti = self.ti
+        if ti.quantity == 1:
+            ti.serial = serial
+            ti.save()
+        elif ti.quantity > 1:
+            ti.quantity -= 1
+            ti.save()
+            TransactionItem.objects.create(
+                transaction=ti.transaction,
+                purchase=ti.purchase,
+                category=ti.category,
+                quantity=1,
+                serial=serial,
+                destination=ti.transaction.destination,
+                cell=serial.cell
+            )
+        return serial
+
+    class Meta:
+        model = ItemSerial
+        fields = ['item', 'purchase', 'serial', 'cell', 'comment']
 
 
 class PlaceForm(autocomplete_light.ModelForm):

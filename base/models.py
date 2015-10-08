@@ -165,6 +165,13 @@ class Place(MPTTModel):
     def __unicode__(self):
         return self.name
 
+    def clean_name(self):
+        pass
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super(Place, self).save(*args, **kwargs)
+
     def get_absolute_url(self):
         return reverse('admin:base_place_item_changelist', args=[self.pk])
 
@@ -322,7 +329,7 @@ class PurchaseItem(MovementItem):
         verbose_name_plural = _("purchase items")
 
     def __unicode__(self):
-        return self.category.name
+        return u"%s, %s → %s" % (self.category.name, self.purchase.source, self.purchase.destination)
 
     def clean_serials(self):
         if not self._serials:
@@ -530,7 +537,7 @@ class Item(models.Model):
         verbose_name_plural = _("items")
 
     def __unicode__(self):
-        return self.category.name
+        return "%s - %s" % (self.category.name, self.place.name)
 
     def get_absolute_url(self):
         return reverse('admin:base_item_serials_filtered_changelist', args=[self.pk])

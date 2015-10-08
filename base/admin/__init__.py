@@ -25,7 +25,7 @@ from actions import process_to_void, update_cell
 from overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
 from functions import create_model_admin
 from forms import ItemCategoryForm, PlaceForm, PurchaseItemForm, TransactionItemForm, PurchaseForm, TransactionForm, \
-    FixCategoryMergeForm, FixPlaceMergeForm, CellForm, CellItemActionForm, ItemInlineForm, ItemChunkForm
+    FixCategoryMergeForm, FixPlaceMergeForm, CellForm, CellItemActionForm, ItemInlineForm, ItemChunkForm, ItemSerialForm
 from inlines import ItemCategoryCommentInline, PurchaseItemInline, PurchaseItemInlineReadonly, \
     TransactionItemInlineReadonly, TransactionItemInline, TransactionCommentPlaceInline
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
@@ -206,10 +206,23 @@ class ItemAdmin(FiltersMixin, AdminReadOnly):
 
 
 @admin.register(ItemSerial)
-class ItemSerialAdmin(FiltersMixin, AdminReadOnly):
+class ItemSerialAdmin(FiltersMixin):
 
     class Media:
-        js = ('base/js/place_item_changelist_autocomplete.js',)
+        js = ('base/js/serial_purchase_autocomplete.js',)
+
+    form = ItemSerialForm
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj and obj.pk:
+            result = list(set(
+                [field.name for field in self.opts.local_fields] +
+                [field.name for field in self.opts.local_many_to_many]
+            ))
+            if 'id' in result:
+                result.remove('id')
+            return result
+        return super(ItemSerialAdmin, self).get_readonly_fields(request, obj)
 
     def get_queryset(self, request):
         return super(ItemSerialAdmin, self).get_queryset(request).select_related('item', 'item__category', 'item__place')
@@ -735,7 +748,7 @@ class SerialMovementFilteredAdmin(HiddenAdminModelMixin, SerialMovementAdmin):
             qs = qs.filter(Q(source_id=self.place_id) | Q(destination_id=self.place_id))
         return qs
 
-    def changelist_view(self, request, serial_id, place_id=None,  extra_context=None):  # pylint:disable=arguments-differ
+    def changelist_view(self, request, serial_id, place_id=None, extra_context=None):  # pylint:disable=arguments-differ
         self.place_id = place_id
         self.serial_id = serial_id
         extra_context = extra_context or {}

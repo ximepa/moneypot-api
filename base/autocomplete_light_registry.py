@@ -4,7 +4,7 @@ __author__ = 'maxim'
 import autocomplete_light
 from decimal import Decimal, InvalidOperation
 
-from .models import Place, ItemCategory, Item, ItemSerial, ItemChunk, Cell
+from .models import Place, ItemCategory, Item, ItemSerial, ItemChunk, Cell, Purchase, PurchaseItem
 
 #
 # autocomplete_light.register(Place,
@@ -157,4 +157,53 @@ autocomplete_light.register(Cell, CellAutocomplete, attrs={
     'placeholder': 'cell name ..',
     'size': 10,
     'style': "width: 80px"
+},)
+
+
+class ItemAutocomplete(autocomplete_light.AutocompleteModelBase):
+
+    def choices_for_request(self):
+        q = self.request.GET.get('q', '')
+        place = None
+        if " - " in q:
+            q, place = q.split(" - ")
+
+        choices = Item.objects.filter(category__name__icontains=q)
+        if place:
+            choices = choices.filter(place__name__icontains=place)
+
+        return self.order_choices(choices)[0:self.limit_choices]
+
+
+autocomplete_light.register(Item, ItemAutocomplete, attrs={
+    'data-autocomplete-minimum-characters': 1,
+    'placeholder': 'item category name ..',
+    # 'size': 30,
+    # 'style': "width: 200px"
+},)
+
+
+class PurchaseItemAutocomplete(autocomplete_light.AutocompleteModelBase):
+
+    def choices_for_request(self):
+        item_id = int(self.request.GET.get('item_id', '0'))
+        category_id = None
+        destination = None
+        try:
+            item = Item.objects.get(pk=item_id)
+        except Item.DoesNotExist:
+            pass
+        else:
+            category_id = item.category_id
+            destination = item.place
+
+        choices = PurchaseItem.objects.filter(category_id=category_id, purchase__destination=destination)
+
+        return self.order_choices(choices)[0:self.limit_choices]
+
+autocomplete_light.register(PurchaseItem, PurchaseItemAutocomplete, attrs={
+    'data-autocomplete-minimum-characters': 0,
+    'placeholder': 'purchase item ..',
+    # 'size': 30,
+    # 'style': "width: 200px"
 },)
