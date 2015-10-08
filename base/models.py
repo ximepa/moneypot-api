@@ -542,9 +542,9 @@ class Item(models.Model):
         verbose_name_plural = _("items")
 
     def __unicode__(self):
-        if self.category:
+        if self.place:
             return "%s - %s" % (self.category.name, self.place.name)
-        return self.category
+        return "%s - unknown place" % self.category.name
 
     def get_absolute_url(self):
         return reverse('admin:base_item_serials_filtered_changelist', args=[self.pk])
