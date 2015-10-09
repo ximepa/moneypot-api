@@ -115,3 +115,4 @@ moneypot/settings/local.py
 media/uploads/*
 media/_versions/*
 env-py3
+*.pid
