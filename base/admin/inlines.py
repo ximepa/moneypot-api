@@ -5,8 +5,8 @@ from django import forms
 import autocomplete_light
 
 from base.models import ItemCategoryComment, PurchaseItem, TransactionItem, Transaction, Place
-from forms import ItemCategoryCommentForm, PurchaseItemForm, TransactionItemForm
-from overrides import InlineReadOnly
+from .forms import ItemCategoryCommentForm, PurchaseItemForm, TransactionItemForm
+from .overrides import InlineReadOnly
 
 
 class ItemCategoryCommentInline(admin.TabularInline):

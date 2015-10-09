@@ -19,21 +19,25 @@ from django.db import models
 from daterange_filter.filter import DateRangeFilter
 from django_mptt_admin import util
 from grappelli_filters import RelatedAutocompleteFilter, FiltersMixin
-from .filters import MPTTRelatedAutocompleteFilter
-
-from actions import process_to_void, update_cell
-from overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
-from functions import create_model_admin
-from forms import ItemCategoryForm, PlaceForm, PurchaseItemForm, TransactionItemForm, PurchaseForm, TransactionForm, \
-    FixCategoryMergeForm, FixPlaceMergeForm, CellForm, CellItemActionForm, ItemInlineForm, ItemChunkForm, ItemSerialForm
-from inlines import ItemCategoryCommentInline, PurchaseItemInline, PurchaseItemInlineReadonly, \
-    TransactionItemInlineReadonly, TransactionItemInline, TransactionCommentPlaceInline
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
     TransactionItem, Transaction, OrderItemSerial, ContractItemSerial, VItemMovement, VSerialMovement, \
-    get_descendants_ids, FixSerialTransform, FixCategoryMerge, FixPlaceMerge, Cell
+    get_descendants_ids, FixSerialTransform, FixCategoryMerge, FixPlaceMerge, Cell, GeoName
 from filebrowser.widgets import ClearableFileInput
 from filebrowser.settings import ADMIN_THUMBNAIL
-from urllib import urlencode
+
+try:
+    from urllib import urlencode
+except ImportError:
+    from urllib.parse import urlencode
+
+from .filters import MPTTRelatedAutocompleteFilter
+from .actions import process_to_void, update_cell
+from .overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
+from .functions import create_model_admin
+from .forms import ItemCategoryForm, PlaceForm, PurchaseItemForm, TransactionItemForm, PurchaseForm, TransactionForm, \
+    FixCategoryMergeForm, FixPlaceMergeForm, CellForm, CellItemActionForm, ItemInlineForm, ItemChunkForm, ItemSerialForm
+from .inlines import ItemCategoryCommentInline, PurchaseItemInline, PurchaseItemInlineReadonly, \
+    TransactionItemInlineReadonly, TransactionItemInline, TransactionCommentPlaceInline
 
 
 
@@ -95,7 +99,7 @@ class PlaceAdmin(DjangoMpttAdmin):
     search_fields = ['name', ]
     tree_auto_open = False
     form = PlaceForm
-    list_display = ['__unicode__', 'is_shop', 'items_changelist_link']
+    list_display = ['__str__', 'is_shop', 'items_changelist_link']
 
     def items_changelist_link(self, obj):
         link = reverse("admin:base_place_item_changelist", args=[obj.id])
@@ -138,7 +142,7 @@ class PurchaseAdmin(FiltersMixin, admin.ModelAdmin):
 
     form = PurchaseForm
     inlines = [PurchaseItemInline, ]
-    list_display = ['__unicode__', 'created_at', 'completed_at', 'source', 'destination', 'is_completed',
+    list_display = ['__str__', 'created_at', 'completed_at', 'source', 'destination', 'is_completed',
                     'is_prepared', ]
     list_filter = [
         ('source', MPTTRelatedAutocompleteFilter),
@@ -202,7 +206,7 @@ class PurchaseAdmin(FiltersMixin, admin.ModelAdmin):
 class ItemAdmin(FiltersMixin, AdminReadOnly):
     search_fields = ['category__name', 'place__name']
     list_filter = [('category', MPTTRelatedAutocompleteFilter), 'cell']
-    list_display = ['__unicode__', 'quantity', 'place', 'cell']
+    list_display = ['__str__', 'quantity', 'place', 'cell']
 
 
 @admin.register(ItemSerial)
@@ -240,7 +244,7 @@ class ItemSerialAdmin(FiltersMixin):
         ('item__place', MPTTRelatedAutocompleteFilter),
         'cell'
     ]
-    list_display = ['__unicode__', 'category_name', 'owner', 'cell', 'serial_movement_changelist_link']
+    list_display = ['__str__', 'category_name', 'owner', 'cell', 'serial_movement_changelist_link']
 
 
 @admin.register(ItemChunk)
@@ -250,7 +254,7 @@ class ItemChunkAdmin(FiltersMixin, AdminReadOnly):
         ('item__category', MPTTRelatedAutocompleteFilter),
         ('item__place', MPTTRelatedAutocompleteFilter),
     ]
-    list_display = ['__unicode__', 'category_name', 'place_name', 'cell']
+    list_display = ['__str__', 'category_name', 'place_name', 'cell']
     form = ItemChunkForm
     actions = [update_cell]
     action_form = CellItemActionForm
@@ -275,7 +279,7 @@ class TransactionAdmin(FiltersMixin, admin.ModelAdmin):
 
     form = TransactionForm
     list_display = [
-        '__unicode__', 'created_at', 'completed_at',
+        '__str__', 'created_at', 'completed_at',
         'source', 'destination', 'is_completed', 'is_prepared',
         # 'is_negotiated_source', 'is_negotiated_destination', 'is_confirmed_source',
         # 'is_confirmed_destination'
@@ -380,7 +384,7 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
     tpl = Template("{{ form.as_p }}")
     place_id = None
     show_zero = None
-    list_display = ['__unicode__', 'quantity', 'place', 'items_serials_changelist_link',
+    list_display = ['__str__', 'quantity', 'place', 'items_serials_changelist_link',
                     # 'items_chunks_changelist_link',
                     'item_movement_changelist_link', 'custom_cell']
 
@@ -438,7 +442,7 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
                 self.list_display.remove('custom_cell')
             if place.has_cells and not 'custom_cell' in self.list_display:
                 self.list_display.append('custom_cell')
-            cl_header = unicode(place.name)
+            cl_header = str(place.name)
             params_get = request.GET.copy()
             params_get.update({'show_zero': int(not self.show_zero)})
             extra_context.update({'show_zero_params': urlencode(params_get)})
@@ -471,7 +475,7 @@ create_model_admin(PlaceItemAdmin, name='place_item', model=Item)
 class CategoryItemAdmin(HiddenAdminModelMixin, ItemAdmin):
     category_id = None
     show_zero = None
-    list_display = ['__unicode__', 'quantity', 'place', 'items_serials_changelist_link',
+    list_display = ['__str__', 'quantity', 'place', 'items_serials_changelist_link',
                     'items_chunks_changelist_link', 'item_movement_changelist_link']
 
     def items_serials_changelist_link(self, obj):
@@ -505,7 +509,7 @@ class CategoryItemAdmin(HiddenAdminModelMixin, ItemAdmin):
         except ItemCategory.DoesNotExist:
             extra_context.update({'cl_header': _('Category does not exist')})
         else:
-            cl_header = _(u"<{name}> items".format(name=unicode(category.name)))
+            cl_header = _(u"<{name}> items".format(name=str(category.name)))
             extra_context.update({'show_zero': self.show_zero})
             extra_context.update({'rq_qs': rq_qs})
             extra_context.update({'cl_header': mark_safe(cl_header)})
@@ -534,7 +538,7 @@ create_model_admin(CategoryItemAdmin, name='category_item', model=Item)
 
 class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
     item_id = None
-    list_display = ['__unicode__', 'category_name', 'serial_movement_changelist_link', 'custom_cell']
+    list_display = ['__str__', 'category_name', 'serial_movement_changelist_link', 'custom_cell']
     tpl = Template("{{ form.as_p }}")
 
     def serial_movement_changelist_link(self, obj):
@@ -560,8 +564,8 @@ class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
             if item.place.has_cells and not "custom_cell" in self.list_display:
                 self.list_display.append("custom_cell")
             extra_context.update({'cl_header': _(u"Serials for <{name}> in <{place}>".format(
-                name=unicode(item.category.name),
-                place=unicode(item.place.name)
+                name=str(item.category.name),
+                place=str(item.place.name)
             ))})
         view = super(ItemSerialsFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
@@ -708,12 +712,12 @@ class ItemMovementFilteredAdmin(HiddenAdminModelMixin, ItemMovementAdmin):
             else:
                 category_name = category.name
             extra_context.update({'cl_header': _(u"Movement history for <{category_name}> in <{place_name}>".format(
-                    category_name=unicode(category_name),
-                    place_name=unicode(place_name)
+                    category_name=str(category_name),
+                    place_name=str(place_name)
                 ))})
         else:
             extra_context.update({'cl_header': _(u"Movement history for <{place_name}>".format(
-                    place_name=unicode(place_name)
+                    place_name=str(place_name)
                 ))})
         view = super(ItemMovementFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
@@ -766,12 +770,12 @@ class SerialMovementFilteredAdmin(HiddenAdminModelMixin, SerialMovementAdmin):
             else:
                 place_name = place.name
             extra_context.update({'cl_header': _(u"Movement history for <{serial_name}> in <{place_name}>".format(
-                    serial_name=unicode(serial_name),
-                    place_name=unicode(place_name)
+                    serial_name=str(serial_name),
+                    place_name=str(place_name)
                 ))})
         else:
             extra_context.update({'cl_header': _(u"Movement history for <{serial_name}>".format(
-                    serial_name=unicode(serial_name),
+                    serial_name=str(serial_name),
                 ))})
         view = super(SerialMovementFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
         return view

@@ -114,3 +114,4 @@ moneypot/settings/local.py
 *.dump.*
 media/uploads/*
 media/_versions/*
+env-py3

@@ -9,8 +9,8 @@ PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__) + "../../../")
 
 import sys
 
-reload(sys)  # Reload does the trick!
-sys.setdefaultencoding('UTF8')
+# reload(sys)  # Reload does the trick!
+# sys.setdefaultencoding('UTF8')
 
 
 # Quick-start development settings - unsuitable for production
@@ -46,6 +46,8 @@ INSTALLED_APPS = (
     'rest_framework.authtoken',
     # project apps
     'base',
+    # batteries dependant on APP_REGISTRY
+    'sphinxql',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -140,4 +142,9 @@ APP_FILTERS = {
     'PLACE_WORKERS_ID': 3,
     'PLACE_ADDRESS_ID': 40,
     'PLACE_VOID': 152,
+}
+
+INDEXES = {
+    'path': os.path.join(PROJECT_ROOT, '_index'),  # also do `mkdir _index`.
+    'sphinx_path': PROJECT_ROOT
 }

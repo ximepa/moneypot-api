@@ -127,7 +127,7 @@ class PurchaseItemForm(autocomplete_light.ModelForm):
 
         try:
             serials_data = parse_serials_data(_serials)
-        except InvalidParameters, e:
+        except InvalidParameters as e:
             raise forms.ValidationError({'_serials': e})
 
         if len(serials_data) and category and category.unit.unit_type == Unit.DECIMAL:
@@ -167,7 +167,7 @@ class TransactionItemForm(autocomplete_light.ModelForm):
 
         try:
             serials_data = parse_serials_data(_serials)
-        except InvalidParameters, e:
+        except InvalidParameters as e:
             raise forms.ValidationError({'_serials': e})
 
         if len(serials_data) and category and category.unit.unit_type == Unit.DECIMAL:
@@ -189,8 +189,8 @@ class TransactionItemForm(autocomplete_light.ModelForm):
                 raise forms.ValidationError({'_serials': ugettext(
                     u'serial <{serial}> <{category}> not found in <{place}>'.format(
                         serial=serial,
-                        category=unicode(category),
-                        place=unicode(transaction.source) if transaction else "<unknown place>"
+                        category=str(category),
+                        place=str(transaction.source) if transaction else "<unknown place>"
                     )
                 )})
             else:

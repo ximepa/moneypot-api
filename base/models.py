@@ -39,12 +39,11 @@ class TransactionNotReady(RuntimeError):
     pass
 
 
+class GeoName(models.Model):
+    name = models.CharField(max_length=100)
 
-# class GeoName(models.Model):
-#     name = models.CharField(max_length=100)
-#
-#     def __unicode__(self):
-#         return self.name
+    def __str__(self):
+        return self.name
 
 
 class Unit(models.Model):
@@ -62,7 +61,7 @@ class Unit(models.Model):
         verbose_name = _("unit")
         verbose_name_plural = _("units")
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -81,7 +80,7 @@ class ItemCategory(MPTTModel):
     class MPTTMeta:
         order_insertion_by = ['name']
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def clean_unit(self):
@@ -126,7 +125,7 @@ class ItemCategoryComment(models.Model):
         verbose_name = _("item category comment")
         verbose_name_plural = _("item category comments")
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s - %s" % (self.category.name, self.serial_prefix)
 
 
@@ -162,7 +161,7 @@ class Place(MPTTModel):
     class MPTTMeta:
         order_insertion_by = ['name']
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def clean_name(self):
@@ -328,9 +327,15 @@ class PurchaseItem(MovementItem):
         verbose_name = _("purchase item")
         verbose_name_plural = _("purchase items")
 
-    def __unicode__(self):
-        return u"%s: %s, %s → %s" % (
-            self.purchase.completed_at.strftime("%Y-%m-%d"),
+    def __str__(self):
+        if self.purchase.completed_at:
+            return u"%s: %s, %s → %s" % (
+                self.purchase.completed_at.strftime("%Y-%m-%d"),
+                self.category.name,
+                self.purchase.source,
+                self.purchase.destination
+            )
+        return u" --- %s, %s → %s" % (
             self.category.name,
             self.purchase.source,
             self.purchase.destination
@@ -375,7 +380,7 @@ class Payer(models.Model):
         verbose_name = _("payer")
         verbose_name_plural = _("payers")
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -408,8 +413,11 @@ class Purchase(Movement):
         verbose_name = _("purchase")
         verbose_name_plural = _("purchases")
 
-    def __unicode__(self):
-        return u'%s: %s → %s' % (self.completed_at.strftime("%Y-%m-%d"), self.source.name, self.destination.name)
+    def __str__(self):
+        if self.completed_at:
+            return u'%s: %s → %s' % (self.completed_at.strftime("%Y-%m-%d"), self.source.name, self.destination.name)
+        else:
+            return u'--- %s → %s' % (self.source.name, self.destination.name)
         # return u'%s -> %s' % (self.source.name, self.destination.name)
 
     def clean_is_auto_source(self):
@@ -455,8 +463,8 @@ class Purchase(Movement):
                         else:
                             raise IntegrityError("serial %s duplicate. item <%s> place <%s> pk <%s>" % (
                                 serial,
-                                item_serial.item.__unicode__(),
-                                item_serial.item.place.__unicode__() if item_serial.item.place else None,
+                                item_serial.item.__str__(),
+                                item_serial.item.place.__str__() if item_serial.item.place else None,
                                 item_serial.item.pk
                             ))
             self.items_prepared.append(i)
@@ -541,7 +549,7 @@ class Item(models.Model):
         verbose_name = _("item")
         verbose_name_plural = _("items")
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s - %s" % (self.category.name, self.place.name)
 
     def get_absolute_url(self):
@@ -618,7 +626,7 @@ class Item(models.Model):
         if not serial.item == self:
             raise InvalidParameters(_("Serial {serial} doesn't belong to item {item}".format(
                 serial=serial.serial,
-                item=self.__unicode__()
+                item=self.__str__()
             )))
         item = Item.objects.create(
             quantity=quantity,
@@ -716,8 +724,6 @@ class Item(models.Model):
         :rtype: base.models.Item()
         """
 
-        print [self, item, cell]
-
         if not isinstance(item, Item):
             raise InvalidParameters(_("item parameter must be instance of base.models.Item"))
 
@@ -772,7 +778,7 @@ class ItemSerial(models.Model):
         verbose_name = _("serial")
         verbose_name_plural = _("serials")
 
-    def __unicode__(self):
+    def __str__(self):
         return self.serial
 
     def category_name(self):
@@ -791,7 +797,7 @@ class ItemChunk(models.Model):
         verbose_name = _("chunk")
         verbose_name_plural = _("chunks")
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s%s" % (self.chunk, (" %s" % self.label) if self.label else "")
 
     def category_name(self):
@@ -824,7 +830,7 @@ class TransactionItem(MovementItem):
         verbose_name = _("transaction item")
         verbose_name_plural = _("transaction items")
 
-    def __unicode__(self):
+    def __str__(self):
         return self.category.name
 
     def save(self, *args, **kwargs):
@@ -864,7 +870,7 @@ class Transaction(Movement):
         verbose_name = _("transaction")
         verbose_name_plural = _("transaction")
 
-    def __unicode__(self):
+    def __str__(self):
         return u'%s → %s' % (self.source.name, self.destination.name)
 
     def save(self, *args, **kwargs):
@@ -906,10 +912,10 @@ class Transaction(Movement):
         self.transaction_items.filter(destination__isnull=True).update(destination=self.destination)
         for ti in self.transaction_items.all():
             item = ti.item_set.get()
-            assert ti.transaction == self, unicode(ti.transaction)
-            assert item.quantity == ti.quantity, unicode(ti.quantity)
-            assert item.category == ti.category, unicode(ti.category)
-            assert item.place == ti.transaction.source, unicode(ti.transaction.source)
+            assert ti.transaction == self, str(ti.transaction)
+            assert item.quantity == ti.quantity, str(ti.quantity)
+            assert item.category == ti.category, str(ti.category)
+            assert item.place == ti.transaction.source, str(ti.transaction.source)
             self.items_prepared.append(item)
 
     def force_complete(self, pending=False):
@@ -947,8 +953,8 @@ class Transaction(Movement):
             if item.reserved_by.destination:
                 assert item.reserved_by.destination.is_descendant_of(self.destination, include_self=True), ugettext(
                     "<{ti_dest}> must be child node of <{dest}>".format(
-                                ti_dest=unicode(item.reserved_by.destination.name),
-                                dest=unicode(self.destination.name)
+                                ti_dest=str(item.reserved_by.destination.name),
+                                dest=str(self.destination.name)
                             )
                 )
                 item.reserved_by.destination.deposit(item, cell=cell)
@@ -1039,7 +1045,7 @@ class VItemMovement(models.Model):
         verbose_name_plural = _("items movements")
         ordering = ['-created_at']
 
-    def __unicode__(self):
+    def __str__(self):
         return self.item_category_name
 
 
@@ -1079,7 +1085,7 @@ class VSerialMovement(models.Model):
         verbose_name_plural = _("serials movements")
         ordering = ['-created_at']
 
-    def __unicode__(self):
+    def __str__(self):
         return self.item_category_name
 
 
@@ -1097,7 +1103,7 @@ class FixSerialTransform(models.Model):
         verbose_name_plural = _("fix: serial transforms")
         ordering = ['-timestamp']
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s -> %s" % (self.old_serial, self.new_serial)
 
     def clean_old_serial(self):
@@ -1235,7 +1241,7 @@ class Cell(models.Model):
         verbose_name_plural = _("cells")
         unique_together = ('place', 'name')
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     @staticmethod
