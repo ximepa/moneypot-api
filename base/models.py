@@ -13,6 +13,7 @@ from filebrowser.fields import FileBrowseField
 import re
 import json
 from copy import copy
+from sphinxql.query import SearchQuerySet
 
 
 class IncompatibleUnitException(ValueError):
@@ -41,6 +42,11 @@ class TransactionNotReady(RuntimeError):
 
 class GeoName(models.Model):
     name = models.CharField(max_length=100)
+
+    @staticmethod
+    def search(*args):
+        from .indexes import GeoNameIndex
+        return SearchQuerySet(GeoNameIndex).search(*args)
 
     def __str__(self):
         return self.name

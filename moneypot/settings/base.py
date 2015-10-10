@@ -146,5 +146,10 @@ APP_FILTERS = {
 
 INDEXES = {
     'path': os.path.join(PROJECT_ROOT, '_index'),  # also do `mkdir _index`.
-    'sphinx_path': PROJECT_ROOT
+    'sphinx_path': PROJECT_ROOT,
+    'index_params': {
+        'type': 'plain',
+        'charset_type': 'utf-8',
+        'morphology': 'stem_enru'
+    }
 }

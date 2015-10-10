@@ -116,3 +116,5 @@ media/uploads/*
 media/_versions/*
 env-py3
 *.pid
+_index
+sphinx.conf

@@ -6,7 +6,8 @@ from base.models import GeoName
 
 
 class GeoNameIndex(indexes.Index):
-    name = fields.Text(model_attr='name')
+    my_name = fields.Text(model_attr='name')
 
     class Meta:
+        morphology = "stem_ru"
         model = GeoName
