@@ -116,3 +116,4 @@ media/uploads/*
 media/_versions/*
 env-py3
 *.pid
+__stash
