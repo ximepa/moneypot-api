@@ -40,10 +40,14 @@ from .inlines import ItemCategoryCommentInline, PurchaseItemInline, PurchaseItem
     TransactionItemInlineReadonly, TransactionItemInline, TransactionCommentPlaceInline
 
 
+@admin.register(GeoName)
+class GeoNameAdmin(admin.ModelAdmin):
+    search_fields = ['name']
+
 
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
-    pass
+    search_fields = ['name']
 
 
 @admin.register(ItemCategory)
