@@ -51,6 +51,8 @@ class ItemSerialForm(autocomplete_light.ModelForm):
         item = self.cleaned_data.get("item", None)
         if not item or not item.category.unit.unit_type == Unit.INTEGER:
             raise forms.ValidationError("this item category can not have serial")
+        if item.quantity < 1:
+            raise forms.ValidationError("item quantity not enough: %s" % item.quantity)
         return item
 
     def clean(self):
