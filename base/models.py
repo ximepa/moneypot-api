@@ -607,8 +607,12 @@ class Item(models.Model):
 
         if self.quantity - self.serials.count() < quantity:
             raise InvalidParameters(_("please provide serial to withdraw"))
-        if self.chunks.count() and self.quantity - self.chunks.aggregate(models.Sum('chunk'))['chunk__sum'] < quantity:
-            raise InvalidParameters(_("please provide chunk to withdraw"))
+        if self.chunks.count():
+            if self.place.has_chunks:
+                if self.quantity - self.chunks.aggregate(models.Sum('chunk'))['chunk__sum'] < quantity:
+                    raise InvalidParameters(_("please provide chunk to withdraw"))
+            else:
+                self.chunks.all().delete()
         item = Item.objects.create(
             quantity=quantity,
             is_reserved=True,
@@ -765,7 +769,11 @@ class Item(models.Model):
         self.qs.update(quantity=models.F('quantity') + item.quantity, )
         self.refresh_from_db()
 
-        item.chunks.update(item=self)
+        if self.place.has_chunks:
+            item.chunks.update(item=self)
+        else:
+            item.chunks.all().delete()
+
         item.serials.update(item=self)
 
         item.delete()
