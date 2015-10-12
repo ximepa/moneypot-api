@@ -250,7 +250,7 @@ def deploy():
     """
     # with settings(warn_only=True):
     #     webserver_stop()
-    print(dir(env))
+
     if not env.project_name:
         print("choose valid env: (%s). Command switch:e=<ENVIRONMENT>" % ",".join(ENVIRONMENTS.keys()))
     else:
