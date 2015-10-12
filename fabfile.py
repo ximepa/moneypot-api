@@ -10,20 +10,36 @@ import posixpath
 from fabric.api import run, local, env, settings, cd, task, sudo
 from fabric.contrib.files import exists
 from fabric.operations import _prefix_commands, _prefix_env_vars
+from copy import deepcopy
+
 #from fabric.decorators import runs_once
 #from fabric.context_managers import cd, lcd, settings, hide
 
 
 # CHANGEME
 env.hosts = ['maxim@192.168.33.152']
-env.project_name = 'moneypot-api'
 env.project_main_app = 'moneypot'
-env.code_dir = '/home/maxim/production/%s' % env.project_name
-env.project_dir = '/home/maxim/production/%s/%s' % (env.project_name, env.project_main_app)
-env.static_root = '/home/maxim/production/%s/static/' % env.project_name
-env.virtualenv = '/home/maxim/production/%s/env' % env.project_name
-env.code_repo = 'git@github.com:shamanu4/moneypot-api.git'
-env.django_settings_module = '%s.settings' % env.project_main_app
+env.project_name = None
+
+ENVIRONMENTS = {
+    'production': {
+        'env.project_name': 'moneypot-api'
+    },
+
+    'staging': {
+        'env.project_name': 'moneypot-api-staging'
+    },
+}
+
+
+def update_env():
+    env.code_dir = '/home/maxim/production/%s' % env.project_name
+    env.project_dir = '/home/maxim/production/%s/%s' % (env.project_name, env.project_main_app)
+    env.static_root = '/home/maxim/production/%s/static/' % env.project_name
+    env.virtualenv = '/home/maxim/production/%s/env' % env.project_name
+    env.code_repo = 'git@github.com:shamanu4/moneypot-api.git'
+    env.django_settings_module = '%s.settings' % env.project_main_app
+
 
 # Python version
 PYTHON_BIN = "python2.7"
@@ -213,15 +229,34 @@ def sshagent_run(cmd):
 
 
 @task
+def switch(e):
+    if e in ENVIRONMENTS:
+        ename = ENVIRONMENTS[e]
+        for key in ename:
+            module, attr = key.split(".")
+            if module in globals():
+                setattr(globals()[module], attr, ename[key])
+            else:
+                raise RuntimeWarning("environment variable %s is not defined" % module)
+        update_env()
+    else:
+        print("choose valid env: (%s) " % ",".join(ENVIRONMENTS.keys()))
+
+
+@task
 def deploy():
     """
     Deploy the project.
     """
     # with settings(warn_only=True):
     #     webserver_stop()
-    push_sources()
-    install_dependencies()
-    update_database()
-    build_static()
-    compile_translation()
-    webserver_restart()
+    print(dir(env))
+    if not env.project_name:
+        print("choose valid env: (%s). Command switch:e=<ENVIRONMENT>" % ",".join(ENVIRONMENTS.keys()))
+    else:
+        push_sources()
+        install_dependencies()
+        update_database()
+        build_static()
+        compile_translation()
+        webserver_restart()
