@@ -1,3 +1,6 @@
+# -*- encoding: utf-8 -*-
+from __future__ import print_function, division, unicode_literals, absolute_import
+
 from django.test import TransactionTestCase
 from django.forms import ValidationError
 

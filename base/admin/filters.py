@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-__author__ = 'maxim'
+from __future__ import print_function, division, unicode_literals, absolute_import
 
 from grappelli_filters import RelatedAutocompleteFilter
 from mptt.models import MPTTModel

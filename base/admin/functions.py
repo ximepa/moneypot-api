@@ -1,4 +1,6 @@
 # -*- encoding: utf-8 -*-
+from __future__ import print_function, division, unicode_literals, absolute_import
+
 from django.contrib import admin
 from django.utils.translation import ugettext
 from base.models import InvalidParameters

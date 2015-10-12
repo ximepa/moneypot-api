@@ -1,3 +1,6 @@
+# -*- encoding: utf-8 -*-
+from __future__ import print_function, division, unicode_literals, absolute_import
+
 from django.shortcuts import render_to_response
 from base.models import Item, PurchaseItem, ItemSerial, Cell
 import json
