@@ -233,8 +233,8 @@ class TransmutationItemForm(autocomplete_light.ModelForm):
         if serial and not quantity == 1:
             raise forms.ValidationError({'quantity': "if serial is set, quantity = 1"})
 
-        if chunk and not quantity == chunk.chunk:
-            raise forms.ValidationError({'quantity': "if chunk is set, quantity = chunk length"})
+        if chunk and quantity < chunk.chunk:
+            raise forms.ValidationError({'quantity': "if chunk is set, quantity <= chunk length"})
 
         return self.cleaned_data
 
