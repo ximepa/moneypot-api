@@ -1349,10 +1349,10 @@ class Transmutation(Transaction):
                 category=tr.transmuted,
                 quantity=tr.quantity,
                 serial=tr.serial,
-                chunk=tr.chunk,
                 cell=tr.cell
             )
         self.complete()
+        rev_t.force_complete()
 
     class Meta:
         verbose_name = _("Fix: transmutation")
