@@ -218,7 +218,7 @@ class ItemAdmin(FiltersMixin, AdminReadOnly):
 class ItemSerialAdmin(FiltersMixin):
 
     class Media:
-        js = ('base/js/serial_purchase_autocomplete.js',)
+        js = ('base/js/place_item_changelist_autocomplete.js',)
 
     form = ItemSerialForm
 
