@@ -68,12 +68,17 @@ class Unit(models.Model):
 
 
 class ItemCategory(MPTTModel):
+
+    @staticmethod
+    def get_upload_dir():
+        return "uploads"
+
     name = models.CharField(_("name"), max_length=100, unique=True)
     unit = models.ForeignKey("Unit", verbose_name=_("unit"), blank=True, null=True)
     is_stackable = models.NullBooleanField(_("stackable"), blank=True, null=True)
     parent = models.ForeignKey('self', verbose_name=_("parent"), null=True, blank=True, related_name='children')
     comment = models.TextField(_("comment"), blank=True, null=True)
-    photo = FileBrowseField("Image", max_length=200, directory="uploads", blank=True, null=True)
+    photo = FileBrowseField("Image", max_length=200, directory=get_upload_dir, blank=True, null=True)
 
     class Meta:
         verbose_name = _("item category")

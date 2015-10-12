@@ -13,6 +13,9 @@
             </a>
         </div>
     </div>
+    <div style="float:right; position: absolute; margin-left: 200px; margin-top: 8px;">
+        rev: {{ request.git_revision|truncatechars:11 }}
+    </div>
 {% endblock %}
 
 {% block extrahead %}

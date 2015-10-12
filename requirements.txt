@@ -7,6 +7,7 @@ django-debug-toolbar
 django-extensions
 django-filebrowser
 django-filter
+django-gitrevision
 django-grappelli
 git+https://github.com/frnhr/django-grappelli-filters
 django-gunicorn

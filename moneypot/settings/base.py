@@ -47,6 +47,7 @@ INSTALLED_APPS = (
     'daterange_filter',
     'rest_framework',
     'rest_framework.authtoken',
+    'gitrevision',
     # project apps
     'base',
 )
@@ -59,7 +60,8 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'moneypot.middleware.ExceptionMiddleware'
+    'gitrevision.middleware.GitRevision',
+    'moneypot.middleware.ExceptionMiddleware',
 )
 
 TEMPLATES = [
@@ -82,7 +84,8 @@ TEMPLATES = [
                 "django.template.context_processors.static",
                 "django.template.context_processors.tz",
                 "django.core.context_processors.request",
-                "django.contrib.messages.context_processors.messages"
+                "django.contrib.messages.context_processors.messages",
+                "gitrevision.context_processors.gitrevision",
             )
         }
     },
