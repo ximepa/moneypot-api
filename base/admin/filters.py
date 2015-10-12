@@ -40,9 +40,9 @@ class MPTTRelatedAutocompleteFilter(RelatedAutocompleteFilter):
                     pass
                 else:
                     if hasattr(request, "mptt_filter"):
-                        request.mptt_filter = '%s | %s:"%s"' % (request.mptt_filter, _(last_field_path), str(obj))
+                        request.mptt_filter = '%s | %s:"%s"' % (request.mptt_filter, _(last_field_path), obj)
                     else:
-                        request.mptt_filter = '%s:"%s"' % (_(last_field_path), str(obj))
+                        request.mptt_filter = '%s:"%s"' % (_(last_field_path), obj)
                     tree = obj.get_descendants(include_self=True)
                     param = tree.values_list("id", flat=True)
 

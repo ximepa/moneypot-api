@@ -190,8 +190,8 @@ class TransactionItemForm(autocomplete_light.ModelForm):
                 raise forms.ValidationError({'_serials': ugettext(
                     u'serial <{serial}> <{category}> not found in <{place}>'.format(
                         serial=serial,
-                        category=str(category),
-                        place=str(transaction.source) if transaction else "<unknown place>"
+                        category=category,
+                        place=transaction.source if transaction else "<unknown place>"
                     )
                 )})
             else:

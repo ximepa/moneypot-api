@@ -447,7 +447,7 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
                 self.list_display.remove('custom_cell')
             if place.has_cells and not 'custom_cell' in self.list_display:
                 self.list_display.append('custom_cell')
-            cl_header = str(place.name)
+            cl_header = place.name
             params_get = request.GET.copy()
             params_get.update({'show_zero': int(not self.show_zero)})
             extra_context.update({'show_zero_params': urlencode(params_get)})
@@ -514,7 +514,7 @@ class CategoryItemAdmin(HiddenAdminModelMixin, ItemAdmin):
         except ItemCategory.DoesNotExist:
             extra_context.update({'cl_header': _('Category does not exist')})
         else:
-            cl_header = _(u"<{name}> items".format(name=str(category.name)))
+            cl_header = _(u"<{name}> items".format(name=category.name))
             extra_context.update({'show_zero': self.show_zero})
             extra_context.update({'rq_qs': rq_qs})
             extra_context.update({'cl_header': mark_safe(cl_header)})
@@ -569,8 +569,8 @@ class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
             if item.place.has_cells and not "custom_cell" in self.list_display:
                 self.list_display.append("custom_cell")
             extra_context.update({'cl_header': _(u"Serials for <{name}> in <{place}>".format(
-                name=str(item.category.name),
-                place=str(item.place.name)
+                name=item.category.name,
+                place=item.place.name
             ))})
         view = super(ItemSerialsFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
@@ -717,12 +717,12 @@ class ItemMovementFilteredAdmin(HiddenAdminModelMixin, ItemMovementAdmin):
             else:
                 category_name = category.name
             extra_context.update({'cl_header': _(u"Movement history for <{category_name}> in <{place_name}>".format(
-                    category_name=str(category_name),
-                    place_name=str(place_name)
+                    category_name=category_name,
+                    place_name=place_name
                 ))})
         else:
             extra_context.update({'cl_header': _(u"Movement history for <{place_name}>".format(
-                    place_name=str(place_name)
+                    place_name=place_name
                 ))})
         view = super(ItemMovementFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
@@ -775,12 +775,12 @@ class SerialMovementFilteredAdmin(HiddenAdminModelMixin, SerialMovementAdmin):
             else:
                 place_name = place.name
             extra_context.update({'cl_header': _(u"Movement history for <{serial_name}> in <{place_name}>".format(
-                    serial_name=str(serial_name),
-                    place_name=str(place_name)
+                    serial_name=serial_name,
+                    place_name=place_name
                 ))})
         else:
             extra_context.update({'cl_header': _(u"Movement history for <{serial_name}>".format(
-                    serial_name=str(serial_name),
+                    serial_name=serial_name,
                 ))})
         view = super(SerialMovementFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
         return view

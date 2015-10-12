@@ -16,7 +16,7 @@ def create_model_admin(model_admin, model, name=None, v_name=None):
 
     attrs = {'__module__': '', 'Meta': Meta}
 
-    new_model = type(name, (model,), attrs)
+    new_model = type(str(name), (model,), attrs)
     admin.site.register(new_model, model_admin)
     return model_admin
 

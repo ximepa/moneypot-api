@@ -916,10 +916,10 @@ class Transaction(Movement):
         self.transaction_items.filter(destination__isnull=True).update(destination=self.destination)
         for ti in self.transaction_items.all():
             item = ti.item_set.get()
-            assert ti.transaction == self, str(ti.transaction)
-            assert item.quantity == ti.quantity, str(ti.quantity)
-            assert item.category == ti.category, str(ti.category)
-            assert item.place == ti.transaction.source, str(ti.transaction.source)
+            assert ti.transaction == self, ti.transaction
+            assert item.quantity == ti.quantity, ti.quantity
+            assert item.category == ti.category, ti.category
+            assert item.place == ti.transaction.source, ti.transaction.source
             self.items_prepared.append(item)
 
     def force_complete(self, pending=False):
@@ -957,8 +957,8 @@ class Transaction(Movement):
             if item.reserved_by.destination:
                 assert item.reserved_by.destination.is_descendant_of(self.destination, include_self=True), ugettext(
                     "<{ti_dest}> must be child node of <{dest}>".format(
-                                ti_dest=str(item.reserved_by.destination.name),
-                                dest=str(self.destination.name)
+                                ti_dest=item.reserved_by.destination.name,
+                                dest=self.destination.name
                             )
                 )
                 item.reserved_by.destination.deposit(item, cell=cell)

@@ -1,5 +1,5 @@
-# coding=utf-8
-from __future__ import unicode_literals, print_function
+# -*- encoding: utf-8 -*-
+from __future__ import print_function, division, unicode_literals, absolute_import
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
@@ -9,8 +9,11 @@ PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__) + "../../../")
 
 import sys
 
-# reload(sys)  # Reload does the trick!
-# sys.setdefaultencoding('UTF8')
+try:
+    reload(sys)  # Reload does the trick for python 2.7
+    sys.setdefaultencoding('UTF8')
+except NameError as e:
+    print(e)     # No reload - no issues. We are running python 3 ...
 
 
 # Quick-start development settings - unsuitable for production
