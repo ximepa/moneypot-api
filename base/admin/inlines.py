@@ -6,8 +6,8 @@ from django.db import models
 from django import forms
 import autocomplete_light
 
-from base.models import ItemCategoryComment, PurchaseItem, TransactionItem, Transaction, Place
-from .forms import ItemCategoryCommentForm, PurchaseItemForm, TransactionItemForm
+from base.models import ItemCategoryComment, PurchaseItem, TransactionItem, Transaction, Place, TransmutationItem
+from .forms import ItemCategoryCommentForm, PurchaseItemForm, TransactionItemForm, TransmutationItemForm
 from .overrides import InlineReadOnly
 
 
@@ -63,6 +63,16 @@ class TransactionItemInline(admin.TabularInline):
         return readonly_fields
 
 
+class TransmutationItemInline(admin.TabularInline):
+    model = TransmutationItem
+    form = TransmutationItemForm
+    extra = 10
+    formfield_overrides = {
+        models.CharField: {'widget': forms.TextInput(
+            attrs={'width': "120px"}
+        )},
+    }
+
 class TransactionItemInlineReadonly(InlineReadOnly):
     model = TransactionItem
     form = TransactionItemForm
@@ -76,6 +86,12 @@ class TransactionItemInlineReadonly(InlineReadOnly):
     def get_readonly_fields(self, request, obj=None):
         readonly_fields = super(TransactionItemInlineReadonly, self).get_readonly_fields(request, obj)
         return readonly_fields
+
+
+class TransmutationItemInlineReadonly(InlineReadOnly):
+    model = TransmutationItem
+    form = TransmutationItemForm
+    extra = 0
 
 
 class TransactionCommentPlaceInline(admin.TabularInline):

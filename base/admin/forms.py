@@ -10,7 +10,7 @@ import autocomplete_light
 
 from .functions import parse_serials_data
 from base.models import InvalidParameters, ItemCategory, ItemCategoryComment, Place, PurchaseItem, TransactionItem, Purchase, \
-    Transaction, Unit, ItemSerial, FixCategoryMerge, FixPlaceMerge, Cell, Item, ItemChunk
+    Transaction, Unit, ItemSerial, FixCategoryMerge, FixPlaceMerge, Cell, Item, ItemChunk, Transmutation, TransmutationItem
 
 
 class ItemCategoryCommentForm(autocomplete_light.ModelForm):
@@ -217,6 +217,28 @@ class TransactionItemForm(autocomplete_light.ModelForm):
         return ti
 
 
+class TransmutationItemForm(autocomplete_light.ModelForm):
+
+    class Meta:
+        model = TransmutationItem
+        fields = ['category', 'quantity', 'serial', 'chunk', 'transmuted', 'cell']
+        autocomplete_fields = ('transmuted', 'category', 'serial', 'chunk')
+
+    def clean(self):
+        cleaned_data = dict(self.cleaned_data)
+        serial = cleaned_data.get('serial', None)
+        chunk = cleaned_data.get('chunk', None)
+        quantity = cleaned_data.get('quantity', 0)
+
+        if serial and not quantity == 1:
+            raise forms.ValidationError({'quantity': "if serial is set, quantity = 1"})
+
+        if chunk and not quantity == chunk.chunk:
+            raise forms.ValidationError({'quantity': "if chunk is set, quantity = chunk length"})
+
+        return self.cleaned_data
+
+
 class PurchaseForm(autocomplete_light.ModelForm):
     force_complete = forms.BooleanField(required=False, label=_("force complete"))
 
@@ -255,6 +277,27 @@ class TransactionForm(autocomplete_light.ModelForm):
             # except Exception, e:
             # raise forms.ValidationError(e)
         return t
+
+
+class TransmutationForm(autocomplete_light.ModelForm):
+    force_complete = forms.BooleanField(required=False, label=_("force complete"))
+
+    class Meta:
+        model = Transmutation
+        fields = ['source', 'comment', 'force_complete']
+        autocomplete_fields = ('source', )
+
+    def save(self, *args, **kwargs):
+        t = super(TransmutationForm, self).save(*args, **kwargs)
+        if self.cleaned_data['force_complete']:
+            if t.is_completed:
+                raise RuntimeError(_("already completed"))
+            # try:
+            t.force_complete(pending=True)
+            # except Exception, e:
+            # raise forms.ValidationError(e)
+        return t
+
 
 
 class FixCategoryMergeForm(autocomplete_light.ModelForm):

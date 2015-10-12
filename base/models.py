@@ -935,7 +935,7 @@ class Transaction(Movement):
         self.complete(pending)
 
     @transaction.atomic
-    def complete(self, pending=False):
+    def complete(self, pending=False, transmutation=False):
         # print "TRANSACTION COMPLETED!"
         if pending:
             # print "transaction complete defer"
@@ -946,7 +946,8 @@ class Transaction(Movement):
             return
         if not self.is_prepared:
             self.prepare()
-        self.check_prepared()
+        if not transmutation:
+            self.check_prepared()
         if not self.is_negotiated_source:
             raise TransactionNotReady(_("list is not confirmed by source"))
         if not self.is_negotiated_destination:
@@ -1256,3 +1257,104 @@ class Cell(models.Model):
     @staticmethod
     def autocomplete_search_fields():
         return "id__iexact", "name__icontains",
+
+
+class TransmutationItem(MovementItem):
+    transmuted = models.ForeignKey("ItemCategory", verbose_name=_("transmuted item category"),
+                                   related_name="transmuted_categories")
+    transmutation = models.ForeignKey("Transmutation", verbose_name=_("transmutation"),
+                                      related_name="transmutation_items")
+    ti = models.OneToOneField(TransactionItem, blank=True, null=True, related_name="transmutation_item")
+    # Movement superclass
+    # category = models.ForeignKey("ItemCategory", verbose_name=_("item category"))
+    # quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
+    # _chunks = models.TextField(blank=True, null=True)
+    serial = models.ForeignKey(ItemSerial, blank=True, null=True, on_delete=models.SET_NULL)
+    chunk = models.ForeignKey(ItemChunk, blank=True, null=True, on_delete=models.SET_NULL)
+    cell = models.CharField(max_length=16, blank=True, null=True)
+
+    class Meta:
+        verbose_name = _("transmutation item")
+        verbose_name_plural = _("transmutation items")
+
+    def __str__(self):
+        return "%s -> %s" % (self.category.name, self.transmuted.name)
+
+
+class Transmutation(Transaction):
+    # items = models.ManyToManyField("ItemCategory", through="TransmutationItem", verbose_name=_("items"),
+    #                                through_fields=["transmutation", "category"])
+    # source = models.ForeignKey("Place", verbose_name=_("source"), related_name="transmutation_sources")
+    # destination = models.ForeignKey("Place", verbose_name=_("destination"), related_name="transmutation_destinations")
+    # comment = models.TextField(_("comment"), blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        try:
+            transmutator = Place.objects.get(pk= settings.APP_FILTERS['PLACE_TRANSMUTATOR_ID'])
+        except Place.DoesNotExist:
+            raise RuntimeError(_("Transmutator not found. Please check settings"))
+        else:
+            self.destination = transmutator
+        super(Transmutation, self).save(*args, **kwargs)
+
+    def force_complete(self, pending=False):
+        self.is_negotiated_source = True
+        self.is_negotiated_destination = True
+        self.is_confirmed_source = True
+        self.is_confirmed_destination = True
+        self.complete(pending)
+
+    @transaction.atomic
+    def complete(self, pending=False, transmutation=True):
+        if pending:
+            # print "transaction complete defer"
+            setattr(self, "is_pending", True)
+            return
+
+        if not self.is_prepared:
+            self.prepare()
+        self.check_prepared()
+
+        for item in self.items_prepared:
+            new_category = item.reserved_by.transmutation_item.transmuted
+            item.category = new_category
+            item.save()
+
+        super(Transmutation, self).complete(pending=False, transmutation=True)
+
+    def transmute(self):
+        if not self.transmutation_items.count():
+            raise RuntimeError(ugettext("No transmutation items added"))
+        # t = Transaction.objects.create(
+        #     source = self.source,
+        #     destination = self.destination,
+        # )
+        rev_t = Transaction.objects.create(
+            destination = self.source,
+            source = self.destination,
+        )
+        for tr in self.transmutation_items.all():
+            ti = TransactionItem.objects.create(
+                transaction=self.transaction_ptr,
+                category=tr.category,
+                quantity=tr.quantity,
+                serial=tr.serial,
+                chunk=tr.chunk,
+                cell=tr.cell
+            )
+            tr.ti = ti
+            tr.save()
+            rev_ti = TransactionItem.objects.create(
+                transaction=rev_t,
+                category=tr.transmuted,
+                quantity=tr.quantity,
+                serial=tr.serial,
+                chunk=tr.chunk,
+                cell=tr.cell
+            )
+        self.complete()
+
+    class Meta:
+        verbose_name = _("Fix: transmutation")
+        verbose_name_plural = _("Fix: transmutations")
+

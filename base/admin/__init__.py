@@ -22,7 +22,8 @@ from django_mptt_admin import util
 from grappelli_filters import RelatedAutocompleteFilter, FiltersMixin
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
     TransactionItem, Transaction, OrderItemSerial, ContractItemSerial, VItemMovement, VSerialMovement, \
-    get_descendants_ids, FixSerialTransform, FixCategoryMerge, FixPlaceMerge, Cell, GeoName
+    get_descendants_ids, FixSerialTransform, FixCategoryMerge, FixPlaceMerge, Cell, GeoName, Transmutation, \
+    TransmutationItem
 from filebrowser.widgets import ClearableFileInput
 from filebrowser.settings import ADMIN_THUMBNAIL
 
@@ -36,9 +37,11 @@ from .actions import process_to_void, update_cell
 from .overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
 from .functions import create_model_admin
 from .forms import ItemCategoryForm, PlaceForm, PurchaseItemForm, TransactionItemForm, PurchaseForm, TransactionForm, \
-    FixCategoryMergeForm, FixPlaceMergeForm, CellForm, CellItemActionForm, ItemInlineForm, ItemChunkForm, ItemSerialForm
+    FixCategoryMergeForm, FixPlaceMergeForm, CellForm, CellItemActionForm, ItemInlineForm, ItemChunkForm, ItemSerialForm, \
+    TransmutationForm
 from .inlines import ItemCategoryCommentInline, PurchaseItemInline, PurchaseItemInlineReadonly, \
-    TransactionItemInlineReadonly, TransactionItemInline, TransactionCommentPlaceInline
+    TransactionItemInlineReadonly, TransactionItemInline, TransactionCommentPlaceInline, TransmutationItemInline, \
+    TransmutationItemInlineReadonly
 
 
 @admin.register(GeoName)
@@ -852,3 +855,67 @@ class CellAdmin(FiltersMixin, admin.ModelAdmin):
     list_display = ['name', 'place']
     list_filter = (('place', RelatedAutocompleteFilter), )
     form = CellForm
+
+
+@admin.register(Transmutation)
+class TransmutationAdmin(FiltersMixin, admin.ModelAdmin):
+    class Media:
+        js = ('base/js/transmutation_source_item_autocomplete.js',)
+
+    form = TransmutationForm
+    list_display = [
+        '__str__', 'created_at', 'completed_at', 'source',
+    ]
+    list_filter = [
+        ('source', MPTTRelatedAutocompleteFilter),
+        'is_completed',
+    ]
+    search_fields = ['source__name', 'transaction_items__category__name']
+    inlines = [
+         TransmutationItemInline
+    ]
+
+    def has_delete_permission(self, request, obj=None):
+        if obj and obj.is_completed:
+            return False
+        else:
+            return super(TransmutationAdmin, self).has_delete_permission(request, obj)
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = list(self.readonly_fields)
+        if obj and obj.is_completed:
+            readonly_fields.extend(['source', 'destination', 'completed_at'])
+        return readonly_fields
+
+    def get_fields(self, request, obj=None):
+        fields = super(TransmutationAdmin, self).get_fields(request, obj)
+        if obj and obj.is_completed:
+            fields.remove('force_complete')
+        return fields
+
+    def get_inline_instances(self, request, obj=None):
+        inline_instances = []
+
+        if obj and obj.transaction_ptr.is_completed:
+            inlines = [TransmutationItemInlineReadonly, ]
+        else:
+            inlines = self.inlines
+
+        self._obj = obj
+
+        for inline_class in inlines:
+            inline = inline_class(self.model, self.admin_site)
+            inline_instances.append(inline)
+        return inline_instances
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        for instance in instances:
+            instance.save()
+        formset.save_m2m()
+        if self._obj:
+            t = self._obj
+            if hasattr(t, "is_pending") and t.is_pending:
+                # print "complete pending transaction"
+                t.is_pending = False
+                t.transmute()
