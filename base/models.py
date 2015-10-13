@@ -769,7 +769,7 @@ class Item(models.Model):
         self.qs.update(quantity=models.F('quantity') + item.quantity, )
         self.refresh_from_db()
 
-        if self.place.has_chunks:
+        if self.place and self.place.has_chunks:
             item.chunks.update(item=self)
         else:
             item.chunks.all().delete()
