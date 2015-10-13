@@ -16,7 +16,7 @@ django-mptt==0.7.4
 git+https://github.com/mbraak/django-mptt-admin
 django-nose==1.4.2
 djangorestframework==3.2.4
-https://github.com/jleivaizq/djorm-ext-pgtrgm
+git+https://github.com/jleivaizq/djorm-ext-pgtrgm
 ecdsa==0.13
 Fabric==1.10.2
 gunicorn==19.3.0
