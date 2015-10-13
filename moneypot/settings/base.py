@@ -8,6 +8,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__) + "../../../")
 
 import sys
+from django.db.backends.signals import connection_created
+from django.db import connection
 
 try:
     reload(sys)  # Reload does the trick for python 2.7
@@ -149,3 +151,9 @@ APP_FILTERS = {
     'PLACE_TRANSMUTATOR_ID': 502,
     'PLACE_VOID': 152,
 }
+
+def db_connection_init(sender, **kwargs):
+    cursor = connection.cursor()
+    cursor.execute("SELECT set_limit(0.2);")
+
+connection_created.connect(db_connection_init)
