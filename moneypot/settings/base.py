@@ -9,13 +9,14 @@ PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__) + "../../../")
 
 import sys
 from django.db.backends.signals import connection_created
+from django.db.utils import ProgrammingError
 from django.db import connection
 
 try:
     reload(sys)  # Reload does the trick for python 2.7
     sys.setdefaultencoding('UTF8')
 except NameError as e:
-    print(e)     # No reload - no issues. We are running python 3 ...
+    pass     # No reload - no issues. We are running python 3 ...
 
 
 # Quick-start development settings - unsuitable for production
@@ -154,6 +155,9 @@ APP_FILTERS = {
 
 def db_connection_init(sender, **kwargs):
     cursor = connection.cursor()
-    cursor.execute("SELECT set_limit(0.1);")
+    try:
+        cursor.execute("SELECT set_limit(0.1);")
+    except ProgrammingError:
+        print("Trigram search not available!")
 
 connection_created.connect(db_connection_init)
