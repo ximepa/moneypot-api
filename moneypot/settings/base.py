@@ -154,6 +154,6 @@ APP_FILTERS = {
 
 def db_connection_init(sender, **kwargs):
     cursor = connection.cursor()
-    cursor.execute("SELECT set_limit(0.2);")
+    cursor.execute("SELECT set_limit(0.1);")
 
 connection_created.connect(db_connection_init)

@@ -6,18 +6,9 @@ from decimal import Decimal, InvalidOperation
 
 from .models import Place, ItemCategory, Item, ItemSerial, ItemChunk, Cell, Purchase, PurchaseItem
 
-#
-# autocomplete_light.register(Place,
-#                             search_fields=['name'],
-#                             attrs={
-#                                 'placeholder': 'place name',
-#                                 'data-autocomplete-minimum-characters': 1,
-#                             },
-#                             widget_attrs={
-#                                 'data-widget-maximum-values': 4,
-#                                 # 'class': 'modern-style',
-#                             },
-#                             )
+
+###################################################################################
+###################################################################################
 
 
 class ItemCategoryAutocomplete(autocomplete_light.AutocompleteModelBase):
@@ -27,9 +18,14 @@ class ItemCategoryAutocomplete(autocomplete_light.AutocompleteModelBase):
         all_nodes = int(self.request.GET.get('all_nodes', "0"))
         source_id = self.request.GET.get('source_id', None)
 
-        choices = ItemCategory.objects.filter(name__similar=q).extra(
-            select={'distance': "similarity(name, '%s')" % q}
-        ).order_by('-distance')
+        _choices = ItemCategory.objects.filter(name__icontains=q)
+
+        if not _choices.count():
+            choices = ItemCategory.objects.filter(name__similar=q).extra(
+                select={'distance': "similarity(name, '%s')" % q}
+            ).order_by('-distance')
+        else:
+            choices = _choices
 
         if not all_nodes:
             choices = choices.filter(children__isnull=True)
@@ -46,6 +42,11 @@ autocomplete_light.register(ItemCategory, ItemCategoryAutocomplete, attrs={
                                 'data-autocomplete-minimum-characters': 0,
                             },)
 
+
+###################################################################################
+###################################################################################
+
+
 autocomplete_light.register(Item,
                             search_fields=['category__name'],
                             attrs={
@@ -57,6 +58,10 @@ autocomplete_light.register(Item,
                                 # 'class': 'modern-style',
                             },
                             )
+
+
+###################################################################################
+###################################################################################
 
 
 class ItemSerialAutocomplete(autocomplete_light.AutocompleteModelBase):
@@ -83,6 +88,9 @@ autocomplete_light.register(ItemSerial, ItemSerialAutocomplete,attrs={
                                 'style': "width: 140px"
                             },)
 
+
+###################################################################################
+###################################################################################
 
 
 class ItemChunkAutocomplete(autocomplete_light.AutocompleteModelBase):
@@ -114,6 +122,9 @@ autocomplete_light.register(ItemChunk, ItemChunkAutocomplete,attrs={
                             },)
 
 
+###################################################################################
+###################################################################################
+
 
 class SubPlaceAutocomplete(autocomplete_light.AutocompleteModelBase):
 
@@ -133,9 +144,16 @@ class SubPlaceAutocomplete(autocomplete_light.AutocompleteModelBase):
         if not choices:
             choices = Place.objects.all()
 
-        choices = choices.filter(name__similar=q).extra(
-            select={'distance': "similarity(name, '%s')" % q}
-        ).order_by('-distance')
+        _choices = choices.filter(name__icontains=q)
+
+        if not _choices.count():
+
+            choices = choices.filter(name__similar=q).extra(
+                select={'distance': "similarity(name, '%s')" % q}
+            ).order_by('-distance')
+
+        else:
+            choices = _choices
 
         return self.order_choices(choices)[0:self.limit_choices]
 
@@ -144,6 +162,10 @@ autocomplete_light.register(Place, SubPlaceAutocomplete, attrs={
     'placeholder': 'place ..',
     'style': "width: 140px"
 },)
+
+
+###################################################################################
+###################################################################################
 
 
 class CellAutocomplete(autocomplete_light.AutocompleteModelBase):
@@ -164,6 +186,10 @@ autocomplete_light.register(Cell, CellAutocomplete, attrs={
 },)
 
 
+###################################################################################
+###################################################################################
+
+
 class ItemAutocomplete(autocomplete_light.AutocompleteModelBase):
 
     def choices_for_request(self):
@@ -172,9 +198,14 @@ class ItemAutocomplete(autocomplete_light.AutocompleteModelBase):
         if " - " in q:
             q, place = q.split(" - ")
 
-        choices = Item.objects.filter(category__name__similar=q).extra(
-            select={'distance': "similarity(name, '%s')" % q}
-        ).order_by('-distance')
+        _choices = Item.objects.filter(category__name__icontains=q)
+
+        if not _choices.count():
+            choices = Item.objects.filter(category__name__similar=q).extra(
+                select={'distance': "similarity(name, '%s')" % q}
+            ).order_by('-distance')
+        else:
+            choices = _choices
 
         if place:
             choices = choices.filter(place__name__icontains=place)
@@ -188,6 +219,10 @@ autocomplete_light.register(Item, ItemAutocomplete, attrs={
     # 'size': 30,
     # 'style': "width: 200px"
 },)
+
+
+###################################################################################
+###################################################################################
 
 
 class PurchaseItemAutocomplete(autocomplete_light.AutocompleteModelBase):
@@ -214,3 +249,7 @@ autocomplete_light.register(PurchaseItem, PurchaseItemAutocomplete, attrs={
     # 'size': 30,
     # 'style': "width: 200px"
 },)
+
+
+###################################################################################
+###################################################################################
