@@ -43,6 +43,7 @@ INSTALLED_APPS = (
     # batteries
     'mptt',
     'django_mptt_admin',
+    'djorm_pgtrgm',
     # 'guardian',
     'daterange_filter',
     'rest_framework',

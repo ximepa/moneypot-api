@@ -27,7 +27,7 @@ class ItemCategoryAutocomplete(autocomplete_light.AutocompleteModelBase):
         all_nodes = int(self.request.GET.get('all_nodes', "0"))
         source_id = self.request.GET.get('source_id', None)
 
-        choices = ItemCategory.objects.filter(name__icontains=q)
+        choices = ItemCategory.objects.filter(name__similar=q)
 
         if not all_nodes:
             choices = choices.filter(children__isnull=True)
@@ -131,7 +131,7 @@ class SubPlaceAutocomplete(autocomplete_light.AutocompleteModelBase):
         if not choices:
             choices = Place.objects.all()
 
-        choices = choices.filter(name__icontains=q)
+        choices = choices.filter(name__similar=q)
 
         return self.order_choices(choices)[0:self.limit_choices]
 
@@ -168,7 +168,7 @@ class ItemAutocomplete(autocomplete_light.AutocompleteModelBase):
         if " - " in q:
             q, place = q.split(" - ")
 
-        choices = Item.objects.filter(category__name__icontains=q)
+        choices = Item.objects.filter(category__name__similar=q)
         if place:
             choices = choices.filter(place__name__icontains=place)
 

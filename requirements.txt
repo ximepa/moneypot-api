@@ -17,6 +17,7 @@ git+https://github.com/mbraak/django-mptt-admin
 django-nose
 git+https://github.com/jorgecarleitao/django-sphinxql.git
 djangorestframework
+djorm-ext-pgtrgm
 Fabric
 gunicorn
 ipython
