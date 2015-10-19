@@ -8,13 +8,13 @@
         var iter = 10;
 
         function check() {
-            return $(".autocomplete-light-widget input.autocomplete").length;
+            return $(".autocomplete-light-widget.item input.autocomplete").length;
         }
 
         function bind_events() {
             //var url = $(".autocomplete-wrapper-js").data("url");
 
-            $(".autocomplete-light-widget select").on("change", function(e, choice, autocomplete) {
+            $(".autocomplete-light-widget.item select").on("change", function(e, choice, autocomplete) {
                 var $select = $(e.target);
                 var item = $select.val();
                 if(item) {

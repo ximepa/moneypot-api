@@ -221,7 +221,8 @@ class ItemAdmin(FiltersMixin, AdminReadOnly):
 class ItemSerialAdmin(FiltersMixin):
 
     class Media:
-        js = ('base/js/place_item_changelist_autocomplete.js',)
+        # js = ('base/js/place_item_changelist_autocomplete.js',)
+        js = ('base/js/serial_purchase_autocomplete.js',)
 
     form = ItemSerialForm
 
@@ -545,6 +546,10 @@ create_model_admin(CategoryItemAdmin, name='category_item', model=Item)
 
 
 class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
+
+    class Media:
+        js = ('base/js/place_item_changelist_autocomplete.js',)
+
     item_id = None
     list_display = ['serial', 'category_name', 'serial_movement_changelist_link', 'custom_cell']
     tpl = Template("{{ form.as_p }}")
@@ -607,6 +612,66 @@ class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
 
 
 create_model_admin(ItemSerialsFilteredAdmin, name='item_serials_filtered', model=ItemSerial)
+
+
+
+# class ItemChunksFilteredAdmin(HiddenAdminModelMixin, ItemChunkAdmin):
+#     item_id = None
+#     list_display = ['chunk', 'category_name', 'custom_cell']
+#     tpl = Template("{{ form.as_p }}")
+#
+#     def get_queryset(self, request):
+#         qs = super(ItemChunksFilteredAdmin, self).get_queryset(request)
+#         return qs.filter(item_id=self.item_id)
+#
+#     def changelist_view(self, request, item_id, extra_context=None):  # pylint:disable=arguments-differ
+#         self.item_id = item_id
+#         extra_context = extra_context or {}
+#         try:
+#             item = Item.objects.get(pk=item_id)
+#         except Item.DoesNotExist:
+#             extra_context.update({'cl_header': _('Item does not exist')})
+#         else:
+#             if not item.place.has_cells and "custom_cell" in self.list_display:
+#                 self.list_display.remove("custom_cell")
+#             if item.place.has_cells and not "custom_cell" in self.list_display:
+#                 self.list_display.append("custom_cell")
+#             extra_context.update({'cl_header': _(u"Chunks for <{name}> in <{place}>".format(
+#                 name=item.category.name,
+#                 place=item.place.name
+#             ))})
+#         view = super(ItemChunksFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
+#         return view
+#
+#     action_form = CellItemActionForm
+#     actions = [update_cell]
+#
+#     def custom_cell(self, obj):
+#         if not obj.item.place.has_cells:
+#             return obj.cell
+#         f = ItemInlineForm(instance=obj, auto_id='id_item_'+str(obj.pk)+'_%s')
+#         html = self.tpl.render(Context({"form": f}))
+#         return mark_safe('<span class="autocomplete-wrapper-js" '
+#                          'data-url="/base/ajax/chunk_cell" data-item-id="%s">%s</span>' % (obj.pk, html))
+#
+#     def get_urls(self):
+#
+#         def wrap(view):
+#             def wrapper(*args, **kwargs):
+#                 return self.admin_site.admin_view(view)(*args, **kwargs)
+#
+#             return update_wrapper(wrapper, view)
+#
+#         urlpatterns = [
+#             url(r'^(\d+)/$', wrap(self.changelist_view), name='base_item_chunks_filtered_changelist'),
+#         ]
+#         return urlpatterns
+#
+#     change_list_template = 'admin/proxy_change_list.html'
+#     change_form_template = 'admin/proxy_change_form.html'
+#
+#
+# create_model_admin(ItemChunksFilteredAdmin, name='item_chunks_filtered', model=ItemChunk)
 
 
 @admin.register(OrderItemSerial)

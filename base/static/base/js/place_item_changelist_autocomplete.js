@@ -8,12 +8,12 @@
         var iter = 10;
 
         function check() {
-            return $(".autocomplete-wrapper-js input.autocomplete").length;
+            return $(".field-custom_cell .autocomplete-wrapper-js input.autocomplete").length;
         }
 
         function bind_events() {
             var url = $(".autocomplete-wrapper-js").data("url");
-            $(".autocomplete-wrapper-js select").on("change", function(e, choice, autocomplete) {
+            $(".field-custom_cell .autocomplete-wrapper-js select").on("change", function(e, choice, autocomplete) {
                 var $select = $(e.target);
                 var cell = $select.val();
                 if(cell) {
