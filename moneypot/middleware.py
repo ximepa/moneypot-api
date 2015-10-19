@@ -21,8 +21,9 @@ class ExceptionMiddleware(object):
 class StaticRevision(object):
 
     def process_response(self, request, response):
-        revision = getattr(request, "git_revision", "UNKNOWN_REVISION")
-        html = response.content.decode("utf-8")
-        html = re.sub("\.(js|css)([^\?])", ".\\1?rev=%s\\2" % revision, html)
-        response.content = html.encode("utf-8")
+        if hasattr(response, 'content'):
+            revision = getattr(request, "git_revision", "UNKNOWN_REVISION")
+            html = response.content.decode("utf-8")
+            html = re.sub("\.(js|css)([^\?])", ".\\1?rev=%s\\2" % revision, html)
+            response.content = html.encode("utf-8")
         return response
