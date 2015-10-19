@@ -52,6 +52,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'rest_framework.authtoken',
     'gitrevision',
+    'compressor',
     # project apps
     'base',
 )
@@ -98,6 +99,13 @@ TEMPLATES = [
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',  # default
     # 'guardian.backends.ObjectPermissionBackend',
+)
+
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    # other finders..
+    'compressor.finders.CompressorFinder',
 )
 
 ANONYMOUS_USER_ID = -1

@@ -1,6 +1,7 @@
 coverage
 Django
 django-autocomplete-light
+django-compressor
 django-daterange-filter
 django-debug-panel
 django-debug-toolbar

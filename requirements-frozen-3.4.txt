@@ -2,6 +2,7 @@ coverage==4.0
 decorator==4.0.4
 Django==1.8.5
 django-autocomplete-light==2.2.10
+django-compressor==1.5
 django-daterange-filter==1.1.1
 django-debug-panel==0.8.1
 django-debug-toolbar==1.4
