@@ -66,6 +66,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'gitrevision.middleware.GitRevision',
     'moneypot.middleware.ExceptionMiddleware',
+    'moneypot.middleware.StaticRevision',
 )
 
 TEMPLATES = [
