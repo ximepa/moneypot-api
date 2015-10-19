@@ -614,10 +614,12 @@ create_model_admin(ItemSerialsFilteredAdmin, name='item_serials_filtered', model
 
 
 class ItemChunksFilteredAdmin(HiddenAdminModelMixin, ItemChunkAdmin):
+
+    class Media:
+        js = ('base/js/place_item_changelist_autocomplete.js',)
+
     item_id = None
-    list_display = ['chunk', 'category_name',
-                    # 'custom_cell'
-                    ]
+    list_display = ['chunk', 'category_name', 'custom_cell']
     tpl = Template("{{ form.as_p }}")
 
     def get_queryset(self, request):
@@ -632,10 +634,10 @@ class ItemChunksFilteredAdmin(HiddenAdminModelMixin, ItemChunkAdmin):
         except Item.DoesNotExist:
             extra_context.update({'cl_header': _('Item does not exist')})
         else:
-            # if not item.place.has_cells and "custom_cell" in self.list_display:
-            #     self.list_display.remove("custom_cell")
-            # if item.place.has_cells and not "custom_cell" in self.list_display:
-            #     self.list_display.append("custom_cell")
+            if not item.place.has_cells and "custom_cell" in self.list_display:
+                self.list_display.remove("custom_cell")
+            if item.place.has_cells and not "custom_cell" in self.list_display:
+                self.list_display.append("custom_cell")
             extra_context.update({'cl_header': _(u"Chunks for <{name}> in <{place}>".format(
                 name=item.category.name,
                 place=item.place.name
