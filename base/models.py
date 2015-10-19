@@ -191,6 +191,9 @@ class Place(MPTTModel):
             item.parent = None
             item.cell = cell
             item.save()
+            if self.has_chunks and not item.is_stackable:
+                if not item.chunks.count():
+                    ItemChunk.objects.create(item=item, chunk=item.quantity, purchase=item.purchase, cell=cell)
         else:
             new_item = i.deposit(item, cell=cell)
 
