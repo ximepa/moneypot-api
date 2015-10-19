@@ -632,10 +632,10 @@ class ItemChunksFilteredAdmin(HiddenAdminModelMixin, ItemChunkAdmin):
         except Item.DoesNotExist:
             extra_context.update({'cl_header': _('Item does not exist')})
         else:
-            if not item.place.has_cells and "custom_cell" in self.list_display:
-                self.list_display.remove("custom_cell")
-            if item.place.has_cells and not "custom_cell" in self.list_display:
-                self.list_display.append("custom_cell")
+            # if not item.place.has_cells and "custom_cell" in self.list_display:
+            #     self.list_display.remove("custom_cell")
+            # if item.place.has_cells and not "custom_cell" in self.list_display:
+            #     self.list_display.append("custom_cell")
             extra_context.update({'cl_header': _(u"Chunks for <{name}> in <{place}>".format(
                 name=item.category.name,
                 place=item.place.name
