@@ -212,7 +212,7 @@ class PurchaseAdmin(FiltersMixin, admin.ModelAdmin):
 
 @admin.register(Item)
 class ItemAdmin(FiltersMixin, AdminReadOnly):
-    search_fields = ['category_name', 'place__name']
+    search_fields = ['category__name', 'place__name']
     list_filter = [('category', MPTTRelatedAutocompleteFilter), 'cell']
     list_display = ['category_name', 'quantity', 'place', 'cell']
 
@@ -394,7 +394,7 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
     place_id = None
     show_zero = None
     list_display = ['category_name', 'quantity', 'place', 'items_serials_changelist_link',
-                    # 'items_chunks_changelist_link',
+                    'items_chunks_changelist_link',
                     'item_movement_changelist_link', 'custom_cell']
 
     action_form = CellItemActionForm
@@ -407,8 +407,7 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
     items_serials_changelist_link.short_description = _("serials")
 
     def items_chunks_changelist_link(self, obj):
-        # link = reverse("admin:base_item_serials_filtered_changelist", args=[obj.id])
-        link = "#%s" % obj.id
+        link = reverse("admin:base_item_chunks_filtered_changelist", args=[obj.id])
         return mark_safe(u'<a href="%s">%s</a>' % (link, _("chunks list")))
 
     items_chunks_changelist_link.short_description = _("chunks")
@@ -614,64 +613,63 @@ class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
 create_model_admin(ItemSerialsFilteredAdmin, name='item_serials_filtered', model=ItemSerial)
 
 
+class ItemChunksFilteredAdmin(HiddenAdminModelMixin, ItemChunkAdmin):
+    item_id = None
+    list_display = ['chunk', 'category_name', 'custom_cell']
+    tpl = Template("{{ form.as_p }}")
 
-# class ItemChunksFilteredAdmin(HiddenAdminModelMixin, ItemChunkAdmin):
-#     item_id = None
-#     list_display = ['chunk', 'category_name', 'custom_cell']
-#     tpl = Template("{{ form.as_p }}")
-#
-#     def get_queryset(self, request):
-#         qs = super(ItemChunksFilteredAdmin, self).get_queryset(request)
-#         return qs.filter(item_id=self.item_id)
-#
-#     def changelist_view(self, request, item_id, extra_context=None):  # pylint:disable=arguments-differ
-#         self.item_id = item_id
-#         extra_context = extra_context or {}
-#         try:
-#             item = Item.objects.get(pk=item_id)
-#         except Item.DoesNotExist:
-#             extra_context.update({'cl_header': _('Item does not exist')})
-#         else:
-#             if not item.place.has_cells and "custom_cell" in self.list_display:
-#                 self.list_display.remove("custom_cell")
-#             if item.place.has_cells and not "custom_cell" in self.list_display:
-#                 self.list_display.append("custom_cell")
-#             extra_context.update({'cl_header': _(u"Chunks for <{name}> in <{place}>".format(
-#                 name=item.category.name,
-#                 place=item.place.name
-#             ))})
-#         view = super(ItemChunksFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
-#         return view
-#
-#     action_form = CellItemActionForm
-#     actions = [update_cell]
-#
-#     def custom_cell(self, obj):
-#         if not obj.item.place.has_cells:
-#             return obj.cell
-#         f = ItemInlineForm(instance=obj, auto_id='id_item_'+str(obj.pk)+'_%s')
-#         html = self.tpl.render(Context({"form": f}))
-#         return mark_safe('<span class="autocomplete-wrapper-js" '
-#                          'data-url="/base/ajax/chunk_cell" data-item-id="%s">%s</span>' % (obj.pk, html))
-#
-#     def get_urls(self):
-#
-#         def wrap(view):
-#             def wrapper(*args, **kwargs):
-#                 return self.admin_site.admin_view(view)(*args, **kwargs)
-#
-#             return update_wrapper(wrapper, view)
-#
-#         urlpatterns = [
-#             url(r'^(\d+)/$', wrap(self.changelist_view), name='base_item_chunks_filtered_changelist'),
-#         ]
-#         return urlpatterns
-#
-#     change_list_template = 'admin/proxy_change_list.html'
-#     change_form_template = 'admin/proxy_change_form.html'
-#
-#
-# create_model_admin(ItemChunksFilteredAdmin, name='item_chunks_filtered', model=ItemChunk)
+    def get_queryset(self, request):
+        qs = super(ItemChunksFilteredAdmin, self).get_queryset(request)
+        return qs.filter(item_id=self.item_id)
+
+    def changelist_view(self, request, item_id, extra_context=None):  # pylint:disable=arguments-differ
+        self.item_id = item_id
+        extra_context = extra_context or {}
+        try:
+            item = Item.objects.get(pk=item_id)
+        except Item.DoesNotExist:
+            extra_context.update({'cl_header': _('Item does not exist')})
+        else:
+            if not item.place.has_cells and "custom_cell" in self.list_display:
+                self.list_display.remove("custom_cell")
+            if item.place.has_cells and not "custom_cell" in self.list_display:
+                self.list_display.append("custom_cell")
+            extra_context.update({'cl_header': _(u"Chunks for <{name}> in <{place}>".format(
+                name=item.category.name,
+                place=item.place.name
+            ))})
+        view = super(ItemChunksFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
+        return view
+
+    action_form = CellItemActionForm
+    actions = [update_cell]
+
+    def custom_cell(self, obj):
+        if not obj.item.place.has_cells:
+            return obj.cell
+        f = ItemInlineForm(instance=obj, auto_id='id_item_'+str(obj.pk)+'_%s')
+        html = self.tpl.render(Context({"form": f}))
+        return mark_safe('<span class="autocomplete-wrapper-js" '
+                         'data-url="/base/ajax/chunk_cell" data-item-id="%s">%s</span>' % (obj.pk, html))
+
+    def get_urls(self):
+
+        def wrap(view):
+            def wrapper(*args, **kwargs):
+                return self.admin_site.admin_view(view)(*args, **kwargs)
+
+            return update_wrapper(wrapper, view)
+
+        urlpatterns = [
+            url(r'^(\d+)/$', wrap(self.changelist_view), name='base_item_chunks_filtered_changelist'),
+        ]
+        return urlpatterns
+
+    change_list_template = 'admin/proxy_change_list.html'
+    change_form_template = 'admin/proxy_change_form.html'
+
+
+create_model_admin(ItemChunksFilteredAdmin, name='item_chunks_filtered', model=ItemChunk)
 
 
 @admin.register(OrderItemSerial)
@@ -729,7 +727,7 @@ class ContractItemSerialAdmin(FiltersMixin, admin.ModelAdmin):
 
 @admin.register(VItemMovement)
 class ItemMovementAdmin(FiltersMixin, AdminReadOnly):
-    search_fields = ['destination_name', 'source_name', 'item_category_name']
+    search_fields = ['destination__name', 'source__name', 'item__category__name']
     list_filter = (
         ('created_at', DateRangeFilter),
         ('completed_at', DateRangeFilter),
@@ -743,7 +741,7 @@ class ItemMovementAdmin(FiltersMixin, AdminReadOnly):
 
 @admin.register(VSerialMovement)
 class SerialMovementAdmin(FiltersMixin, AdminReadOnly):
-    search_fields = ['destination_name', 'source_name', 'item_category_name', 'serial']
+    search_fields = ['destination__name', 'source__name', 'item__category__name', 'serial']
     list_filter = (
         ('created_at', DateRangeFilter),
         ('completed_at', DateRangeFilter),
