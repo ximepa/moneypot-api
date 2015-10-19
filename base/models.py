@@ -561,6 +561,9 @@ class Item(models.Model):
             return "%s - %s" % (self.category.name, self.place.name)
         return "%s - unknown place" % self.category.name
 
+    def category_name(self):
+        return self.category.name
+
     def get_absolute_url(self):
         return reverse('admin:base_item_serials_filtered_changelist', args=[self.pk])
 
@@ -815,7 +818,7 @@ class ItemChunk(models.Model):
         verbose_name_plural = _("chunks")
 
     def __str__(self):
-        return "%s%s" % (self.chunk, (" %s" % self.label) if self.label else "")
+        return "ID_%s: %s %s%s" % (self.pk, self.chunk, self.item.unit, (" %s" % self.label) if self.label else "")
 
     def category_name(self):
         return self.item.category.name

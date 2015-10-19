@@ -107,7 +107,7 @@ class PlaceAdmin(DjangoMpttAdmin):
     search_fields = ['name', ]
     tree_auto_open = False
     form = PlaceForm
-    list_display = ['__str__', 'is_shop', 'items_changelist_link']
+    list_display = ['name', 'is_shop', 'items_changelist_link']
 
     def items_changelist_link(self, obj):
         link = reverse("admin:base_place_item_changelist", args=[obj.id])
@@ -212,9 +212,9 @@ class PurchaseAdmin(FiltersMixin, admin.ModelAdmin):
 
 @admin.register(Item)
 class ItemAdmin(FiltersMixin, AdminReadOnly):
-    search_fields = ['category__name', 'place__name']
+    search_fields = ['category_name', 'place__name']
     list_filter = [('category', MPTTRelatedAutocompleteFilter), 'cell']
-    list_display = ['__str__', 'quantity', 'place', 'cell']
+    list_display = ['category_name', 'quantity', 'place', 'cell']
 
 
 @admin.register(ItemSerial)
@@ -252,7 +252,7 @@ class ItemSerialAdmin(FiltersMixin):
         ('item__place', MPTTRelatedAutocompleteFilter),
         'cell'
     ]
-    list_display = ['__str__', 'category_name', 'owner', 'cell', 'serial_movement_changelist_link']
+    list_display = ['serial', 'category_name', 'owner', 'cell', 'serial_movement_changelist_link']
 
 
 @admin.register(ItemChunk)
@@ -392,7 +392,7 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
     tpl = Template("{{ form.as_p }}")
     place_id = None
     show_zero = None
-    list_display = ['__str__', 'quantity', 'place', 'items_serials_changelist_link',
+    list_display = ['category_name', 'quantity', 'place', 'items_serials_changelist_link',
                     # 'items_chunks_changelist_link',
                     'item_movement_changelist_link', 'custom_cell']
 
@@ -483,7 +483,7 @@ create_model_admin(PlaceItemAdmin, name='place_item', model=Item)
 class CategoryItemAdmin(HiddenAdminModelMixin, ItemAdmin):
     category_id = None
     show_zero = None
-    list_display = ['__str__', 'quantity', 'place', 'items_serials_changelist_link',
+    list_display = ['category_name', 'quantity', 'place', 'items_serials_changelist_link',
                     'items_chunks_changelist_link', 'item_movement_changelist_link']
 
     def items_serials_changelist_link(self, obj):
@@ -546,7 +546,7 @@ create_model_admin(CategoryItemAdmin, name='category_item', model=Item)
 
 class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
     item_id = None
-    list_display = ['__str__', 'category_name', 'serial_movement_changelist_link', 'custom_cell']
+    list_display = ['serial', 'category_name', 'serial_movement_changelist_link', 'custom_cell']
     tpl = Template("{{ form.as_p }}")
 
     def serial_movement_changelist_link(self, obj):
