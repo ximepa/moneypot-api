@@ -20,10 +20,10 @@ def validate_place_name(value, fix=False):
         for part in parts:
             street_match = street_re.match(part)
             if street_match:
-                if 'в' in street_match.group(1):
-                    prefix = "вул."
-                elif 'п' in street_match.group(1):
+                if 'п' in street_match.group(1):
                     prefix = "пров."
+                elif 'в' in street_match.group(1):
+                    prefix = "вул."
                 else:
                     raise ValidationError("вулиця чи провулок?")
                 q = street_match.group(2)
@@ -31,7 +31,7 @@ def validate_place_name(value, fix=False):
                     geoname = GeoName.objects.get(name__iexact=q)
                 except GeoName.DoesNotExist:
                     geonames = GeoName.objects.filter(name__similar=q).extra(
-                        select={'distance': "similarity(name, '%s')" % q}
+                        select={'distance': "similarity(base_geoname.name, '%s')" % q}
                     ).order_by('-distance')
                     if geonames.count():
                         if not fix:
