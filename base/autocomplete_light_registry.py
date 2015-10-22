@@ -22,7 +22,7 @@ class ItemCategoryAutocomplete(autocomplete_light.AutocompleteModelBase):
 
         if not _choices.count():
             choices = ItemCategory.objects.filter(name__similar=q).extra(
-                select={'distance': "similarity(base_itemcategory.name, '%s')" % q}
+                select={'distance': "similarity(base_itemcategory.name, '%s')" % q}                
             ).order_by('-distance')
         else:
             choices = _choices

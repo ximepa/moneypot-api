@@ -7,6 +7,7 @@ from django import forms
 from django.utils.translation import ugettext_lazy as _, ugettext
 from django.contrib.admin.helpers import ActionForm
 import autocomplete_light
+from base.admin.validators import validate_place_name
 
 from .functions import parse_serials_data
 from base.models import InvalidParameters, ItemCategory, ItemCategoryComment, Place, PurchaseItem, TransactionItem, \
@@ -112,6 +113,12 @@ class ItemSerialForm(autocomplete_light.ModelForm):
 
 
 class PlaceForm(autocomplete_light.ModelForm):
+
+    def clean_name(self):
+        cleaned_data = dict(self.cleaned_data)
+        name = self.cleaned_data.get('name', '')
+        return validate_place_name(name)
+
     class Meta:
         model = Place
         exclude = []
