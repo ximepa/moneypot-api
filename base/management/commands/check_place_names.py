@@ -17,7 +17,7 @@ class Command(BaseCommand):
         p = Place.objects.get(pk=PLACE_ADDRESS_ID)
         addrs = p.get_descendants()
         for a in addrs:
-            if 'FIX' not in a.name:
+            if 'FIX' not in a.name and 'DUP!' not in a.name and 'DEL' not in a.name:
                 try:
                     name = validate_place_name(a.name)
                 except Exception as e:
