@@ -9,8 +9,9 @@ from django.contrib.admin.helpers import ActionForm
 import autocomplete_light
 
 from .functions import parse_serials_data
-from base.models import InvalidParameters, ItemCategory, ItemCategoryComment, Place, PurchaseItem, TransactionItem, Purchase, \
-    Transaction, Unit, ItemSerial, FixCategoryMerge, FixPlaceMerge, Cell, Item, ItemChunk, Transmutation, TransmutationItem
+from base.models import InvalidParameters, ItemCategory, ItemCategoryComment, Place, PurchaseItem, TransactionItem, \
+    Purchase, Transaction, Unit, ItemSerial, FixCategoryMerge, FixPlaceMerge, Cell, Item, ItemChunk, Transmutation, \
+    TransmutationItem, Warranty
 
 
 class ItemCategoryCommentForm(autocomplete_light.ModelForm):
@@ -339,3 +340,9 @@ class ItemInlineForm(autocomplete_light.ModelForm):
     class Meta:
         model = Item
         fields = ['cell']
+
+
+class WarrantyForm(autocomplete_light.ModelForm):
+    class Meta:
+        model = Warranty
+        exclude = []

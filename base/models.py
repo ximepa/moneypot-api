@@ -1375,3 +1375,18 @@ class Transmutation(Transaction):
         verbose_name = _("Fix: transmutation")
         verbose_name_plural = _("Fix: transmutations")
 
+
+class Warranty(models.Model):
+    serial = models.OneToOneField("ItemSerial", verbose_name=_("serial"))
+    date = models.DateField(_("warranty date"))
+    comment = models.TextField(_("comment"), blank=True, null=True)
+
+    class Meta:
+        verbose_name = _("warranty date")
+        verbose_name_plural = _("warranty dates")
+
+    def __str__(self):
+        return self.serial.serial
+
+    def category_name(self):
+        return self.serial.item.category.name

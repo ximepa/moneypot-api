@@ -20,17 +20,13 @@ from django.db import models
 from daterange_filter.filter import DateRangeFilter
 from django_mptt_admin import util
 from grappelli_filters import RelatedAutocompleteFilter, FiltersMixin
-from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
-    TransactionItem, Transaction, OrderItemSerial, ContractItemSerial, VItemMovement, VSerialMovement, \
-    get_descendants_ids, FixSerialTransform, FixCategoryMerge, FixPlaceMerge, Cell, GeoName, Transmutation, \
-    TransmutationItem
 from filebrowser.widgets import ClearableFileInput
 from filebrowser.settings import ADMIN_THUMBNAIL
 
-try:
-    from urllib import urlencode
-except ImportError:
-    from urllib.parse import urlencode
+from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
+    TransactionItem, Transaction, OrderItemSerial, ContractItemSerial, VItemMovement, VSerialMovement, \
+    get_descendants_ids, FixSerialTransform, FixCategoryMerge, FixPlaceMerge, Cell, GeoName, Transmutation, \
+    TransmutationItem, Warranty
 
 from .filters import MPTTRelatedAutocompleteFilter
 from .actions import process_to_void, update_cell
@@ -38,10 +34,15 @@ from .overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
 from .functions import create_model_admin
 from .forms import ItemCategoryForm, PlaceForm, PurchaseItemForm, TransactionItemForm, PurchaseForm, TransactionForm, \
     FixCategoryMergeForm, FixPlaceMergeForm, CellForm, CellItemActionForm, ItemInlineForm, ItemChunkForm, ItemSerialForm, \
-    TransmutationForm
+    TransmutationForm, WarrantyForm
 from .inlines import ItemCategoryCommentInline, PurchaseItemInline, PurchaseItemInlineReadonly, \
     TransactionItemInlineReadonly, TransactionItemInline, TransactionCommentPlaceInline, TransmutationItemInline, \
     TransmutationItemInlineReadonly
+
+try:
+    from urllib import urlencode
+except ImportError:
+    from urllib.parse import urlencode
 
 
 @admin.register(GeoName)
@@ -986,3 +987,13 @@ class TransmutationAdmin(FiltersMixin, admin.ModelAdmin):
                 # print "complete pending transaction"
                 t.is_pending = False
                 t.transmute()
+
+
+@admin.register(Warranty)
+class WarrantyAdmin(FiltersMixin, admin.ModelAdmin):
+    search_fields = ['serial__serial', 'serial__item__category__name']
+    list_display = ['__str__', 'category_name', 'date']
+    list_filter = [
+        ('serial__item__category', MPTTRelatedAutocompleteFilter)
+    ]
+    form = WarrantyForm
