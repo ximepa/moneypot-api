@@ -343,6 +343,14 @@ class ItemInlineForm(autocomplete_light.ModelForm):
 
 
 class WarrantyForm(autocomplete_light.ModelForm):
+
     class Meta:
         model = Warranty
         exclude = []
+
+
+class WarrantyInlineForm(forms.ModelForm):
+
+    class Meta:
+        model = Warranty
+        fields = ['date']

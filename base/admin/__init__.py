@@ -34,7 +34,7 @@ from .overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
 from .functions import create_model_admin
 from .forms import ItemCategoryForm, PlaceForm, PurchaseItemForm, TransactionItemForm, PurchaseForm, TransactionForm, \
     FixCategoryMergeForm, FixPlaceMergeForm, CellForm, CellItemActionForm, ItemInlineForm, ItemChunkForm, ItemSerialForm, \
-    TransmutationForm, WarrantyForm
+    TransmutationForm, WarrantyForm, WarrantyInlineForm
 from .inlines import ItemCategoryCommentInline, PurchaseItemInline, PurchaseItemInlineReadonly, \
     TransactionItemInlineReadonly, TransactionItemInline, TransactionCommentPlaceInline, TransmutationItemInline, \
     TransmutationItemInlineReadonly
@@ -548,10 +548,13 @@ create_model_admin(CategoryItemAdmin, name='category_item', model=Item)
 class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
 
     class Media:
-        js = ('base/js/place_item_changelist_autocomplete.js',)
+        js = (
+            'base/js/place_item_changelist_autocomplete.js',
+            'base/js/place_serial_changelist_warranty.js',
+        )
 
     item_id = None
-    list_display = ['serial', 'category_name', 'serial_movement_changelist_link', 'custom_cell']
+    list_display = ['serial', 'category_name', 'serial_movement_changelist_link', 'custom_warranty_date', 'custom_cell']
     tpl = Template("{{ form.as_p }}")
 
     def serial_movement_changelist_link(self, obj):
@@ -593,6 +596,20 @@ class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
         html = self.tpl.render(Context({"form": f}))
         return mark_safe('<span class="autocomplete-wrapper-js" '
                          'data-url="/base/ajax/serial_cell" data-item-id="%s">%s</span>' % (obj.pk, html))
+
+    def custom_warranty_date(self, obj):
+        try:
+            warranty = obj.warranty
+        except Warranty.DoesNotExist:
+            warranty = None
+
+        f = WarrantyInlineForm(instance=warranty, auto_id='id_warranty_'+str(obj.pk)+'_%s')
+        html = self.tpl.render(Context({"form": f}))
+        return mark_safe('<span class="date-warranty-wrapper-js" '
+                         'data-item-id="%s">' % obj.pk + ''
+                         '%s' % html + ''
+                         '<span class="btn confirm-js"><img src="/static/glyphicons/glyphicons-207-ok-2.png"></span>'
+                         '</span>')
 
     def get_urls(self):
 

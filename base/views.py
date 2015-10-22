@@ -2,7 +2,8 @@
 from __future__ import print_function, division, unicode_literals, absolute_import
 
 from django.shortcuts import render_to_response
-from base.models import Item, PurchaseItem, ItemSerial, Cell, ItemChunk
+from base.models import Item, PurchaseItem, ItemSerial, Cell, ItemChunk, Warranty
+from base.admin.forms import WarrantyForm
 import json
 from django.http import HttpResponse
 
@@ -196,4 +197,44 @@ def ajax_chunk_cell(request, chunk_id, cell_id):
         if data['success']:
             itemchunk.cell_id = cell_id
             itemchunk.save()
+    return HttpResponse(json.dumps(data), content_type="application/json")
+
+
+def ajax_serial_warranty(request, serial_id, datestr=None):
+    selector = request.GET.get('selector', '')
+
+    data = {
+        'selector': selector,
+        'success': True,
+    }
+
+    try:
+        itemserial = ItemSerial.objects.get(pk=serial_id)
+    except Item.DoesNotExist:
+        data.update({
+            'success': False,
+            'msg': "Serial does not exist"
+        })
+    else:
+        try:
+            warranty = itemserial.warranty
+        except Warranty.DoesNotExist:
+            warranty = None
+        if datestr:
+            f = WarrantyForm({
+                "serial": itemserial.id,
+                "date": datestr
+            }, instance=warranty)
+
+            if not f.is_valid():
+                data.update({
+                    'success': False,
+                    'msg': f.errors
+                })
+            else:
+                f.save()
+        else:
+            if warranty:
+                warranty.delete()
+
     return HttpResponse(json.dumps(data), content_type="application/json")

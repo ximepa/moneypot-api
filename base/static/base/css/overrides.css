@@ -17,3 +17,46 @@
     left: 0;
     display: inline-block;
 }
+
+.date-warranty-wrapper-js p {
+    display: inline;
+}
+
+.date-warranty-wrapper-js input {
+    width: 80px;
+}
+
+.date-warranty-wrapper-js input.changed {
+    background-color: #ffeebb;
+}
+
+.date-warranty-wrapper-js input.error {
+    background-color: #ffbbbb;
+}
+
+.confirm-js {
+    display: inline-block;
+    position: relative;
+    top: -2px;
+    left: 4px;
+}
+
+.confirm-js img {
+    width: 16px;
+    height: 12px;
+}
+
+.confirm-js.btn {
+    background-color: #DDFFDD;
+    color: white;
+    border: 1px solid #DDDDDD;
+    cursor: pointer;
+    padding: 2px 2px 2px 2px;
+    text-decoration: none;
+
+}
+
+.confirm-js.btn:active {
+    background-color: #AAFFAA;
+    border: 1px solid #AAAAAA;
+}
