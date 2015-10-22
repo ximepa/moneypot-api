@@ -52,6 +52,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'rest_framework.authtoken',
     'gitrevision',
+    'import_export',
     # project apps
     'base',
 )

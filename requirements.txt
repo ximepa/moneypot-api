@@ -11,6 +11,7 @@ django-gitrevision
 django-grappelli
 git+https://github.com/frnhr/django-grappelli-filters
 django-gunicorn
+django-import-export
 django-mptt
 #django-mptt-admin
 git+https://github.com/mbraak/django-mptt-admin
