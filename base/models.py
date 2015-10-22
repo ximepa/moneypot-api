@@ -1087,14 +1087,17 @@ class VSerialMovement(models.Model):
      serial_id      | integer                  |           | plain    |
      created_at     | timestamp with time zone |           | plain    |
      completed_at   | timestamp with time zone |           | plain    |
+     transaction_item_id | integer                  |
+
     """
 
+    transaction_item = models.OneToOneField("TransactionItem", verbose_name=_("transaction_item"), on_delete=models.DO_NOTHING, primary_key=True)
     item_category_name = models.CharField(_("item_category"), max_length=100)
     source_name = models.CharField(_("source"), max_length=100)
     destination_name = models.CharField(_("destination"), max_length=100)
     quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
     serial = models.CharField(_("serial"), max_length=32)
-    serial_id = models.OneToOneField("ItemSerial", verbose_name=_("serial"), db_column="serial_id", on_delete=models.DO_NOTHING, primary_key=True)
+    serial_id = models.OneToOneField("ItemSerial", verbose_name=_("serial"), db_column="serial_id", on_delete=models.DO_NOTHING)
     source = models.ForeignKey("Place", verbose_name=_("source"), related_name="source_serial_movements", on_delete=models.DO_NOTHING)
     destination = models.ForeignKey("Place", verbose_name=_("destination"), related_name="destination_serial_movements", on_delete=models.DO_NOTHING)
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"), on_delete=models.DO_NOTHING)

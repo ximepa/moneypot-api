@@ -745,7 +745,7 @@ class ItemMovementAdmin(FiltersMixin, AdminReadOnly):
 
 @admin.register(VSerialMovement)
 class SerialMovementAdmin(FiltersMixin, AdminReadOnly):
-    search_fields = ['destination__name', 'source__name', 'item__category__name', 'serial']
+    search_fields = ['destination__name', 'source__name', 'category__name', 'serial']
     list_filter = (
         ('created_at', DateRangeFilter),
         ('completed_at', DateRangeFilter),
