@@ -142,7 +142,7 @@ REST_FRAMEWORK = {
     )
 }
 
-GRAPPELLI_ADMIN_TITLE = "Склад. версія 1.0"
+GRAPPELLI_ADMIN_TITLE = "Склад. версія 1.0.1"
 
 APP_FILTERS = {
     'CAT_ORDERS_ID': 85,
