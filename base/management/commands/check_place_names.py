@@ -25,15 +25,19 @@ class Command(BaseCommand):
                     a.save()
                 else:
                     if not a.name == name:
+                        old_name = a.name
                         a.name = name
                         try:
                             a.save()
                         except ValidationError as e:
-                            new_place = Place.objects.get(name=name)
-                            pm = FixPlaceMerge(
-                                old_place=a,
-                                new_place=new_place
-                            )
-                            pm.save()
+                            print("dup! %s" % old_name)
+                            a.name = "%s DUP!" % name
+                            a.save()
+                            # new_place = Place.objects.get(name=name)
+                            # pm = FixPlaceMerge(
+                            #     old_place=a,
+                            #     new_place=new_place
+                            # )
+                            # pm.save()
 
 
