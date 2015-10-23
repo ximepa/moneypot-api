@@ -208,6 +208,13 @@ class TransactionItemForm(autocomplete_light.ModelForm):
                 self.serials.append(sr)
 
         self.cleaned_data['_serials'] = self.serials
+
+        serial = cleaned_data.get("serial", None)
+        if serial and not serial.item.place == transaction.source:
+            raise forms.ValidationError(({'serial': ugettext(
+                'serial not found: %s. It is in %s' % (serial, serila.item.place)
+            )}))
+
         return self.cleaned_data
 
     def save(self, *args, **kwargs):
