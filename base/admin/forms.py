@@ -212,7 +212,7 @@ class TransactionItemForm(autocomplete_light.ModelForm):
         serial = cleaned_data.get("serial", None)
         if serial and not serial.item.place == transaction.source:
             raise forms.ValidationError(({'serial': ugettext(
-                'serial not found: %s. It is in %s' % (serial, serila.item.place)
+                'serial not found: %s. It is in %s' % (serial, serial.item.place)
             )}))
 
         return self.cleaned_data
