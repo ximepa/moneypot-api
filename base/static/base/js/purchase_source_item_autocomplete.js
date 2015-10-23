@@ -3,13 +3,12 @@
 
         var $inlines = $('.grp-tabular');
 
-        $inlines.on('change', "select[id^='id_purchase_items-'][name*='category']", function() {
-
-            var category_id = $(this).val();
+        var set_inline_category = function($inline) {
+            var category_id = $inline.val();
             var source_id = $("#id_source").val();
 
             if (source_id && category_id) {
-                var $price = $(this).closest('.grp-tr').find("input[id^='id_purchase_items-'][name*='price']");
+                var $price = $inline.closest('.grp-tr').find("input[id^='id_purchase_items-'][name*='price']");
                 $.get("/base/ajax/price/" + source_id[0]+"/" + category_id[0]+"/" +
                     "?selector_uah=" + $($price[0]).attr('id') +
                     "&selector_usd=" + $($price[1]).attr('id'), function(response){
@@ -29,7 +28,14 @@
                     }
                 })
             }
+        };
 
+        $inlines.on('change', "select[id^='id_purchase_items-'][name*='category']", function() {
+            set_inline_category($(this));
+        });
+
+        $.each($inlines.find("select[id^='id_purchase_items-'][name*='category']"), function() {
+            set_inline_category($(this));
         });
     });
 
