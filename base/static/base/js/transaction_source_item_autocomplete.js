@@ -3,7 +3,15 @@
         var $body = $('body');
         var $inlines = $('.grp-tabular');
 
-        $body.on('change', '.autocomplete-light-widget #id_source', function () {
+        var set_source = function() {
+
+            var value = $(".autocomplete-light-widget #id_source").val();
+
+            if(!value) {
+                //console.log('no source');
+                return
+            }
+
             var itemCategoryElements = $("select[id^='id_transaction_items-'][name*='category']");
             var itemSerialElements = $("select[id^='id_transaction_items-'][name*='serial']");
             var itemChunkElements = $("select[id^='id_transaction_items-'][name*='chunk']");
@@ -13,27 +21,25 @@
             itemSelectElements = itemSelectElements.add(itemChunkElements);
             var itemWidgetElements = itemSelectElements.parents('.autocomplete-light-widget');
 
-            // When the country select changes
-            var value = $(this).val();
-
             $.each(itemWidgetElements, function () {
                 $(this).yourlabsWidget().autocomplete.data = $(this).yourlabsWidget().autocomplete.data || {};
                 if (value) {
-                    // If value is contains something, add it to autocomplete.data
                     $(this).yourlabsWidget().autocomplete.data.source_id = value[0];
                 } else {
-                    // If value is empty, empty autocomplete.data
                     delete $(this).yourlabsWidget().autocomplete.data.source_id;
                 }
             });
-        });
+        };
 
-        $body.on('change', '.autocomplete-light-widget #id_destination', function () {
+        var set_destination = function() {
             var itemSelectElements = $("select[id^='id_transaction_items-'][name*='destination']");
             var itemWidgetElements = itemSelectElements.parents('.autocomplete-light-widget');
+            var value = $(".autocomplete-light-widget #id_destination").val();
 
-            // When the country select changes
-            var value = $(this).val();
+            if(!value) {
+                //console.log('no destination');
+                return
+            }
 
             $.each(itemWidgetElements, function () {
                 if (value) {
@@ -46,12 +52,29 @@
                     $(this).yourlabsWidget().autocomplete.data = {}
                 }
             });
+        };
+
+        $body.on('change', '.autocomplete-light-widget #id_source', function () {
+            set_source();
         });
 
-        $inlines.on('change', "select[id^='id_transaction_items-'][name*='category']", function() {
-            var value = $(this).val();
+        set_source();
 
-            var $widget = $(this).closest('.grp-tr')
+        $body.on('change', '.autocomplete-light-widget #id_destination', function () {
+            set_destination();
+        });
+
+        set_destination();
+        
+        var set_inline_category = function($inline) {
+            var value = $inline.val();
+
+            if(!value) {
+                //console.log('no inline category');
+                return
+            }
+
+            var $widget = $inline.closest('.grp-tr')
                 .find("select[id^='id_transaction_items-'][name*='serial']")
                 .parents('.autocomplete-light-widget');
             $widget.yourlabsWidget().autocomplete.data = $widget.yourlabsWidget().autocomplete.data || {};
@@ -61,7 +84,7 @@
                 delete $widget.yourlabsWidget().autocomplete.data.category_id;
             }
 
-            $widget = $(this).closest('.grp-tr')
+            $widget = $inline.closest('.grp-tr')
                 .find("select[id^='id_transaction_items-'][name*='chunk']")
                 .parents('.autocomplete-light-widget');
             $widget.yourlabsWidget().autocomplete.data = $widget.yourlabsWidget().autocomplete.data || {};
@@ -74,13 +97,13 @@
             var source = $("#id_source").val();
 
             if (source && value) {
-                var $quantity = $(this).closest('.grp-tr').find("input[id^='id_transaction_items-'][name*='quantity']");
+                var $quantity = $inline.closest('.grp-tr').find("input[id^='id_transaction_items-'][name*='quantity']");
 
                 $.get("/base/ajax/qty/"+source[0]+"/"+value[0]+"/?selector="+$quantity.attr('id'), function(response){
                     $("#"+response.selector).attr('placeholder', response.qty);
                 });
 
-                var $cell = $(this).closest('.grp-tr').find(".cell_from");
+                var $cell = $inline.closest('.grp-tr').find(".cell_from");
                 var rnd = parseInt(Math.random()*10000);
                 $cell.attr("id", "id_cell_from_"+rnd);
 
@@ -88,8 +111,16 @@
                     $("#"+response.selector).html(response.cell);
                 });
             }
-
+        };
+        
+        $inlines.on('change', "select[id^='id_transaction_items-'][name*='category']", function() {
+            set_inline_category($(this));
         });
+
+        $.each($inlines.find("select[id^='id_transaction_items-'][name*='category']"), function() {
+            set_inline_category($(this));
+        });
+
 
         $inlines.on('change', "select[id^='id_transaction_items-'][name*='-serial']", function() {
             var value = $(this).val();
