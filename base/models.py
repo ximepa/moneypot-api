@@ -819,6 +819,15 @@ class ItemSerial(models.Model):
     def category_name(self):
         return self.item.category.name
 
+    @property
+    def price(self):
+        if self.purchase:
+            if self.purchase.price_usd:
+                return "%s UAH (%s USD)" % (self.purchase.price, self.purchase.price_usd)
+            else:
+                return "%s UAH" % (self.purchase.price, )
+        return "?"
+
 
 class ItemChunk(models.Model):
     item = models.ForeignKey("Item", verbose_name=_("item"), related_name='chunks')
