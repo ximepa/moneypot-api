@@ -248,6 +248,12 @@ class ItemSerialAdmin(FiltersMixin):
         link = reverse("admin:base_serial_movement_filtered_changelist", args=[obj.id])
         return mark_safe(u'<a href="%s">%s</a>' % (link, _("movement history")))
 
+    def get_list_display(self, request):
+        list_display = self.list_display[:]
+        if request.user.has_perm('base.view_item_price'):
+            list_display.append('price')
+        return list_display
+
     search_fields = ['item__category__name', 'serial']
     list_filter = [
         ('item__category', MPTTRelatedAutocompleteFilter),
@@ -392,14 +398,18 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
 
     list_filter = [('category', MPTTRelatedAutocompleteFilter), 'cell']
     tpl = Template("{{ form.as_p }}")
-    place_id = None
-    show_zero = None
     list_display = ['category_name', 'quantity', 'place', 'items_serials_changelist_link',
                     'items_chunks_changelist_link',
-                    'item_movement_changelist_link', 'custom_cell']
+                    'item_movement_changelist_link']
 
     action_form = CellItemActionForm
     actions = [update_cell]
+
+    def __init__(self, *args, **kwargs):
+        super(PlaceItemAdmin, self).__init__(*args, **kwargs)
+        self.place_id = None
+        self.place = None
+        self.show_zero = None
 
     def items_serials_changelist_link(self, obj):
         link = reverse("admin:base_item_serials_filtered_changelist", args=[obj.id])
@@ -436,6 +446,14 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
             qs = qs.filter(quantity__gt=0)
         return qs
 
+    def get_list_display(self, request):
+        list_display = self.list_display[:]
+        if self.place.has_cells and 'custom_cell' not in self.list_display:
+            list_display.append('custom_cell')
+        if request.user.has_perm('base.view_item_price'):
+            list_display.append('price')
+        return list_display
+
     def changelist_view(self, request, place_id, extra_context=None):  # pylint:disable=arguments-differ
         request.GET._mutable = True
         self.show_zero = int(request.GET.pop("show_zero", ["0"])[0])
@@ -447,10 +465,7 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
         except Place.DoesNotExist:
             extra_context.update({'cl_header': _('Place does not exist')})
         else:
-            if not place.has_cells and 'custom_cell' in self.list_display:
-                self.list_display.remove('custom_cell')
-            if place.has_cells and not 'custom_cell' in self.list_display:
-                self.list_display.append('custom_cell')
+            self.place = place
             cl_header = place.name
             params_get = request.GET.copy()
             params_get.update({'show_zero': int(not self.show_zero)})
@@ -482,10 +497,15 @@ create_model_admin(PlaceItemAdmin, name='place_item', model=Item)
 
 
 class CategoryItemAdmin(HiddenAdminModelMixin, ItemAdmin):
-    category_id = None
-    show_zero = None
+
     list_display = ['category_name', 'quantity', 'place', 'items_serials_changelist_link',
                     'items_chunks_changelist_link', 'item_movement_changelist_link']
+
+    def __init__(self, *args, **kwargs):
+        super(CategoryItemAdmin, self).__init__(*args, **kwargs)
+        self.category_id = None
+        self.category = None
+        self.show_zero = None
 
     def items_serials_changelist_link(self, obj):
         link = reverse("admin:base_item_serials_filtered_changelist", args=[obj.id])
@@ -518,6 +538,7 @@ class CategoryItemAdmin(HiddenAdminModelMixin, ItemAdmin):
         except ItemCategory.DoesNotExist:
             extra_context.update({'cl_header': _('Category does not exist')})
         else:
+            self.category = category
             cl_header = _(u"<{name}> items".format(name=category.name))
             extra_context.update({'show_zero': self.show_zero})
             extra_context.update({'rq_qs': rq_qs})
@@ -553,9 +574,13 @@ class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
             'base/js/place_serial_changelist_warranty.js',
         )
 
-    item_id = None
-    list_display = ['serial', 'category_name', 'serial_movement_changelist_link', 'custom_warranty_date', 'custom_cell']
+    list_display = ['serial', 'category_name', 'serial_movement_changelist_link', 'custom_warranty_date']
     tpl = Template("{{ form.as_p }}")
+
+    def __init__(self, *args, **kwargs):
+        super(ItemSerialsFilteredAdmin, self).__init__(*args, **kwargs)
+        self.item_id = None
+        self.item = None
 
     def serial_movement_changelist_link(self, obj):
         link = reverse("admin:base_serial_movement_filtered_changelist", args=[obj.id])
@@ -567,6 +592,14 @@ class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
         qs = super(ItemSerialsFilteredAdmin, self).get_queryset(request)
         return qs.filter(item_id=self.item_id)
 
+    def get_list_display(self, request):
+        list_display = self.list_display[:]
+        if self.item.place.has_cells and 'custom_cell' not in self.list_display:
+            list_display.append('custom_cell')
+        if request.user.has_perm('base.view_item_price'):
+            list_display.append('price')
+        return list_display
+
     def changelist_view(self, request, item_id, extra_context=None):  # pylint:disable=arguments-differ
         self.item_id = item_id
         extra_context = extra_context or {}
@@ -575,10 +608,7 @@ class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
         except Item.DoesNotExist:
             extra_context.update({'cl_header': _('Item does not exist')})
         else:
-            if not item.place.has_cells and "custom_cell" in self.list_display:
-                self.list_display.remove("custom_cell")
-            if item.place.has_cells and not "custom_cell" in self.list_display:
-                self.list_display.append("custom_cell")
+            self.item = item
             extra_context.update({'cl_header': _(u"Serials for <{name}> in <{place}>".format(
                 name=item.category.name,
                 place=item.place.name
@@ -637,12 +667,23 @@ class ItemChunksFilteredAdmin(HiddenAdminModelMixin, ItemChunkAdmin):
         js = ('base/js/place_item_changelist_autocomplete.js',)
 
     item_id = None
-    list_display = ['chunk', 'category_name', 'custom_cell']
+    list_display = ['chunk', 'category_name']
     tpl = Template("{{ form.as_p }}")
+
+    def __init__(self, *args, **kwargs):
+        super(ItemChunksFilteredAdmin, self).__init__(*args, **kwargs)
+        self.item_id = None
+        self.item = None
 
     def get_queryset(self, request):
         qs = super(ItemChunksFilteredAdmin, self).get_queryset(request)
         return qs.filter(item_id=self.item_id)
+
+    def get_list_display(self, request):
+        list_display = self.list_display[:]
+        if self.item.place.has_cells and 'custom_cell' not in self.list_display:
+            list_display.append('custom_cell')
+        return list_display
 
     def changelist_view(self, request, item_id, extra_context=None):  # pylint:disable=arguments-differ
         self.item_id = item_id
@@ -652,10 +693,7 @@ class ItemChunksFilteredAdmin(HiddenAdminModelMixin, ItemChunkAdmin):
         except Item.DoesNotExist:
             extra_context.update({'cl_header': _('Item does not exist')})
         else:
-            if not item.place.has_cells and "custom_cell" in self.list_display:
-                self.list_display.remove("custom_cell")
-            if item.place.has_cells and not "custom_cell" in self.list_display:
-                self.list_display.append("custom_cell")
+            self.item = item
             extra_context.update({'cl_header': _(u"Chunks for <{name}> in <{place}>".format(
                 name=item.category.name,
                 place=item.place.name

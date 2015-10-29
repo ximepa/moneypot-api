@@ -336,6 +336,9 @@ class PurchaseItem(MovementItem):
     class Meta:
         verbose_name = _("purchase item")
         verbose_name_plural = _("purchase items")
+        permissions = (
+            ('view_item_price', _('view item price')),  # can view price
+        )
 
     def __str__(self):
         if self.purchase.completed_at:
@@ -578,10 +581,19 @@ class Item(models.Model):
     def is_stackable(self):
         return self.category.is_stackable
 
+    @property
+    def price(self):
+        if self.purchase:
+            if self.purchase.price_usd:
+                return "%s UAH (%s USD)" % (self.purchase.price, self.purchase.price_usd)
+            else:
+                return "%s UAH" % (self.purchase.price, )
+        return "?"
+
     def clean_quantity(self):
-        f = None
-        if self.category.unit.unit_type == Unit.INTEGER:
-            f = int
+        f = int
+        # if self.category.unit.unit_type == Unit.INTEGER:
+        #     f = int
         if self.category.unit.unit_type == Unit.DECIMAL:
             f = Decimal
 
@@ -806,6 +818,15 @@ class ItemSerial(models.Model):
 
     def category_name(self):
         return self.item.category.name
+
+    @property
+    def price(self):
+        if self.purchase:
+            if self.purchase.price_usd:
+                return "%s UAH (%s USD)" % (self.purchase.price, self.purchase.price_usd)
+            else:
+                return "%s UAH" % (self.purchase.price, )
+        return "?"
 
 
 class ItemChunk(models.Model):
