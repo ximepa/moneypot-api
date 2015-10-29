@@ -392,14 +392,18 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
 
     list_filter = [('category', MPTTRelatedAutocompleteFilter), 'cell']
     tpl = Template("{{ form.as_p }}")
-    place_id = None
-    show_zero = None
     list_display = ['category_name', 'quantity', 'place', 'items_serials_changelist_link',
                     'items_chunks_changelist_link',
-                    'item_movement_changelist_link', 'custom_cell']
+                    'item_movement_changelist_link']
 
     action_form = CellItemActionForm
     actions = [update_cell]
+
+    def __init__(self, *args, **kwargs):
+        super(PlaceItemAdmin, self).__init__(*args, **kwargs)
+        self.place_id = None
+        self.place = None
+        self.show_zero = None
 
     def items_serials_changelist_link(self, obj):
         link = reverse("admin:base_item_serials_filtered_changelist", args=[obj.id])
@@ -436,6 +440,14 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
             qs = qs.filter(quantity__gt=0)
         return qs
 
+    def get_list_display(self, request):
+        list_display = self.list_display[:]
+        if self.place.has_cells and not 'custom_cell' in self.list_display:
+            list_display.append('custom_cell')
+        if request.user.has_perm('base.view_item_price'):
+            list_display.append('price')
+        return list_display
+
     def changelist_view(self, request, place_id, extra_context=None):  # pylint:disable=arguments-differ
         request.GET._mutable = True
         self.show_zero = int(request.GET.pop("show_zero", ["0"])[0])
@@ -447,10 +459,7 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
         except Place.DoesNotExist:
             extra_context.update({'cl_header': _('Place does not exist')})
         else:
-            if not place.has_cells and 'custom_cell' in self.list_display:
-                self.list_display.remove('custom_cell')
-            if place.has_cells and not 'custom_cell' in self.list_display:
-                self.list_display.append('custom_cell')
+            self.place = place
             cl_header = place.name
             params_get = request.GET.copy()
             params_get.update({'show_zero': int(not self.show_zero)})
