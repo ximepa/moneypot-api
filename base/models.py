@@ -1282,7 +1282,7 @@ class FixPlaceMerge(models.Model):
 
 class Cell(models.Model):
     place = models.ForeignKey("Place", verbose_name=_("place"), related_name="cells")
-    name = models.CharField(max_length=10)
+    name = models.CharField(max_length=32)
 
     class Meta:
         verbose_name = _("cell")
