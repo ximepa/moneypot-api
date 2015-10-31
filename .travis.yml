@@ -29,6 +29,7 @@ notifications:
   email:
     recipients:
     - shamanu4+travis.moneypot-api@gmail.com
+  hipchat: 0fd00c98d0455dcbf97aa9f1f4adf4@Склад
 env:
   global:
   - secure: h1F90gXcLzDzTLj/dhXUARYdsl0CsPrRdFWn4Ur+O1LDMczg0M588FNrSmyj5yq0cbvxJNbCUxS9bXt6BY81FCFSOqXb4YapxWpCa0FZQ2bDTs/hfJu5QZOW3+RahFeHBCP/EQfPbo+NYHujHGgoMNdetZmTFmfzsrLPx8/lwKQ=
