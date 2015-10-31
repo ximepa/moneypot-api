@@ -1,5 +1,4 @@
 coverage
-
 Django
 django-autocomplete-light
 django-daterange-filter

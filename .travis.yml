@@ -17,7 +17,7 @@ before_script:
 - python manage.py syncdb --noinput
 - python manage.py migrate --noinput
 script:
-- coverage run --source='.' manage.py test
+- coverage run --source='base' manage.py test
 after_success:
 - coveralls
 addons:
@@ -29,7 +29,9 @@ notifications:
   email:
     recipients:
     - shamanu4+travis.moneypot-api@gmail.com
-  hipchat: 0fd00c98d0455dcbf97aa9f1f4adf4@Склад
+  hipchat:
+    rooms:
+      secure: gcl4HuGdwFG0rxEMtjEEThW2GJNWS5pB5mSWNO3o8UaAcOTj8hnmknJcGIFSZ0C4gtvtbacxVkSZwy1HtUroKGSMLba+BpHQv0Ccq6OC/+B7UxF+UCkcyQkvhZoQe43BG3CG3v3fp41lDXLZX19It7Kye5cGoLAh8Zl9qbO9fEc=
 env:
   global:
   - secure: h1F90gXcLzDzTLj/dhXUARYdsl0CsPrRdFWn4Ur+O1LDMczg0M588FNrSmyj5yq0cbvxJNbCUxS9bXt6BY81FCFSOqXb4YapxWpCa0FZQ2bDTs/hfJu5QZOW3+RahFeHBCP/EQfPbo+NYHujHGgoMNdetZmTFmfzsrLPx8/lwKQ=
