@@ -17,7 +17,9 @@ before_script:
 - python manage.py syncdb --noinput
 - python manage.py migrate --noinput
 script:
-- python manage.py test
+- coverage run --source='.' manage.py test
+after_success:
+- coveralls
 addons:
   postgresql: '9.3'
   code_climate:
@@ -31,3 +33,5 @@ env:
   global:
   - secure: h1F90gXcLzDzTLj/dhXUARYdsl0CsPrRdFWn4Ur+O1LDMczg0M588FNrSmyj5yq0cbvxJNbCUxS9bXt6BY81FCFSOqXb4YapxWpCa0FZQ2bDTs/hfJu5QZOW3+RahFeHBCP/EQfPbo+NYHujHGgoMNdetZmTFmfzsrLPx8/lwKQ=
   - secure: oBcJ4Es4wu0S1NNkXAmfRehoTSKEfVP3DAer/n9LC0YkWNJ6g5LX1IPm64+WJ7VjN74d08LmgjUPHQJhLmor7RwpCKJrGQ2Ty8rkgV7IR2fOVSr1p3RmeZPxjmjE9x9Is3q3KIXXTxh0r0xffscC9W2jSUv/KvSVVCEwBBUlqOA=
+dd:
+  secure: mjFe8oWtvqF774wAovXshV78Fjr3wY994G0UNDZwQX/gD+oz0JNfOe4WtJJBsho2nKRBlg7efuAO8B3WZNf1SMA4jkpXOHQjOqOb1DjlS7tD96zND3eLBaRuunzaCcYz37/GFVvU1XZfKAZdSmFiG+83YxfBsVE7Q6hlHZRWRcY=
