@@ -32,6 +32,9 @@ notifications:
   hipchat:
     rooms:
       secure: gcl4HuGdwFG0rxEMtjEEThW2GJNWS5pB5mSWNO3o8UaAcOTj8hnmknJcGIFSZ0C4gtvtbacxVkSZwy1HtUroKGSMLba+BpHQv0Ccq6OC/+B7UxF+UCkcyQkvhZoQe43BG3CG3v3fp41lDXLZX19It7Kye5cGoLAh8Zl9qbO9fEc=
+    on_success: always
+    on_failure: always
+    notify: true
 env:
   global:
   - secure: h1F90gXcLzDzTLj/dhXUARYdsl0CsPrRdFWn4Ur+O1LDMczg0M588FNrSmyj5yq0cbvxJNbCUxS9bXt6BY81FCFSOqXb4YapxWpCa0FZQ2bDTs/hfJu5QZOW3+RahFeHBCP/EQfPbo+NYHujHGgoMNdetZmTFmfzsrLPx8/lwKQ=
