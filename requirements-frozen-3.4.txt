@@ -37,6 +37,7 @@ psycopg2==2.6.1
 ptyprocess==0.5
 pycrypto==2.6.1
 PyMySQL==0.6.7
+python-coveralls==2.5.0
 simplegeneric==0.8.1
 six==1.10.0
 sqlparse==0.1.16

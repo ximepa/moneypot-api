@@ -1,4 +1,5 @@
 coverage
+
 Django
 django-autocomplete-light
 django-daterange-filter
@@ -30,4 +31,5 @@ paramiko
 Pillow
 psycopg2
 pycrypto
+python-coveralls
 Unidecode
