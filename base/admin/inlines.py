@@ -30,6 +30,8 @@ class PurchaseItemInlineReadonly(InlineReadOnly):
     def get_readonly_fields(self, request, obj=None):
         readonly_fields = super(PurchaseItemInlineReadonly, self).get_readonly_fields(request, obj)
         readonly_fields.remove('_serials')
+        readonly_fields.remove('price')
+        readonly_fields.remove('price_usd')
         return readonly_fields
 
 
@@ -37,6 +39,7 @@ class PurchaseItemInline(admin.TabularInline):
     model = PurchaseItem
     form = PurchaseItemForm
     extra = 10
+
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(
             attrs={'rows': 1, 'cols': 60, '': 'disable'}

@@ -4,7 +4,6 @@ from __future__ import print_function, division, unicode_literals, absolute_impo
 from functools import update_wrapper
 
 from django.contrib import admin
-from django import forms
 from django.core.exceptions import ValidationError
 from django.template import Template, Context
 from django_mptt_admin.admin import DjangoMpttAdmin
@@ -16,18 +15,15 @@ from django.conf import settings
 from django.contrib.admin.utils import quote
 from django.contrib import messages
 from django.db.models import Q
-from django.db import models
 from daterange_filter.filter import DateRangeFilter
 from django_mptt_admin import util
 from grappelli_filters import RelatedAutocompleteFilter, FiltersMixin
-from filebrowser.widgets import ClearableFileInput
 from filebrowser.settings import ADMIN_THUMBNAIL
 
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
     TransactionItem, Transaction, OrderItemSerial, ContractItemSerial, VItemMovement, VSerialMovement, \
     get_descendants_ids, FixSerialTransform, FixCategoryMerge, FixPlaceMerge, Cell, GeoName, Transmutation, \
-    TransmutationItem, Warranty
-
+    Warranty
 from .filters import MPTTRelatedAutocompleteFilter
 from .actions import process_to_void, update_cell
 from .overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
@@ -195,12 +191,18 @@ class PurchaseAdmin(FiltersMixin, admin.ModelAdmin):
         return inline_instances
 
     def save_formset(self, request, form, formset, change):
+        print(change)
         instances = formset.save(commit=False)
         for obj in formset.deleted_objects:
             obj.delete()
         for instance in instances:
             if formset.form.__name__ == PurchaseItemForm.__name__ and instance.purchase.is_completed:
-                raise ValidationError(ugettext("purchase items data is read only!"))
+                completed_instance = PurchaseItem.objects.get(pk=instance.pk)
+                if not completed_instance.pk == instance.pk or \
+                        not completed_instance.quantity == instance.quantity or \
+                        not completed_instance.category == instance.category or \
+                        not completed_instance.serials == instance.serials:
+                    raise ValidationError(ugettext("purchase items data is read only!"))
             instance.save()
         formset.save_m2m()
         if self._obj:
