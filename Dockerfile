@@ -21,5 +21,7 @@ RUN apt-get purge -y python.* \
 
 RUN mkdir /code
 WORKDIR /code
-ADD . /code/
+ADD requirements-frozen.txt /code/
 RUN pip install -r requirements-frozen.txt
+ADD . /code/
+ENTRYPOINT ./gunicorn-docker.sh
