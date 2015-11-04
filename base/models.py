@@ -682,7 +682,7 @@ class Item(models.Model):
         :rtype: base.models.Item()
         """
         if chunk.chunk < quantity:
-            raise InvalidParameters(_("Chunks lenght lesser than requested quantity"))
+            raise InvalidParameters(_("Chunks length lesser than requested quantity"))
         item = Item.objects.create(
             quantity=quantity,
             is_reserved=True,
@@ -859,6 +859,7 @@ class TransactionItem(MovementItem):
     transaction = models.ForeignKey("Transaction", verbose_name=_("item transaction"), related_name="transaction_items")
     purchase = models.ForeignKey("Purchase", verbose_name=_("Purchase"),
                                  blank=True, null=True, related_name="transaction_items")
+    purchase_item = models.ForeignKey("PurchaseItem", verbose_name=_("purchase"), blank=True, null=True)
     # Movement superclass
     # category = models.ForeignKey("ItemCategory", verbose_name=_("item category"))
     # quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
@@ -949,6 +950,8 @@ class Transaction(Movement):
                 item.is_reserved = True
                 item.reserved_by = trans_item
                 item.save()
+            trans_item.purchase_item = item.purchase
+            trans_item.save()
         self.is_prepared = True
 
     def check_prepared(self):
@@ -1095,8 +1098,8 @@ class VItemMovement(models.Model):
 
     @property
     def price(self):
-        if self.transaction_item.purchase:
-            purchase = self.transaction_item.purchase
+        if self.transaction_item.purchase_item:
+            purchase = self.transaction_item.purchase_item
             if purchase.price_usd:
                 return "%s UAH (%s USD)" % (purchase.price, purchase.price_usd)
             else:
@@ -1148,8 +1151,8 @@ class VSerialMovement(models.Model):
 
     @property
     def price(self):
-        if self.transaction_item.purchase:
-            purchase = self.transaction_item.purchase
+        if self.transaction_item.purchase_item:
+            purchase = self.transaction_item.purchase_item
             if purchase.price_usd:
                 return "%s UAH (%s USD)" % (purchase.price, purchase.price_usd)
             else:
