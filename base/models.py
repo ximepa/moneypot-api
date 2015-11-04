@@ -1093,6 +1093,16 @@ class VItemMovement(models.Model):
     def __str__(self):
         return self.item_category_name
 
+    @property
+    def price(self):
+        if self.transaction_item.purchase:
+            purchase = self.transaction_item.purchase
+            if purchase.price_usd:
+                return "%s UAH (%s USD)" % (purchase.price, purchase.price_usd)
+            else:
+                return "%s UAH" % (purchase.price, )
+        return "?"
+
 
 class VSerialMovement(models.Model):
     """
