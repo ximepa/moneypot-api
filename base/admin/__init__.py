@@ -797,7 +797,7 @@ class ItemMovementAdmin(FiltersMixin, AdminReadOnly):
         ('source', MPTTRelatedAutocompleteFilter),
         ('destination', MPTTRelatedAutocompleteFilter),
     )
-    list_display = ['item_category_name', 'created_at', 'completed_at', 'source', 'destination', 'quantity']
+    list_display = ['item_category_name', 'created_at', 'completed_at', 'source', 'destination', 'quantity', 'price']
     fields = ['item_category_name', 'created_at', 'completed_at', 'source', 'destination', 'quantity']
 
 
@@ -811,7 +811,8 @@ class SerialMovementAdmin(FiltersMixin, AdminReadOnly):
         ('source', MPTTRelatedAutocompleteFilter),
         ('destination', MPTTRelatedAutocompleteFilter),
     )
-    list_display = ['serial', 'item_category_name', 'created_at', 'completed_at', 'source', 'destination', 'quantity']
+    list_display = ['serial', 'item_category_name', 'created_at',
+                    'completed_at', 'source', 'destination', 'quantity', 'price']
     fields = ['serial', 'item_category_name', 'created_at', 'completed_at', 'source', 'destination', 'quantity']
 
 
