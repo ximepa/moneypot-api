@@ -55,7 +55,7 @@ def validate_place_name(value, fix=False):
                            r" *([^\(\)\"]+)"
                            r" *(\(.*\)|\".*\")?", re.IGNORECASE, )
     house_re = re.compile(r"^(\d+) *([А-Я]?)(\/\d+ *[А-Я]?)? *(\(.*\)|\".*\")?$", re.IGNORECASE, )
-    flat_re = re.compile(r"^(кв|кімн?|оф)\.? *(\d+[А-Я]?(\/\d+[А-Я]?)?) *(\(.*\)|\".*\")?$", re.IGNORECASE, )
+    flat_re = re.compile(r"^(кв|кімн?|оф|каб)\.? *(\d+[А-Я]?(\/\d+[А-Я]?)?) *(\(.*\)|\".*\")?$", re.IGNORECASE, )
     voca_re = re.compile(r"^(будка|ящик|криша|маг) *(.+)?$", re.IGNORECASE, )
     ext_re = re.compile(r"^(\(.*\)|\".*\")?$", re.IGNORECASE, )
 
@@ -110,6 +110,8 @@ def validate_place_name(value, fix=False):
                     prefix = "кімн"
                 elif "оф" in flat_match.group(1):
                     prefix = "оф"
+                elif "каб" in flat_match.group(1):
+                    prefix = "каб"
                 else:
                     raise ValidationError("%s: квартира, кімната чи офіс?" % value)
                 part = "%s. %s" % (prefix, flat_match.group(2))
