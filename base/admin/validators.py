@@ -33,14 +33,33 @@ def validate_place_name(value, fix=False):
                 raise ValidationError("%s: географічний об'єкт не знайдено `%s`" % (value, q))
         return geoname
 
+    def street_parse(street_match):
+        if 'п' in street_match.group(1):
+            prefix = "пров."
+        elif 'в' in street_match.group(1):
+            prefix = "вул."
+        else:
+            raise ValidationError("%s: вулиця чи провулок?" % value)
+        print(street_match.groups())
+        ext = street_match.group(3)
+        q = street_match.group(2)
+        geoname = geoname_lookup(q, fix)
+        part = "%s %s" % (prefix, geoname)
+        if ext:
+            part = "%s %s" % (part, ext)
+        return part
+
     addrs_re = re.compile(r"(\bм\b\.?|\bс\b\.?|\bв\b\.?|\bвул\b\.?|\bпров\b\.?|\bпер\b\.?|\bпр\b\.?)", re.IGNORECASE)
     city_re = re.compile(r"(\bм\b\.?|\bс\b\.?) *(.+)", re.IGNORECASE, )
-    street_re = re.compile(r"(\bв\b\.?|\bвул\b\.?|\bпров\b\.?|\bпер\b\.?|\bпр\b\.?) *([^\(\)\"]+) *(\(.*\)|\".*\")?",
-                           re.IGNORECASE, )
+    street_re = re.compile(r"(\bв\b\.?|\bвул\b\.?|\bпров\b\.?|\bпер\b\.?|\bпр\b\.?)"
+                           r" *([^\(\)\"]+)"
+                           r" *(\(.*\)|\".*\")?", re.IGNORECASE, )
     house_re = re.compile(r"^(\d+) *([А-Я]?)(\/\d+ *[А-Я]?)? *(\(.*\)|\".*\")?$", re.IGNORECASE, )
     flat_re = re.compile(r"^(кв|кімн?|оф)\.? *(\d+[А-Я]?(\/\d+[А-Я]?)?) *(\(.*\)|\".*\")?$", re.IGNORECASE, )
     voca_re = re.compile(r"^(будка|ящик|криша|маг) *(.+)?$", re.IGNORECASE, )
     ext_re = re.compile(r"^(\(.*\)|\".*\")?$", re.IGNORECASE, )
+
+    value = value.strip()
 
     if addrs_re.match(value):
         parts = map(lambda x: x.strip(), value.split(","))
@@ -58,18 +77,17 @@ def validate_place_name(value, fix=False):
 
             street_match = street_re.match(part)
             if street_match:
-                if 'п' in street_match.group(1):
-                    prefix = "пров."
-                elif 'в' in street_match.group(1):
-                    prefix = "вул."
+                if '--' in part:
+                    street_parts = part.split('--')
+                    parts = []
+                    for sp in street_parts:
+                        sp = sp.strip()
+                        sm = street_re.match(sp)
+                        if sm:
+                            parts.append(street_parse(sm))
+                    part = " -- ".join(parts)
                 else:
-                    raise ValidationError("%s: вулиця чи провулок?" % value)
-                ext = street_match.group(3)
-                q = street_match.group(2)
-                geoname = geoname_lookup(q, fix)
-                part = "%s %s" % (prefix, geoname)
-                if ext:
-                    part = "%s %s" % (part, ext)
+                    part = street_parse(street_match)
                 res.append(part)
                 continue
 
@@ -114,8 +132,11 @@ def validate_place_name(value, fix=False):
 
             raise ValidationError("частина адреси не розпізнається `%s` з `%s`" % (part, value))
 
+        print(", ".join(res))
         return ", ".join(res)
     else:
+        print("#!@")
+        print(value)
         return value
 
 
