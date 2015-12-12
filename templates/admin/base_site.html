@@ -14,6 +14,7 @@
         </div>
     </div>
     <div style="float:right; position: absolute; margin-left: 200px; margin-top: 10px;">
+        <a href="{{ request.release_notes_url }}">[ release notes ]</a> &nbsp;&nbsp;&nbsp;
         rev: {{ request.git_revision|truncatechars:11 }}
     </div>
 {% endblock %}

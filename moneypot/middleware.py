@@ -5,6 +5,7 @@ import sys
 
 from django.views.debug import ExceptionReporter
 from django.http import HttpResponse
+from django.conf import settings
 import re
 
 
@@ -19,6 +20,9 @@ class ExceptionMiddleware(object):
 
 
 class StaticRevision(object):
+
+    def process_request(self, request):
+        request.release_notes_url = settings.RELEASE_NOTES_URL
 
     def process_response(self, request, response):
         if hasattr(response, 'content'):

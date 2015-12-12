@@ -27,6 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+SITE_ID = 1
 
 # Application definition
 
@@ -37,12 +38,14 @@ INSTALLED_APPS = (
     'grappelli_filters',
     'filebrowser',
     # django stuff
+    'django.contrib.sites',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.flatpages',
     # batteries
     'mptt',
     'django_mptt_admin',
@@ -142,7 +145,8 @@ REST_FRAMEWORK = {
     )
 }
 
-VERSION = "1.0.2"
+VERSION = "1.0.3"
+RELEASE_NOTES_URL = "/p/release-1.0.3/"
 GRAPPELLI_ADMIN_TITLE = "Склад. версія %s" % VERSION
 
 APP_FILTERS = {

@@ -1,0 +1,15 @@
+{% extends "admin/base.html" %}
+
+{% block title %}
+    {{ flatpage.title }} -
+{% endblock %}
+
+{% block breadcrumbs %} 
+    &nbsp;&nbsp;&nbsp;<a href="/">Склад</a> / {{ flatpage.title }}
+{% endblock %}
+
+{% block content %}
+    <h1>{{ flatpage.title }}</h1>	
+    <!-- http://programanddesign.com/uncategorized/django-flatpages-markdown-and-syntax-highlighting/ -->
+    {{ flatpage.content }}
+{% endblock %}

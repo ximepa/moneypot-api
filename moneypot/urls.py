@@ -20,6 +20,7 @@ urlpatterns = patterns('',
                        url(r'^autocomplete/', include('autocomplete_light.urls')),
                        url(r'', include(admin.site.urls)),
                        url(r'^admin/', TemplateView.as_view(template_name="base/redirect.html")),
+                       url(r'^p/', include('django.contrib.flatpages.urls')),
                        )
 
 if settings.DEBUG:
