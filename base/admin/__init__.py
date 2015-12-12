@@ -44,6 +44,9 @@ except ImportError:
 @admin.register(GeoName)
 class GeoNameAdmin(admin.ModelAdmin):
     search_fields = ['name']
+    readonly_fields = ['timestamp', ]
+    list_display = ['name', 'timestamp']
+    list_filter = [('timestamp', DateRangeFilter), ]
 
 
 @admin.register(Unit)
@@ -62,7 +65,9 @@ class ItemCategoryAdmin(DjangoMpttAdmin):
     search_fields = ['name', ]
     tree_auto_open = False
     inlines = [ItemCategoryCommentInline]
-    list_display = ['name', 'image_thumbnail']
+    list_display = ['name', 'image_thumbnail', 'timestamp']
+    list_filter = [('timestamp', DateRangeFilter), ]
+    readonly_fields = ['timestamp', ]
 
     def image_thumbnail(self, obj):
         if obj.photo:
@@ -104,7 +109,9 @@ class PlaceAdmin(DjangoMpttAdmin):
     search_fields = ['name', ]
     tree_auto_open = False
     form = PlaceForm
-    list_display = ['name', 'is_shop', 'items_changelist_link']
+    list_display = ['name', 'is_shop', 'items_changelist_link', 'timestamp']
+    list_filter = [('timestamp', DateRangeFilter), ]
+    readonly_fields = ['timestamp', ]
 
     def items_changelist_link(self, obj):
         link = reverse("admin:base_place_item_changelist", args=[obj.id])

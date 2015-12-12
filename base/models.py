@@ -43,6 +43,7 @@ class TransactionNotReady(RuntimeError):
 
 class GeoName(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    timestamp = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return self.name
@@ -79,6 +80,7 @@ class ItemCategory(MPTTModel):
     parent = models.ForeignKey('self', verbose_name=_("parent"), null=True, blank=True, related_name='children')
     comment = models.TextField(_("comment"), blank=True, null=True)
     photo = FileBrowseField("Image", max_length=200, directory=get_upload_dir, blank=True, null=True)
+    timestamp = models.DateTimeField(default=timezone.now)
 
     class Meta:
         verbose_name = _("item category")
@@ -143,6 +145,7 @@ class Place(MPTTModel):
     has_cells = models.BooleanField(_("has cells"), default=False)
     has_chunks = models.BooleanField(_("has chunks"), default=False)
     comment = models.TextField(_("comment"), blank=True, null=True)
+    timestamp = models.DateTimeField(default=timezone.now)
 
     class Meta:
         verbose_name = _("place")
