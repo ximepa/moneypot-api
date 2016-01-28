@@ -1281,7 +1281,7 @@ class FixCategoryMerge(models.Model):
                 qs.update(**u)
         self.__class__.objects.filter(pk=self.pk).update(data=str(data))
         c = self.old_category
-        # c.delete()
+        c.delete()
 
     def save(self, *args, **kwargs):
         if not self.old_category_sav_id:
