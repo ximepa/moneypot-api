@@ -831,6 +831,9 @@ class ItemSerial(models.Model):
                 return "%s UAH" % (self.purchase.price, )
         return "?"
 
+    def delete(self, using=None):
+        raise NotImplementedError("Delete of serial numbers is not allowed!")
+
 
 class ItemChunk(models.Model):
     item = models.ForeignKey("Item", verbose_name=_("item"), related_name='chunks')
@@ -1238,17 +1241,19 @@ class FixCategoryMerge(models.Model):
     @staticmethod
     def get_related_models():
         return [
-            [ItemCategoryComment, 'category_id', None, None],
-            [Item, 'category_id', 'quantity', 'place_id'],
-            [TransactionItem, 'category_id', None, None],
-            [PurchaseItem, 'category_id', None, None],
-            [FixSerialTransform, 'category_id', None, None],
-            [FixCategoryMerge, 'old_category_id', None, None]
+            [ItemCategoryComment, 'category_id', None, None, None],
+            [Item, 'category_id', 'quantity', 'place_id', {'item': ['serials', 'chunks']}],
+            [TransactionItem, 'category_id', None, None, None],
+            [PurchaseItem, 'category_id', None, None, None],
+            [FixSerialTransform, 'category_id', None, None, None],
+            [FixCategoryMerge, 'old_category_id', None, None, None]
         ]
 
     def do_merge(self):
         data = {}
-        for model, field, qf, uniq in self.get_related_models():
+        Item.objects.filter(quantity=0, category=self.old_category).delete()
+        Item.objects.filter(quantity=0, category=self.new_category).delete()
+        for model, field, qf, uniq, rel in self.get_related_models():
             q = {field: self.old_category_sav_id}
             u = {field: self.new_category_id}
             qs = model.objects.filter(**q)
@@ -1256,7 +1261,6 @@ class FixCategoryMerge(models.Model):
             data.update({
                 model.__name__: qs_list
             })
-
             if qf:
                 for new_ins in qs:
                     cu = copy(u)
@@ -1269,12 +1273,15 @@ class FixCategoryMerge(models.Model):
                         model.objects.filter(pk=new_ins.pk).update(**{field: self.new_category_id})
                     else:
                         model.objects.filter(pk=old_ins.pk).update(**{qf: models.F(qf) + getattr(new_ins, qf)})
+                        for k in rel:
+                            for r in rel[k]:
+                                getattr(new_ins, r).all().update(**{k: old_ins})
                         new_ins.delete()
             else:
                 qs.update(**u)
         self.__class__.objects.filter(pk=self.pk).update(data=str(data))
         c = self.old_category
-        c.delete()
+        # c.delete()
 
     def save(self, *args, **kwargs):
         if not self.old_category_sav_id:

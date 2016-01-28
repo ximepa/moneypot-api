@@ -1,8 +1,8 @@
 # -*- encoding: utf-8 -*-
 from __future__ import print_function, division, unicode_literals, absolute_import
 
-from django.test import TransactionTestCase
 from django.forms import ValidationError
+from django.test import TransactionTestCase
 
 # Create your tests here.
 
@@ -11,7 +11,7 @@ from model_mommy import mommy
 from decimal import Decimal
 
 from .models import Unit, ItemCategory, Item, ItemSerial, ItemChunk, IncompatibleUnitException, InvalidParameters, \
-    DryRun, Place, Purchase, PurchaseItem
+    DryRun, Place, Purchase, PurchaseItem, FixCategoryMerge
 
 from django.db import models
 
@@ -207,9 +207,9 @@ class MovementTestCase(TransactionTestCase):
         self.cat_router = mommy.make(ItemCategory, unit=self.unit_pcs, is_stackable=True)
         self.cat_fuel = mommy.make(ItemCategory, unit=self.unit_litre, is_stackable=True)
         self.cat_cable = mommy.make(ItemCategory, unit=self.unit_m, is_stackable=False)
-        self.source = mommy.make(Place, is_shop=False)
-        self.destination = mommy.make(Place, is_shop=False)
-        self.shop = mommy.make(Place, is_shop=True)
+        self.source = mommy.make(Place, name="source", is_shop=False)
+        self.destination = mommy.make(Place, name="destination", is_shop=False)
+        self.shop = mommy.make(Place, name="shop", is_shop=True)
 
     def tearDown(self):
         self.unit_pcs.delete()
@@ -218,6 +218,8 @@ class MovementTestCase(TransactionTestCase):
         self.cat_router.delete()
         self.cat_fuel.delete()
         self.cat_cable.delete()
+        Place.objects.all().delete()
+        Purchase.objects.all().delete()
 
     def test_01_purchase_auto(self):
         p = mommy.make(Purchase, source=self.shop, destination=self.destination, is_auto_source=True)
@@ -230,3 +232,29 @@ class MovementTestCase(TransactionTestCase):
         p.complete()
         self.assertEqual(p.items_prepared, list(self.destination.items.filter(purchase__purchase=p)))
         self.assertEqual([], list(self.shop.items.filter(purchase__purchase=p)))
+
+    def test_02_category_merge(self):
+        cat1 = mommy.make(ItemCategory, name="cat1", unit=self.unit_pcs, is_stackable=True)
+        cat2 = mommy.make(ItemCategory, name="cat2", unit=self.unit_pcs, is_stackable=True)
+        cat1.save()
+        cat2.save()
+        d1 = mommy.make(Place, name="d1", is_shop=False)
+        d2 = mommy.make(Place, name="d2", is_shop=False)
+        p1 = mommy.make(Purchase, source=self.shop, destination=d1, is_auto_source=True)
+        p2 = mommy.make(Purchase, source=self.shop, destination=d2, is_auto_source=True)
+        mommy.make(PurchaseItem, purchase=p1, price=Decimal('13.53'), category=cat1, quantity=2, _serials="cat01, cat02")
+        mommy.make(PurchaseItem, purchase=p2, price=Decimal('13.53'), category=cat1, quantity=2, _serials="cat03, cat04")
+        mommy.make(PurchaseItem, purchase=p1, price=Decimal('13.53'), category=cat2, quantity=2, _serials="cat05, cat06")
+        mommy.make(PurchaseItem, purchase=p2, price=Decimal('13.53'), category=cat2, quantity=2, _serials="cat07, cat08")
+        p1.prepare()
+        p1.complete()
+        p2.prepare()
+        p2.complete()
+        fix = mommy.make(FixCategoryMerge, old_category=cat1, new_category=cat2)
+        fix.save()
+        self.assertEqual(Item.objects.all().count(), 2)
+        self.assertEqual(ItemSerial.objects.all().count(), 8)
+        for item in Item.objects.all():
+            self.assertEqual(item.category, cat2)
+
+
