@@ -220,6 +220,7 @@ class MovementTestCase(TransactionTestCase):
         self.cat_cable.delete()
         Place.objects.all().delete()
         Purchase.objects.all().delete()
+        ItemCategory.objects.all().delete()
 
     def test_01_purchase_auto(self):
         p = mommy.make(Purchase, source=self.shop, destination=self.destination, is_auto_source=True)
@@ -250,7 +251,7 @@ class MovementTestCase(TransactionTestCase):
         p1.complete()
         p2.prepare()
         p2.complete()
-        fix = mommy.make(FixCategoryMerge, old_category=cat1, new_category=cat2)
+        fix = mommy.prepare(FixCategoryMerge, old_category=cat1, new_category=cat2)
         fix.save()
         self.assertEqual(Item.objects.all().count(), 2)
         self.assertEqual(ItemSerial.objects.all().count(), 8)
