@@ -115,5 +115,6 @@ moneypot/settings/local.py
 media/uploads/*
 media/_versions/*
 env-py3
+py27-env
 *.pid
 __stash
