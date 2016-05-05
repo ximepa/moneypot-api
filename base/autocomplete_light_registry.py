@@ -104,7 +104,7 @@ class ItemChunkAutocomplete(autocomplete_light.AutocompleteModelBase):
         source_id = self.request.GET.get('source_id', None)
         category_id = self.request.GET.get('category_id', None)
 
-        choices = ItemChunk.objects.filter(chunk__gte=q)
+        choices = ItemChunk.objects.filter(chunk__gte=q).order_by('chunk')
 
         if source_id:
             choices = choices.filter(item__place_id=source_id)
