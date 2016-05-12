@@ -453,8 +453,7 @@ class Purchase(Movement):
         self.is_prepared = False
         for purchase_item in self.purchase_items.all():
             purchase_item.item_set.all().delete()
-            i, created = Item.objects.get_or_create(category=purchase_item.category, place=self.source,
-                                                    purchase=purchase_item)
+            i, created = Item.objects.get_or_create(category=purchase_item.category, place=self.source)
             if created:
                 i.quantity = purchase_item.quantity
                 i.purchase = purchase_item
