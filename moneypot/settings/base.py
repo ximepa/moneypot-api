@@ -145,8 +145,8 @@ REST_FRAMEWORK = {
     )
 }
 
-VERSION = "1.0.3"
-RELEASE_NOTES_URL = "/p/release-1.0.3/"
+VERSION = "1.0.4"
+RELEASE_NOTES_URL = "/p/release-1.0.4/"
 GRAPPELLI_ADMIN_TITLE = "Склад. версія %s" % VERSION
 
 APP_FILTERS = {
