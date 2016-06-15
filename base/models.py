@@ -628,12 +628,15 @@ class Item(models.Model):
 
         if self.quantity - self.serials.count() < quantity:
             raise InvalidParameters(_("please provide serial to withdraw"))
-        if self.chunks.count():
-            if self.place.has_chunks:
-                if self.quantity - self.chunks.aggregate(models.Sum('chunk'))['chunk__sum'] < quantity:
+        if self.place.has_chunks:
+            if self.chunks.count() == 1:
+                return self.withdraw_chunk(quantity, self.chunks.get())
+            if self.chunks.count() > 1:
+                total_chunks_len = self.chunks.aggregate(models.Sum('chunk'))['chunk__sum']
+                if self.quantity - total_chunks_len < quantity:
                     raise InvalidParameters(_("please provide chunk to withdraw"))
-            else:
-                self.chunks.all().delete()
+        else:
+            self.chunks.all().delete()
         item = Item.objects.create(
             quantity=quantity,
             is_reserved=True,
@@ -696,16 +699,17 @@ class Item(models.Model):
         )
         if chunk.chunk == quantity:
             chunk.qs.update(item=item)
+            chunk_b = None
         else:
             chunk.qs.update(chunk=models.F('chunk')-quantity)
 
-            ItemChunk.objects.create(
+            chunk_b = ItemChunk.objects.create(
                 item=item,
                 chunk=quantity,
                 purchase=chunk.purchase
             )
 
-        return item
+        return item, chunk, chunk_b
 
     @transaction.atomic
     def withdraw(self, quantity, serial=None, chunk=None, dry_run=False):
@@ -730,15 +734,33 @@ class Item(models.Model):
         if quantity > self.quantity:
             raise QuantityNotEnough(_("Requested quantity more than available"))
 
+        chunk_a = None
+        chunk_b = None
+
         if serial:
             item = self.withdraw_serial(quantity, serial)
         elif chunk:
-            item = self.withdraw_chunk(quantity, chunk)
+            item, chunk_a, chunk_b = self.withdraw_chunk(quantity, chunk)
         else:
             item = self.withdraw_any(quantity)
 
         self.qs.update(quantity=models.F('quantity') - quantity)
         self.refresh_from_db()
+
+        if chunk_a:
+            i = chunk_a.item
+            i_chunk_len = i.chunks.aggregate(score=models.Sum('chunk'))['score']
+            assert i.quantity == i_chunk_len, "Item chunk length error: %s %s <> %s" % (i, i.quantity, i_chunk_len)
+
+        if chunk_b:
+            i = chunk_b.item
+            i_chunk_len = i.chunks.aggregate(score=models.Sum('chunk'))['score']
+            assert i.quantity == i_chunk_len, "Item chunk length error: %s %s <> %s" % (i, i.quantity, i_chunk_len)
+
+        if chunk_a or chunk_b:
+            i = self
+            i_chunk_len = i.chunks.aggregate(score=models.Sum('chunk'))['score']
+            assert i.quantity == i_chunk_len, "Item chunk length error: %s %s <> %s" % (i, i.quantity, i_chunk_len)
 
         # if self.quantity == 0:
         # self.children.update(parent=None)
@@ -1018,7 +1040,8 @@ class Transaction(Movement):
         self.completed_at = timezone.now()
         self.save()
 
-    def fill_cells(self, ti):
+    @staticmethod
+    def fill_cells(ti):
         place = ti.destination or ti.transaction.destination
         if place.has_cells and ti.cell:
             cell, created = Cell.objects.get_or_create(place_id=place.id, name=ti.cell)
