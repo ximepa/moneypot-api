@@ -1336,7 +1336,6 @@ class FixPlaceMerge(models.Model):
         super(FixPlaceMerge, self).save(*args, **kwargs)
 
 
-
 class Cell(models.Model):
     place = models.ForeignKey("Place", verbose_name=_("place"), related_name="cells")
     name = models.CharField(max_length=32)

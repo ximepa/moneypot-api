@@ -59,7 +59,7 @@ class ItemTestCase(TransactionTestCase):
         self.cat_cable.delete()
 
     def test_00_item_create(self):
-        i = mommy.make(Item, category=self.cat_router, quantity=10)
+        i = mommy.make(Item, category=self.cat_router, place=mommy.make(Place), quantity=10)
         self.assertEqual(i.unit, self.unit_pcs, "wrong item unit created")
         self.assertEqual(i.is_stackable, self.cat_router.is_stackable, "wrong item stacking ability")
 
@@ -76,7 +76,7 @@ class ItemTestCase(TransactionTestCase):
         chunks = mommy.make(ItemChunk, _quantity=4, item=i, chunk=Decimal(2.5))
 
     def test_04_withdraw_any(self):
-        i = mommy.make(Item, category=self.cat_router, quantity=10)
+        i = mommy.make(Item, category=self.cat_router, place=mommy.make(Place), quantity=10)
         result = i.withdraw(quantity=4)
         self.assertEqual(result.quantity, Decimal(4))
         self.assertEqual(i.quantity, Decimal(6))
@@ -87,11 +87,11 @@ class ItemTestCase(TransactionTestCase):
         self.assertEqual(result.place, i.place)
 
     def test_05_withdraw_pcs_float_fail(self):
-        i = mommy.make(Item, category=self.cat_router, quantity=10)
+        i = mommy.make(Item, category=self.cat_router, place=mommy.make(Place), quantity=10)
         self.assertRaises(IncompatibleUnitException, i.withdraw, quantity=4.5)
 
     def test_06_withdraw_serial(self):
-        i = mommy.make(Item, category=self.cat_router, quantity=10)
+        i = mommy.make(Item, category=self.cat_router, place=mommy.make(Place), quantity=10)
         serials = mommy.make(ItemSerial, _quantity=10, item=i)
         result = i.withdraw(quantity=1, serial=serials[0])
         self.assertEqual(result.quantity, Decimal(1))
@@ -105,18 +105,18 @@ class ItemTestCase(TransactionTestCase):
         self.assertEqual(result.serials.count(), 1)
 
     def test_07_withdraw_serial_count_fail(self):
-        i = mommy.make(Item, category=self.cat_router, quantity=10)
+        i = mommy.make(Item, category=self.cat_router, place=mommy.make(Place), quantity=10)
         serials = mommy.make(ItemSerial, _quantity=10, item=i)
         self.assertRaises(InvalidParameters, i.withdraw, quantity=2, serial=serials[0])
 
     def test_08_withdraw_any_when_serial_fail(self):
-        i = mommy.make(Item, category=self.cat_router, quantity=10)
+        i = mommy.make(Item, category=self.cat_router, place=mommy.make(Place), quantity=10)
         serials = mommy.make(ItemSerial, _quantity=10, item=i)
         self.assertRaises(InvalidParameters, i.withdraw, quantity=2)
 
     def test_09_withdraw_atomic_test(self):
         self.assertEqual(Item.objects.count(), 0)
-        i = mommy.make(Item, category=self.cat_router, quantity=10)
+        i = mommy.make(Item, category=self.cat_router, place=mommy.make(Place), quantity=10)
         self.assertEqual(Item.objects.count(), 1)
         self.assertEqual(i.quantity, 10)
         result = i.withdraw(quantity=2)
@@ -131,7 +131,7 @@ class ItemTestCase(TransactionTestCase):
 
     def test_10_withdraw_all(self):
         self.assertEqual(Item.objects.count(), 0)
-        i = mommy.make(Item, category=self.cat_router, quantity=10)
+        i = mommy.make(Item, category=self.cat_router, place=mommy.make(Place), quantity=10)
         self.assertEqual(Item.objects.count(), 1)
         self.assertEqual(i.quantity, 10)
         result = i.withdraw(quantity=10)
@@ -141,7 +141,7 @@ class ItemTestCase(TransactionTestCase):
         self.assertEqual(result.quantity, 10)
 
     def test_11_deposit_withdrawed(self):
-        i = mommy.make(Item, category=self.cat_router, quantity=10)
+        i = mommy.make(Item, category=self.cat_router, place=mommy.make(Place), quantity=10)
         result = i.withdraw(quantity=5)
         self.assertEqual(i.quantity, 5)
         i.deposit(result)
@@ -149,50 +149,51 @@ class ItemTestCase(TransactionTestCase):
         self.assertRaises(Item.DoesNotExist, result.refresh_from_db)
 
     def test_12_deposit_self_fail(self):
-        i = mommy.make(Item, category=self.cat_router, quantity=10)
+        i = mommy.make(Item, category=self.cat_router, place=mommy.make(Place), quantity=10)
         self.assertRaises(InvalidParameters, i.deposit, i)
 
     def test_13_deposit_wrong_cat_fail(self):
-        i = mommy.make(Item, category=self.cat_router, quantity=10)
-        i2 = mommy.make(Item, category=self.cat_cable, quantity=10)
+        i = mommy.make(Item, category=self.cat_router, place=mommy.make(Place), quantity=10)
+        i2 = mommy.make(Item, category=self.cat_cable, place=mommy.make(Place), quantity=10)
         self.assertRaises(InvalidParameters, i.deposit, i2)
 
     def test_14_deposit_same_cat(self):
-        i = mommy.make(Item, category=self.cat_router, quantity=10)
-        i2 = mommy.make(Item, category=self.cat_router, quantity=5)
+        i = mommy.make(Item, category=self.cat_router, place=mommy.make(Place), quantity=10)
+        i2 = mommy.make(Item, category=self.cat_router, place=mommy.make(Place), quantity=5)
         i.deposit(i2)
         self.assertEqual(i.quantity, 15)
 
     def test_15_deposit_not_saved_item_source_fail(self):
-        i = mommy.make(Item, category=self.cat_router, quantity=10)
-        i2 = mommy.prepare(Item, category=self.cat_router, quantity=5)
+        i = mommy.make(Item, category=self.cat_router, place=mommy.make(Place), quantity=10)
+        i2 = mommy.prepare(Item, category=self.cat_router, place=mommy.make(Place), quantity=5)
         self.assertRaises(InvalidParameters, i.deposit, i2)
         i2.save()
         i.deposit(i2)
         self.assertEqual(i.quantity, 15)
 
     def test_16_deposit_not_saved_item_source_fail(self):
-        i = mommy.prepare(Item, category=self.cat_router, quantity=10)
-        i2 = mommy.make(Item, category=self.cat_router, quantity=5)
+        i = mommy.prepare(Item, category=self.cat_router, place=mommy.make(Place), quantity=10)
+        i2 = mommy.make(Item, category=self.cat_router, place=mommy.make(Place), quantity=5)
         self.assertRaises(InvalidParameters, i.deposit, i2)
         i.save()
         i.deposit(i2)
         self.assertEqual(i.quantity, 15)
 
     def test_17_deposit_decimal_stackable(self):
-        i = mommy.make(Item, category=self.cat_fuel, quantity=Decimal('11.4'))
-        i2 = mommy.make(Item, category=self.cat_fuel, quantity=Decimal('2.25'))
+        i = mommy.make(Item, category=self.cat_fuel, place=mommy.make(Place), quantity=Decimal('11.4'))
+        i2 = mommy.make(Item, category=self.cat_fuel, place=mommy.make(Place), quantity=Decimal('2.25'))
         i.deposit(i2)
         self.assertEqual(i.is_stackable, True)
         self.assertEqual(i.quantity, Decimal('13.65'))
         self.assertEqual(ItemChunk.objects.count(), 0)
 
     def test_18_deposit_decimal_not_stackable(self):
-        i = mommy.make(Item, category=self.cat_cable, quantity=Decimal('11.4'))
-        i2 = mommy.make(Item, category=self.cat_cable, quantity=Decimal('2.25'))
+        i = mommy.make(Item, category=self.cat_cable, place=mommy.make(Place, has_chunks=True), quantity=Decimal('11.4'))
+        i2 = mommy.make(Item, category=self.cat_cable, place=mommy.make(Place, has_chunks=True), quantity=Decimal('2.25'))
         i.deposit(i2)
         self.assertEqual(i.is_stackable, False)
         self.assertEqual(i.quantity, Decimal('13.65'))
+        self.assertEqual(i.chunks.count(), 2)
         self.assertEqual(ItemChunk.objects.count(), 2)
         for chunk in ItemChunk.objects.all():
             self.assertEqual(chunk.item, i)
@@ -228,10 +229,10 @@ class MovementTestCase(TransactionTestCase):
         mommy.make(PurchaseItem, purchase=p, price=Decimal('3.5'), category=self.cat_cable, quantity=Decimal('4.5'))
         p.prepare()
         self.assertEqual(p.is_prepared, True)
-        self.assertEqual(p.items_prepared, list(self.shop.items.filter(purchase__purchase=p)))
+        self.assertEqual(len(p.items_prepared), len(list(self.shop.items.filter(purchase__purchase=p))))
         self.assertEqual([], list(self.destination.items.filter(purchase__purchase=p)))
         p.complete()
-        self.assertEqual(p.items_prepared, list(self.destination.items.filter(purchase__purchase=p)))
+        self.assertEqual(len(p.items_prepared), len(list(self.destination.items.filter(purchase__purchase=p))))
         self.assertEqual([], list(self.shop.items.filter(purchase__purchase=p)))
 
     def test_02_category_merge(self):
