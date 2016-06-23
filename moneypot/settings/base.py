@@ -50,6 +50,7 @@ INSTALLED_APPS = (
     'mptt',
     'django_mptt_admin',
     'djorm_pgtrgm',
+    'downtime',
     # 'guardian',
     'daterange_filter',
     'rest_framework',
@@ -60,6 +61,7 @@ INSTALLED_APPS = (
 )
 
 MIDDLEWARE_CLASSES = (
+    'downtime.middleware.DowntimeMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

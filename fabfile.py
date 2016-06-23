@@ -17,7 +17,7 @@ from copy import deepcopy
 
 
 # CHANGEME
-env.hosts = ['maxim@192.168.33.152']
+env.hosts = ['maxim@192.168.33.60']
 env.project_main_app = 'moneypot'
 env.project_name = None
 
@@ -42,7 +42,7 @@ def update_env():
 
 
 # Python version
-PYTHON_BIN = "python2.7"
+PYTHON_BIN = "python3.5"
 PYTHON_PREFIX = ""  # e.g. /usr/local  Use "" for automatic
 PYTHON_FULL_PATH = "%s/bin/%s" % (PYTHON_PREFIX, PYTHON_BIN) if PYTHON_PREFIX else PYTHON_BIN
 

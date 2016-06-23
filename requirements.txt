@@ -4,6 +4,7 @@ django-autocomplete-light
 django-daterange-filter
 django-debug-panel
 django-debug-toolbar
+django-downtime
 django-extensions
 django-filebrowser
 django-filter

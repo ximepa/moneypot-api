@@ -8,6 +8,7 @@ django-compressor==1.5
 django-daterange-filter==1.1.1
 django-debug-panel==0.8.1
 django-debug-toolbar==1.4
+django-downtime==1.0.4
 django-extensions==1.5.7
 django-filebrowser==3.6.1
 django-filter==0.11.0
