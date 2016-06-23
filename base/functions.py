@@ -15,8 +15,11 @@ def check_item_chunk_consistency(trans):
     items = Item.objects.filter(chunks__isnull=False).annotate(score = Sum('chunks__chunk'))
     for item in items:
         if not item.quantity == item.score:
-            raise ChunkConsistencyError("%s: %s <> %s after %s" % (item, item.quantity, item.score, trans),
+            if trans:
+                raise ChunkConsistencyError("%s: %s <> %s after %s" % (item, item.quantity, item.score, trans),
                                         [item, trans])
+            else:
+                print("%s: %s <> %s" % (item, item.quantity, item.score))
 
 
 @atomic
