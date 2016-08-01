@@ -17,6 +17,8 @@ pipelines:
           - psql -c "CREATE DATABASE moneypot_dist;" -U postgres
           - psql -c "GRANT ALL PRIVILEGES ON DATABASE moneypot_dist to moneypot;" -U postgres          
           - cp moneypot/settings/local-dist.py moneypot/settings/local.py
+          - apt-get update
+          - apt-get -y install python3-pip
           - pip install -U pip
           - pip install -r requirements-frozen.txt
           - python manage.py syncdb --noinput
