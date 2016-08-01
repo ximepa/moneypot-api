@@ -8,6 +8,8 @@ pipelines:
   default:
     - step:
         script: # Modify the commands below to build your repository.
+          - echo "local   all             all                                     trust" >  /etc/postgresql/9.5/main/pg_hba.conf
+          - echo "host    all             all             127.0.0.1/32            trust" >> /etc/postgresql/9.5/main/pg_hba.conf
           - /etc/init.d/postgresql start
           - psql -c "CREATE USER moneypot WITH PASSWORD 'test';" -U postgres
           - psql -c "ALTER USER moneypot WITH SUPERUSER;" -U postgres
