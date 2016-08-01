@@ -9,6 +9,7 @@ pipelines:
     - step:
         script: # Modify the commands below to build your repository.
           - export PG_PASSWORD='bitbucket-pipelines-test'
+          - export SECRET_KEY="1fc96300e817c97510d9c456836b1ed7F^hFdsf"
           - echo "local   all             all                                     trust" >  /etc/postgresql/9.5/main/pg_hba.conf
           - echo "host    all             all             127.0.0.1/32            trust" >> /etc/postgresql/9.5/main/pg_hba.conf
           - /etc/init.d/postgresql start
