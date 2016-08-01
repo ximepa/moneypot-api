@@ -17,7 +17,7 @@ pipelines:
           - psql -c "CREATE DATABASE moneypot_dist;" -U postgres
           - psql -c "GRANT ALL PRIVILEGES ON DATABASE moneypot_dist to moneypot;" -U postgres                    
           - apt-get update
-          - apt-get install -y python3-venv
+          - apt-get install -y python3-venv git
           - python3.5 -m venv env 
           - source env/bin/activate
           - cp moneypot/settings/local-dist.py moneypot/settings/local.py
