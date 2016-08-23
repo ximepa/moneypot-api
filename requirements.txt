@@ -19,7 +19,7 @@ django-nose
 git+https://github.com/jorgecarleitao/django-sphinxql.git
 djangorestframework
 djorm-ext-pgtrgm
-Fabric
+Fabric3
 gunicorn
 ipython
 ipython-genutils

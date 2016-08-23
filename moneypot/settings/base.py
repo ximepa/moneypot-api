@@ -159,7 +159,10 @@ APP_FILTERS = {
     'PLACE_ADDRESS_ID': 40,
     'PLACE_TRANSMUTATOR_ID': 502,
     'PLACE_VOID': 152,
+    'PLACE_OLD_STORAGE': 1,
+    'PAYER_OLD_STORAGE': 1
 }
+
 
 def db_connection_init(sender, **kwargs):
     cursor = connection.cursor()

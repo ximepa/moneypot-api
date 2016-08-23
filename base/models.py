@@ -69,7 +69,6 @@ class Unit(models.Model):
 
 
 class ItemCategory(MPTTModel):
-
     @staticmethod
     def get_upload_dir():
         return "uploads"
@@ -109,7 +108,7 @@ class ItemCategory(MPTTModel):
             self.is_stackable = obj.is_stackable
         else:
             raise ValidationError(
-                {'is_stackable': ugettext('Stackable must be set for object or for one of its parents.')})
+                    {'is_stackable': ugettext('Stackable must be set for object or for one of its parents.')})
 
     def clean(self):
         self.clean_unit()
@@ -208,25 +207,26 @@ class Place(MPTTModel):
             i = self.items.get(category=item.category, is_reserved=False, quantity__gt=0)
         except Item.DoesNotExist:
             raise ItemNotFound(_("Can not withdraw <{item}> from <{place}>: not found.".format(
-                item=item,
-                place=self
+                    item=item,
+                    place=self
             )))
         else:
             serial = None
             if item.serial:
                 if not item.quantity == 1:
-                    raise InvalidParameters(_("Can not withdraw <{item}> from <{place}>: quantity >1 for serial <{serial}> ".format(
-                        item=item,
-                        place=self,
-                        serial=serial
-                    )))
+                    raise InvalidParameters(
+                            _("Can not withdraw <{item}> from <{place}>: quantity >1 for serial <{serial}> ".format(
+                                    item=item,
+                                    place=self,
+                                    serial=serial
+                            )))
                 try:
                     serial = i.serials.get(serial=item.serial)
                 except ItemSerial.DoesNotExist:
                     raise ItemNotFound(_("Can not withdraw <{item}> from <{place}>: serial <{serial}> not found".format(
-                        item=item,
-                        place=self,
-                        serial=serial
+                            item=item,
+                            place=self,
+                            serial=serial
                     )))
                 serial.cell = None
                 serial.save()
@@ -258,6 +258,7 @@ class Place(MPTTModel):
 class MovementItem(models.Model):
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"))
     quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
+
     # _chunks = models.TextField(blank=True, null=True)
 
     class Meta:
@@ -303,7 +304,7 @@ class MovementItem(models.Model):
             self.category
         except ItemCategory.DoesNotExist:
             raise ValidationError({'category': ugettext(
-                'this field is required'
+                    'this field is required'
             )})
         f = None
         if self.category.unit.unit_type == Unit.INTEGER:
@@ -313,7 +314,7 @@ class MovementItem(models.Model):
 
         if self.quantity and not f(self.quantity) == self.quantity:
             raise ValidationError({'quantity': ugettext(
-                'unit type `%s` can not be decimal' % self.category.unit.name
+                    'unit type `%s` can not be decimal' % self.category.unit.name
             )})
 
     def clean(self):
@@ -363,12 +364,12 @@ class PurchaseItem(MovementItem):
 
         if self.category.unit.unit_type == Unit.DECIMAL:
             raise ValidationError({'_serials': ugettext(
-                'unit type `%s` can not have serials' % self.category.unit.name
+                    'unit type `%s` can not have serials' % self.category.unit.name
             )})
         serials_data = re.findall(r"[\w-]+", self._serials)
         if not self.quantity == len(serials_data):
             raise ValidationError({'_serials': ugettext(
-                u'serials count error: {count}≠{quantity}'.format(count=len(serials_data), quantity=self.quantity)
+                    u'serials count error: {count}≠{quantity}'.format(count=len(serials_data), quantity=self.quantity)
             )})
         self._serials = ", ".join(map(str, serials_data))
         return serials_data
@@ -434,7 +435,7 @@ class Purchase(Movement):
             return u'%s: %s → %s' % (self.completed_at.strftime("%Y-%m-%d"), self.source.name, self.destination.name)
         else:
             return u'--- %s → %s' % (self.source.name, self.destination.name)
-        # return u'%s -> %s' % (self.source.name, self.destination.name)
+            # return u'%s -> %s' % (self.source.name, self.destination.name)
 
     def clean_is_auto_source(self):
         if self.source_id:
@@ -565,7 +566,7 @@ class Item(models.Model):
         verbose_name = _("item")
         verbose_name_plural = _("items")
 
-    def __str__(self):    
+    def __str__(self):
         if self.place:
             return "%s - %s" % (self.category.name, self.place.name)
         return "%s - unknown place" % self.category.name
@@ -590,7 +591,7 @@ class Item(models.Model):
             if self.purchase.price_usd:
                 return "%s UAH (%s USD)" % (self.purchase.price, self.purchase.price_usd)
             else:
-                return "%s UAH" % (self.purchase.price, )
+                return "%s UAH" % (self.purchase.price,)
         return "?"
 
     def clean_quantity(self):
@@ -602,7 +603,7 @@ class Item(models.Model):
 
         if self.quantity and not f(self.quantity) == self.quantity:
             raise ValidationError({'quantity': ugettext(
-                'unit type `%s` can not be decimal' % self.category.unit.name
+                    'unit type `%s` can not be decimal' % self.category.unit.name
             )})
 
     def clean(self):
@@ -638,12 +639,12 @@ class Item(models.Model):
         else:
             self.chunks.all().delete()
         item = Item.objects.create(
-            quantity=quantity,
-            is_reserved=True,
-            purchase=self.purchase,
-            category=self.category,
-            place=self.place,
-            parent=self,
+                quantity=quantity,
+                is_reserved=True,
+                purchase=self.purchase,
+                category=self.category,
+                place=self.place,
+                parent=self,
         )
         return item
 
@@ -662,18 +663,18 @@ class Item(models.Model):
             raise InvalidParameters(_("Serials count does not match requested quantity"))
         if not serial.item == self:
             raise InvalidParameters(_("Serial {serial} doesn't belong to item {item}".format(
-                serial=serial.serial,
-                item=self.__str__()
+                    serial=serial.serial,
+                    item=self.__str__()
             )))
         item = Item.objects.create(
-            quantity=quantity,
-            is_reserved=True,
-            purchase=self.purchase,
-            category=self.category,
-            place=self.place,
-            parent=self,
+                quantity=quantity,
+                is_reserved=True,
+                purchase=self.purchase,
+                category=self.category,
+                place=self.place,
+                parent=self,
         )
-        serial.item=item
+        serial.item = item
         serial.save()
         return item
 
@@ -690,23 +691,23 @@ class Item(models.Model):
         if chunk.chunk < quantity:
             raise InvalidParameters(_("Chunks length lesser than requested quantity"))
         item = Item.objects.create(
-            quantity=quantity,
-            is_reserved=True,
-            purchase=self.purchase,
-            category=self.category,
-            place=self.place,
-            parent=self,
+                quantity=quantity,
+                is_reserved=True,
+                purchase=self.purchase,
+                category=self.category,
+                place=self.place,
+                parent=self,
         )
         if chunk.chunk == quantity:
             chunk.qs.update(item=item)
             chunk_b = None
         else:
-            chunk.qs.update(chunk=models.F('chunk')-quantity)
+            chunk.qs.update(chunk=models.F('chunk') - quantity)
 
             chunk_b = ItemChunk.objects.create(
-                item=item,
-                chunk=quantity,
-                purchase=chunk.purchase
+                    item=item,
+                    chunk=quantity,
+                    purchase=chunk.purchase
             )
 
         return item, chunk, chunk_b
@@ -728,8 +729,8 @@ class Item(models.Model):
         if self.unit.unit_type == Unit.INTEGER:
             if not int(quantity) == quantity:
                 raise IncompatibleUnitException(_("Unit {unit} can not have value {quantity}".format(
-                    unit=self.unit.name,
-                    quantity=quantity)
+                        unit=self.unit.name,
+                        quantity=quantity)
                 ))
         if quantity > self.quantity:
             raise QuantityNotEnough(_("Requested quantity more than available"))
@@ -747,7 +748,7 @@ class Item(models.Model):
         self.qs.update(quantity=models.F('quantity') - quantity)
         self.refresh_from_db()
 
-        if False:    # temporary disable check block
+        if False:  # temporary disable check block
             if chunk_a:
                 i = chunk_a.item
                 i_chunk_len = i.chunks.aggregate(score=models.Sum('chunk'))['score']
@@ -851,7 +852,7 @@ class ItemSerial(models.Model):
             if self.purchase.price_usd:
                 return "%s UAH (%s USD)" % (self.purchase.price, self.purchase.price_usd)
             else:
-                return "%s UAH" % (self.purchase.price, )
+                return "%s UAH" % (self.purchase.price,)
         return "?"
 
     def delete(self, using=None):
@@ -1029,10 +1030,10 @@ class Transaction(Movement):
 
             if item.reserved_by.destination:
                 assert item.reserved_by.destination.is_descendant_of(self.destination, include_self=True), ugettext(
-                    "<{ti_dest}> must be child node of <{dest}>".format(
+                        "<{ti_dest}> must be child node of <{dest}>".format(
                                 ti_dest=item.reserved_by.destination.name,
                                 dest=self.destination.name
-                            )
+                        )
                 )
                 item.reserved_by.destination.deposit(item, cell=cell)
             else:
@@ -1053,7 +1054,6 @@ class Transaction(Movement):
 
 
 class ProcessSerialMixin(object):
-
     def __init__(self):
         self.void = Place.objects.get(pk=settings.APP_FILTERS["PLACE_VOID"])
         self.item = self.item or {}
@@ -1083,6 +1083,7 @@ class OrderItemSerial(ItemSerial, ProcessSerialMixin):
         verbose_name = _("order serial")
         verbose_name_plural = _("order serials")
 
+
 class ContractItemSerial(ItemSerial, ProcessSerialMixin):
     class Meta:
         proxy = True
@@ -1108,9 +1109,12 @@ class VItemMovement(models.Model):
     source_name = models.CharField(_("source"), max_length=100)
     destination_name = models.CharField(_("destination"), max_length=100)
     quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
-    source = models.ForeignKey("Place", verbose_name=_("source"), related_name="source_item_movements", on_delete=models.DO_NOTHING)
-    transaction_item = models.OneToOneField("TransactionItem", verbose_name=_("transaction_item"), on_delete=models.DO_NOTHING, primary_key=True)
-    destination = models.ForeignKey("Place", verbose_name=_("destination"), related_name="destination_item_movements", on_delete=models.DO_NOTHING)
+    source = models.ForeignKey("Place", verbose_name=_("source"), related_name="source_item_movements",
+                               on_delete=models.DO_NOTHING)
+    transaction_item = models.OneToOneField("TransactionItem", verbose_name=_("transaction_item"),
+                                            on_delete=models.DO_NOTHING, primary_key=True)
+    destination = models.ForeignKey("Place", verbose_name=_("destination"), related_name="destination_item_movements",
+                                    on_delete=models.DO_NOTHING)
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"), on_delete=models.DO_NOTHING)
     transaction = models.ForeignKey("Transaction", verbose_name=_("transaction"), on_delete=models.DO_NOTHING)
     created_at = models.DateTimeField(_("created at"), default=timezone.now)
@@ -1133,7 +1137,7 @@ class VItemMovement(models.Model):
             if purchase.price_usd:
                 return "%s UAH (%s USD)" % (purchase.price, purchase.price_usd)
             else:
-                return "%s UAH" % (purchase.price, )
+                return "%s UAH" % (purchase.price,)
         return "?"
 
 
@@ -1155,15 +1159,19 @@ class VSerialMovement(models.Model):
 
     """
 
-    transaction_item = models.OneToOneField("TransactionItem", verbose_name=_("transaction_item"), on_delete=models.DO_NOTHING, primary_key=True)
+    transaction_item = models.OneToOneField("TransactionItem", verbose_name=_("transaction_item"),
+                                            on_delete=models.DO_NOTHING, primary_key=True)
     item_category_name = models.CharField(_("item_category"), max_length=100)
     source_name = models.CharField(_("source"), max_length=100)
     destination_name = models.CharField(_("destination"), max_length=100)
     quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
     serial = models.CharField(_("serial"), max_length=32)
-    serial_id = models.OneToOneField("ItemSerial", verbose_name=_("serial"), db_column="serial_id", on_delete=models.DO_NOTHING)
-    source = models.ForeignKey("Place", verbose_name=_("source"), related_name="source_serial_movements", on_delete=models.DO_NOTHING)
-    destination = models.ForeignKey("Place", verbose_name=_("destination"), related_name="destination_serial_movements", on_delete=models.DO_NOTHING)
+    serial_id = models.OneToOneField("ItemSerial", verbose_name=_("serial"), db_column="serial_id",
+                                     on_delete=models.DO_NOTHING)
+    source = models.ForeignKey("Place", verbose_name=_("source"), related_name="source_serial_movements",
+                               on_delete=models.DO_NOTHING)
+    destination = models.ForeignKey("Place", verbose_name=_("destination"), related_name="destination_serial_movements",
+                                    on_delete=models.DO_NOTHING)
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"), on_delete=models.DO_NOTHING)
     transaction = models.ForeignKey("Transaction", verbose_name=_("transaction"), on_delete=models.DO_NOTHING)
     created_at = models.DateTimeField(_("created at"), default=timezone.now)
@@ -1186,13 +1194,11 @@ class VSerialMovement(models.Model):
             if purchase.price_usd:
                 return "%s UAH (%s USD)" % (purchase.price, purchase.price_usd)
             else:
-                return "%s UAH" % (purchase.price, )
+                return "%s UAH" % (purchase.price,)
         return "?"
 
 
-
 class FixSerialTransform(models.Model):
-
     old_serial = models.CharField(_("old serial"), max_length=32)
     new_serial = models.CharField(_("new serial"), max_length=32)
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"), on_delete=models.DO_NOTHING,
@@ -1247,7 +1253,6 @@ class FixSerialTransform(models.Model):
 
 
 class FixCategoryMerge(models.Model):
-
     old_category = models.ForeignKey("ItemCategory", verbose_name=_("old item category"),
                                      null=True, related_name="old_categoriess", on_delete=models.SET_NULL)
     new_category = models.ForeignKey("ItemCategory", verbose_name=_("new item category"),
@@ -1385,7 +1390,7 @@ class Transmutation(Transaction):
 
     def save(self, *args, **kwargs):
         try:
-            transmutator = Place.objects.get(pk= settings.APP_FILTERS['PLACE_TRANSMUTATOR_ID'])
+            transmutator = Place.objects.get(pk=settings.APP_FILTERS['PLACE_TRANSMUTATOR_ID'])
         except Place.DoesNotExist:
             raise RuntimeError(_("Transmutator not found. Please check settings"))
         else:
@@ -1425,26 +1430,26 @@ class Transmutation(Transaction):
         #     destination = self.destination,
         # )
         rev_t = Transaction.objects.create(
-            destination = self.source,
-            source = self.destination,
+                destination=self.source,
+                source=self.destination,
         )
         for tr in self.transmutation_items.all():
             ti = TransactionItem.objects.create(
-                transaction=self.transaction_ptr,
-                category=tr.category,
-                quantity=tr.quantity,
-                serial=tr.serial,
-                chunk=tr.chunk,
-                cell=tr.cell
+                    transaction=self.transaction_ptr,
+                    category=tr.category,
+                    quantity=tr.quantity,
+                    serial=tr.serial,
+                    chunk=tr.chunk,
+                    cell=tr.cell
             )
             tr.ti = ti
             tr.save()
             rev_ti = TransactionItem.objects.create(
-                transaction=rev_t,
-                category=tr.transmuted,
-                quantity=tr.quantity,
-                serial=tr.serial,
-                cell=tr.cell
+                    transaction=rev_t,
+                    category=tr.transmuted,
+                    quantity=tr.quantity,
+                    serial=tr.serial,
+                    cell=tr.cell
             )
         self.complete()
         rev_t.force_complete()
@@ -1468,3 +1473,106 @@ class Warranty(models.Model):
 
     def category_name(self):
         return self.serial.item.category.name
+
+
+class ReturnItem(MovementItem):
+    source = models.ForeignKey("Place", verbose_name=_("source"),
+                               related_name="return_items", blank=True, null=True, on_delete=models.SET_NULL)
+    ret = models.ForeignKey("Return", verbose_name=_("return"),
+                            related_name="return_items")
+    ti = models.OneToOneField(TransactionItem, blank=True, null=True, related_name="return_item")
+    # Movement superclass
+    # category = models.ForeignKey("ItemCategory", verbose_name=_("item category"))
+    # quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
+    # _chunks = models.TextField(blank=True, null=True)
+    serial = models.CharField(max_length=32, blank=True, null=True)
+    cell = models.CharField(max_length=16, blank=True, null=True)
+
+    class Meta:
+        verbose_name = _("return item")
+        verbose_name_plural = _("return items")
+
+    def __str__(self):
+        return self.category.name
+
+
+class Return(Transaction):
+
+    @transaction.atomic
+    def ret(self):
+        if not self.return_items.count():
+            raise RuntimeError(ugettext("No return items added"))
+        for ri in self.return_items.all():
+            if ri.source and not ri.source == self.source:
+                t_prep = Transaction.objects.create(
+                    destination=self.source,
+                    source=ri.source,
+                )
+                ti = None
+                try:
+                    serial = ItemSerial.objects.get(serial=ri.serial, item__category=ri.category)
+                    ti = TransactionItem.objects.create(
+                        transaction=t_prep,
+                        category=ri.category,
+                        quantity=ri.quantity,
+                        serial=serial,
+                        cell=ri.cell
+                    )
+                    ri.ti = ti
+                    ri.save()
+                    t_prep.force_complete()
+                except (ItemNotFound, ItemSerial.DoesNotExist):
+                    p_prep = Purchase.objects.create(
+                        destination=ri.source,
+                        source_id=settings.APP_FILTERS['PLACE_OLD_STORAGE'],
+                        payer_id=settings.APP_FILTERS['PAYER_OLD_STORAGE'],
+                        is_auto_source=True,
+                        comment="Created automatically by return id:%s" % self.id
+                    )
+                    PurchaseItem.objects.create(
+                        purchase=p_prep,
+                        category=ri.category,
+                        quantity=ri.quantity,
+                        price=0,
+                        _serials=ri.serial,
+                        cell=ri.cell
+                    )
+                    p_prep.complete()
+                    serial = ItemSerial.objects.get(
+                            serial=ri.serial,
+                            item__category=ri.category,
+                            item__place=ri.source
+                    )
+                    if not ti:
+                        ti = TransactionItem.objects.create(
+                            transaction=t_prep,
+                            category=ri.category,
+                            quantity=ri.quantity,
+                            serial=serial,
+                            cell=ri.cell
+                        )
+                        ri.ti = ti
+                        ri.save()
+                    t_prep.force_complete()
+
+            serial = ItemSerial.objects.get(
+                serial=ri.serial,
+                item__category=ri.category,
+                item__place=self.source
+            )
+
+            TransactionItem.objects.create(
+                transaction_id=self.transaction_ptr_id,
+                category=ri.category,
+                quantity=ri.quantity,
+                serial=serial,
+                cell=ri.cell
+            )
+
+        self.complete()
+        self.transaction_ptr.created_at = timezone.now()
+        self.transaction_ptr.save()
+
+    class Meta:
+        verbose_name = _("return")
+        verbose_name_plural = _("returns")

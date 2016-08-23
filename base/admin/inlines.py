@@ -6,8 +6,10 @@ from django.db import models
 from django import forms
 import autocomplete_light
 
-from base.models import ItemCategoryComment, PurchaseItem, TransactionItem, Transaction, Place, TransmutationItem
-from .forms import ItemCategoryCommentForm, PurchaseItemForm, TransactionItemForm, TransmutationItemForm
+from base.models import ItemCategoryComment, PurchaseItem, TransactionItem, Transaction, Place, \
+    TransmutationItem, ReturnItem
+from .forms import ItemCategoryCommentForm, PurchaseItemForm, TransactionItemForm, TransmutationItemForm, \
+    ReturnItemForm
 from .overrides import InlineReadOnly
 
 
@@ -76,6 +78,7 @@ class TransmutationItemInline(admin.TabularInline):
         )},
     }
 
+
 class TransactionItemInlineReadonly(InlineReadOnly):
     model = TransactionItem
     form = TransactionItemForm
@@ -101,3 +104,20 @@ class TransactionCommentPlaceInline(admin.TabularInline):
     model = Transaction.comment_places.through
     form = autocomplete_light.modelform_factory(Place, exclude=[])
     extra = 10
+
+
+class ReturnItemInline(admin.TabularInline):
+    model = ReturnItem
+    form = ReturnItemForm
+    extra = 10
+    formfield_overrides = {
+        models.CharField: {'widget': forms.TextInput(
+            attrs={'width': "120px"}
+        )},
+    }
+
+
+class ReturnItemInlineReadonly(InlineReadOnly):
+    model = ReturnItem
+    form = ReturnItemForm
+    extra = 0

@@ -12,7 +12,7 @@ from base.admin.validators import validate_place_name
 from .functions import parse_serials_data
 from base.models import InvalidParameters, ItemCategory, ItemCategoryComment, Place, PurchaseItem, TransactionItem, \
     Purchase, Transaction, Unit, ItemSerial, FixCategoryMerge, FixPlaceMerge, Cell, Item, ItemChunk, Transmutation, \
-    TransmutationItem, Warranty
+    TransmutationItem, Warranty, Return, ReturnItem
 
 
 class ItemCategoryCommentForm(autocomplete_light.ModelForm):
@@ -115,7 +115,7 @@ class ItemSerialForm(autocomplete_light.ModelForm):
 class PlaceForm(autocomplete_light.ModelForm):
 
     def clean_name(self):
-        cleaned_data = dict(self.cleaned_data)
+        # cleaned_data = dict(self.cleaned_data)
         name = self.cleaned_data.get('name', '')
         return validate_place_name(name)
 
@@ -212,7 +212,7 @@ class TransactionItemForm(autocomplete_light.ModelForm):
         serial = cleaned_data.get("serial", None)
         if serial and not serial.item.place == transaction.source:
             raise forms.ValidationError(({'serial': ugettext(
-                'serial not found: %s. It is in %s' % (serial, serial.item.place)
+                'serial not found: {}. It is in {}'.format(serial, serial.item.place)
             )}))
 
         return self.cleaned_data
@@ -314,7 +314,6 @@ class TransmutationForm(autocomplete_light.ModelForm):
         return t
 
 
-
 class FixCategoryMergeForm(autocomplete_light.ModelForm):
     class Meta:
         model = FixCategoryMerge
@@ -368,3 +367,46 @@ class WarrantyInlineForm(forms.ModelForm):
     class Meta:
         model = Warranty
         fields = ['date']
+
+
+class ReturnItemForm(autocomplete_light.ModelForm):
+
+    class Meta:
+        model = ReturnItem
+        fields = ['category', 'quantity', 'serial', 'source', 'cell']
+        autocomplete_fields = ('category', 'source', 'cell')
+
+    def clean(self):
+        cleaned_data = dict(self.cleaned_data)
+        serial = cleaned_data.get('serial', None)
+        chunk = cleaned_data.get('chunk', None)
+        quantity = cleaned_data.get('quantity', 0)
+
+        if serial and not quantity == 1:
+            raise forms.ValidationError({'quantity': "if serial is set, quantity = 1"})
+
+        if chunk and quantity > chunk.chunk:
+            raise forms.ValidationError({'quantity': "if chunk is set, quantity <= chunk length"})
+
+        return self.cleaned_data
+
+
+class ReturnForm(autocomplete_light.ModelForm):
+    force_complete = forms.BooleanField(required=False, label=_("force complete"))
+
+    class Meta:
+        model = Return
+        exclude = ['comment_places', 'is_completed', 'is_prepared', 'is_negotiated_source',
+                   'is_negotiated_destination', 'is_confirmed_source', 'is_confirmed_destination']
+        autocomplete_fields = ('source', 'destination', 'items')
+
+    def save(self, *args, **kwargs):
+        t = super(ReturnForm, self).save(*args, **kwargs)
+        if self.cleaned_data['force_complete']:
+            if t.is_completed:
+                raise RuntimeError(_("already completed"))
+            # try:
+            t.force_complete(pending=True)
+            # except Exception, e:
+            # raise forms.ValidationError(e)
+        return t

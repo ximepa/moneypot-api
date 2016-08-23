@@ -3,37 +3,37 @@ from __future__ import print_function, division, unicode_literals, absolute_impo
 
 from functools import update_wrapper
 
-from django.contrib import admin
-from django.core.exceptions import ValidationError
-from django.template import Template, Context
-from django_mptt_admin.admin import DjangoMpttAdmin
-from django.utils.translation import ugettext_lazy as _, ugettext
-from django.utils.html import mark_safe
-from django.core.urlresolvers import reverse
-from django.conf.urls import url
-from django.conf import settings
-from django.contrib.admin.utils import quote
-from django.contrib import messages
-from django.db.models import Q
 from daterange_filter.filter import DateRangeFilter
+from django.conf import settings
+from django.conf.urls import url
+from django.contrib import admin
+from django.contrib import messages
+from django.contrib.admin.utils import quote
+from django.core.exceptions import ValidationError
+from django.core.urlresolvers import reverse
+from django.db.models import Q
+from django.template import Template, Context
+from django.utils.html import mark_safe
+from django.utils.translation import ugettext_lazy as _, ugettext
 from django_mptt_admin import util
-from grappelli_filters import RelatedAutocompleteFilter, FiltersMixin
+from django_mptt_admin.admin import DjangoMpttAdmin
 from filebrowser.settings import ADMIN_THUMBNAIL
+from grappelli_filters import RelatedAutocompleteFilter, FiltersMixin
 
 from base.models import Unit, ItemCategory, Place, PurchaseItem, Payer, Purchase, Item, ItemSerial, ItemChunk, \
     TransactionItem, Transaction, OrderItemSerial, ContractItemSerial, VItemMovement, VSerialMovement, \
     get_descendants_ids, FixSerialTransform, FixCategoryMerge, FixPlaceMerge, Cell, GeoName, Transmutation, \
-    Warranty
-from .filters import MPTTRelatedAutocompleteFilter
+    Warranty, Return
 from .actions import process_to_void, update_cell
-from .overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
-from .functions import create_model_admin
+from .filters import MPTTRelatedAutocompleteFilter
 from .forms import ItemCategoryForm, PlaceForm, PurchaseItemForm, TransactionItemForm, PurchaseForm, TransactionForm, \
-    FixCategoryMergeForm, FixPlaceMergeForm, CellForm, CellItemActionForm, ItemInlineForm, ItemChunkForm, ItemSerialForm, \
-    TransmutationForm, WarrantyForm, WarrantyInlineForm
+    FixCategoryMergeForm, FixPlaceMergeForm, CellForm, CellItemActionForm, ItemInlineForm, ItemChunkForm, \
+    ItemSerialForm, TransmutationForm, WarrantyForm, WarrantyInlineForm, ReturnForm
+from .functions import create_model_admin
 from .inlines import ItemCategoryCommentInline, PurchaseItemInline, PurchaseItemInlineReadonly, \
     TransactionItemInlineReadonly, TransactionItemInline, TransactionCommentPlaceInline, TransmutationItemInline, \
-    TransmutationItemInlineReadonly
+    TransmutationItemInlineReadonly, ReturnItemInline, ReturnItemInlineReadonly
+from .overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
 
 try:
     from urllib import urlencode
@@ -56,7 +56,6 @@ class UnitAdmin(admin.ModelAdmin):
 
 @admin.register(ItemCategory)
 class ItemCategoryAdmin(DjangoMpttAdmin):
-
     class Media:
         js = ('base/js/category_parent_autocomplete.js',)
 
@@ -72,11 +71,13 @@ class ItemCategoryAdmin(DjangoMpttAdmin):
     def image_thumbnail(self, obj):
         if obj.photo:
             if obj.photo.filetype == "Image":
-                return '<a href="%s"><img src="%s" /></a>' % (obj.photo.url, obj.photo.version_generate(ADMIN_THUMBNAIL).url)
+                return '<a href="%s"><img src="%s" /></a>' % (
+                obj.photo.url, obj.photo.version_generate(ADMIN_THUMBNAIL).url)
             else:
                 return '<a href="%s">%s</a>' % (obj.photo.url, obj.photo.url)
         else:
             return ""
+
     image_thumbnail.allow_tags = True
     image_thumbnail.short_description = "Thumbnail"
 
@@ -88,16 +89,16 @@ class ItemCategoryAdmin(DjangoMpttAdmin):
 
             if Item.objects.filter(category_id=pk).count():
                 node_info.update(
-                    view_url=reverse("admin:base_category_item_changelist", args=[pk]),
-                    transfer_url=reverse("admin:base_item_movement_filtered_changelist", args=[0, pk]),
+                        view_url=reverse("admin:base_category_item_changelist", args=[pk]),
+                        transfer_url=reverse("admin:base_item_movement_filtered_changelist", args=[0, pk]),
                 )
             node_info.update(
-                url=self.get_admin_url('change', (quote(pk),)),
-                storage_url=reverse(
-                    'admin:base_place_item_changelist',
-                    args=(settings.APP_FILTERS["PLACE_STORAGE_ID"],)
-                )+"?category__id__in=%s" % pk,
-                move_url=self.get_admin_url('move', (quote(pk),))
+                    url=self.get_admin_url('change', (quote(pk),)),
+                    storage_url=reverse(
+                            'admin:base_place_item_changelist',
+                            args=(settings.APP_FILTERS["PLACE_STORAGE_ID"],)
+                    ) + "?category__id__in=%s" % pk,
+                    move_url=self.get_admin_url('move', (quote(pk),))
             )
 
         return util.get_tree_from_queryset(qs, handle_create_node, max_level)
@@ -125,16 +126,15 @@ class PlaceAdmin(DjangoMpttAdmin):
 
             if Item.objects.filter(place_id=pk).count():
                 node_info.update(
-                    view_url=reverse("admin:base_place_item_changelist", args=[pk]),
-                    transfer_url=reverse("admin:base_item_movement_filtered_changelist", args=[pk]),
+                        view_url=reverse("admin:base_place_item_changelist", args=[pk]),
+                        transfer_url=reverse("admin:base_item_movement_filtered_changelist", args=[pk]),
                 )
             node_info.update(
-                url=self.get_admin_url('change', (quote(pk),)),
-                move_url=self.get_admin_url('move', (quote(pk),))
+                    url=self.get_admin_url('change', (quote(pk),)),
+                    move_url=self.get_admin_url('move', (quote(pk),))
             )
 
         return util.get_tree_from_queryset(qs, handle_create_node, max_level)
-
 
 
 @admin.register(PurchaseItem)
@@ -229,7 +229,6 @@ class ItemAdmin(FiltersMixin, AdminReadOnly):
 
 @admin.register(ItemSerial)
 class ItemSerialAdmin(FiltersMixin):
-
     class Media:
         # js = ('base/js/place_item_changelist_autocomplete.js',)
         js = ('base/js/serial_purchase_autocomplete.js',)
@@ -239,8 +238,8 @@ class ItemSerialAdmin(FiltersMixin):
     def get_readonly_fields(self, request, obj=None):
         if obj and obj.pk:
             result = list(set(
-                [field.name for field in self.opts.local_fields] +
-                [field.name for field in self.opts.local_many_to_many]
+                    [field.name for field in self.opts.local_fields] +
+                    [field.name for field in self.opts.local_many_to_many]
             ))
             if 'id' in result:
                 result.remove('id')
@@ -248,7 +247,8 @@ class ItemSerialAdmin(FiltersMixin):
         return super(ItemSerialAdmin, self).get_readonly_fields(request, obj)
 
     def get_queryset(self, request):
-        return super(ItemSerialAdmin, self).get_queryset(request).select_related('item', 'item__category', 'item__place')
+        return super(ItemSerialAdmin, self).get_queryset(request).select_related('item', 'item__category',
+                                                                                 'item__place')
 
     def owner(self, instance):
         return instance.item.place.name
@@ -288,8 +288,6 @@ class ItemChunkAdmin(FiltersMixin, AdminReadOnly):
         fields = super(ItemChunkAdmin, self).get_readonly_fields(request, obj)
         fields.remove('cell')
         return fields
-
-
 
 
 @admin.register(TransactionItem)
@@ -401,7 +399,6 @@ class TransactionAdmin(FiltersMixin, admin.ModelAdmin):
 
 
 class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
-
     class Media:
         js = ('base/js/place_item_changelist_autocomplete.js',)
 
@@ -441,9 +438,9 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
     def custom_cell(self, obj):
         cell_list = list(set(obj.serials.filter(cell__isnull=False).values_list("cell__name", flat=True)))
         if len(cell_list) > 1:
-                # or (cell_list and obj.cell is not None and not obj.cell.name == cell_list[0]):
+            # or (cell_list and obj.cell is not None and not obj.cell.name == cell_list[0]):
             return "+".join(sorted(cell_list))
-        f = ItemInlineForm(instance=obj, auto_id='id_item_'+str(obj.pk)+'_%s')
+        f = ItemInlineForm(instance=obj, auto_id='id_item_' + str(obj.pk) + '_%s')
         html = self.tpl.render(Context({"form": f}))
         return mark_safe('<span class="autocomplete-wrapper-js" '
                          'data-url="/base/ajax/item_cell" data-item-id="%s">%s</span>' % (obj.pk, html))
@@ -506,7 +503,6 @@ create_model_admin(PlaceItemAdmin, name='place_item', model=Item)
 
 
 class CategoryItemAdmin(HiddenAdminModelMixin, ItemAdmin):
-
     list_display = ['category_name', 'quantity', 'place', 'items_serials_changelist_link',
                     'items_chunks_changelist_link', 'item_movement_changelist_link']
 
@@ -576,7 +572,6 @@ create_model_admin(CategoryItemAdmin, name='category_item', model=Item)
 
 
 class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
-
     class Media:
         js = (
             'base/js/place_item_changelist_autocomplete.js',
@@ -619,8 +614,8 @@ class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
         else:
             self.item = item
             extra_context.update({'cl_header': _(u"Serials for <{name}> in <{place}>".format(
-                name=item.category.name,
-                place=item.place.name
+                    name=item.category.name,
+                    place=item.place.name
             ))})
         view = super(ItemSerialsFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
@@ -631,7 +626,7 @@ class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
     def custom_cell(self, obj):
         if not obj.item.place.has_cells:
             return obj.cell
-        f = ItemInlineForm(instance=obj, auto_id='id_item_'+str(obj.pk)+'_%s')
+        f = ItemInlineForm(instance=obj, auto_id='id_item_' + str(obj.pk) + '_%s')
         html = self.tpl.render(Context({"form": f}))
         return mark_safe('<span class="autocomplete-wrapper-js" '
                          'data-url="/base/ajax/serial_cell" data-item-id="%s">%s</span>' % (obj.pk, html))
@@ -642,13 +637,13 @@ class ItemSerialsFilteredAdmin(HiddenAdminModelMixin, ItemSerialAdmin):
         except Warranty.DoesNotExist:
             warranty = None
 
-        f = WarrantyInlineForm(instance=warranty, auto_id='id_warranty_'+str(obj.pk)+'_%s')
+        f = WarrantyInlineForm(instance=warranty, auto_id='id_warranty_' + str(obj.pk) + '_%s')
         html = self.tpl.render(Context({"form": f}))
         return mark_safe('<span class="date-warranty-wrapper-js" '
                          'data-item-id="%s">' % obj.pk + ''
-                         '%s' % html + ''
-                         '<span class="btn confirm-js"><img src="/static/glyphicons/glyphicons-207-ok-2.png"></span>'
-                         '</span>')
+                                                         '%s' % html + ''
+                                                                       '<span class="btn confirm-js"><img src="/static/glyphicons/glyphicons-207-ok-2.png"></span>'
+                                                                       '</span>')
 
     def get_urls(self):
 
@@ -671,7 +666,6 @@ create_model_admin(ItemSerialsFilteredAdmin, name='item_serials_filtered', model
 
 
 class ItemChunksFilteredAdmin(HiddenAdminModelMixin, ItemChunkAdmin):
-
     class Media:
         js = ('base/js/place_item_changelist_autocomplete.js',)
 
@@ -704,8 +698,8 @@ class ItemChunksFilteredAdmin(HiddenAdminModelMixin, ItemChunkAdmin):
         else:
             self.item = item
             extra_context.update({'cl_header': _(u"Chunks for <{name}> in <{place}>".format(
-                name=item.category.name,
-                place=item.place.name
+                    name=item.category.name,
+                    place=item.place.name
             ))})
         view = super(ItemChunksFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
@@ -716,7 +710,7 @@ class ItemChunksFilteredAdmin(HiddenAdminModelMixin, ItemChunkAdmin):
     def custom_cell(self, obj):
         if not obj.item.place.has_cells:
             return obj.cell
-        f = ItemInlineForm(instance=obj, auto_id='id_item_'+str(obj.pk)+'_%s')
+        f = ItemInlineForm(instance=obj, auto_id='id_item_' + str(obj.pk) + '_%s')
         html = self.tpl.render(Context({"form": f}))
         return mark_safe('<span class="autocomplete-wrapper-js" '
                          'data-url="/base/ajax/chunk_cell" data-item-id="%s">%s</span>' % (obj.pk, html))
@@ -756,11 +750,11 @@ class OrderItemSerialAdmin(FiltersMixin, admin.ModelAdmin):
 
     def get_queryset(self, request):
         qs = super(OrderItemSerialAdmin, self).get_queryset(request).select_related(
-            'item', 'item__category', 'item__place'
+                'item', 'item__category', 'item__place'
         )
         return qs.filter(
-            item__category_id__in=get_descendants_ids(ItemCategory, settings.APP_FILTERS["CAT_ORDERS_ID"]),
-            item__place_id__in=get_descendants_ids(Place, settings.APP_FILTERS["PLACE_WORKERS_ID"])
+                item__category_id__in=get_descendants_ids(ItemCategory, settings.APP_FILTERS["CAT_ORDERS_ID"]),
+                item__place_id__in=get_descendants_ids(Place, settings.APP_FILTERS["PLACE_WORKERS_ID"])
         )
 
     def owner(self, instance):
@@ -782,16 +776,15 @@ class ContractItemSerialAdmin(FiltersMixin, admin.ModelAdmin):
 
     def get_queryset(self, request):
         qs = super(ContractItemSerialAdmin, self).get_queryset(request).select_related(
-            'item', 'item__category', 'item__place'
+                'item', 'item__category', 'item__place'
         )
         return qs.filter(
-            item__category_id__in=get_descendants_ids(ItemCategory, settings.APP_FILTERS["CAT_CONTRACTS_ID"]),
-            item__place_id__in=get_descendants_ids(Place, settings.APP_FILTERS["PLACE_WORKERS_ID"])
+                item__category_id__in=get_descendants_ids(ItemCategory, settings.APP_FILTERS["CAT_CONTRACTS_ID"]),
+                item__place_id__in=get_descendants_ids(Place, settings.APP_FILTERS["PLACE_WORKERS_ID"])
         )
 
     def owner(self, instance):
         return instance.item.place.name
-
 
 
 @admin.register(VItemMovement)
@@ -836,7 +829,8 @@ class ItemMovementFilteredAdmin(HiddenAdminModelMixin, ItemMovementAdmin):
             qs = qs.filter(category_id=self.category_id)
         return qs
 
-    def changelist_view(self, request, place_id=None, category_id=None, extra_context=None):  # pylint:disable=arguments-differ
+    def changelist_view(self, request, place_id=None, category_id=None,
+                        extra_context=None):  # pylint:disable=arguments-differ
         self.place_id = int(place_id or "0")
         self.category_id = int(category_id or "0")
         extra_context = extra_context or {}
@@ -856,11 +850,11 @@ class ItemMovementFilteredAdmin(HiddenAdminModelMixin, ItemMovementAdmin):
             extra_context.update({'cl_header': _(u"Movement history for <{category_name}> in <{place_name}>".format(
                     category_name=category_name,
                     place_name=place_name
-                ))})
+            ))})
         else:
             extra_context.update({'cl_header': _(u"Movement history for <{place_name}>".format(
                     place_name=place_name
-                ))})
+            ))})
         view = super(ItemMovementFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
 
@@ -879,6 +873,7 @@ class ItemMovementFilteredAdmin(HiddenAdminModelMixin, ItemMovementAdmin):
         return urlpatterns
 
     change_list_template = 'admin/proxy_change_list.html'
+
 
 create_model_admin(ItemMovementFilteredAdmin, name='item_movement_filtered', model=VItemMovement)
 
@@ -914,11 +909,11 @@ class SerialMovementFilteredAdmin(HiddenAdminModelMixin, SerialMovementAdmin):
             extra_context.update({'cl_header': _(u"Movement history for <{serial_name}> in <{place_name}>".format(
                     serial_name=serial_name,
                     place_name=place_name
-                ))})
+            ))})
         else:
             extra_context.update({'cl_header': _(u"Movement history for <{serial_name}>".format(
                     serial_name=serial_name,
-                ))})
+            ))})
         view = super(SerialMovementFilteredAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
 
@@ -937,6 +932,7 @@ class SerialMovementFilteredAdmin(HiddenAdminModelMixin, SerialMovementAdmin):
         return urlpatterns
 
     change_list_template = 'admin/proxy_change_list.html'
+
 
 create_model_admin(SerialMovementFilteredAdmin, name='serial_movement_filtered', model=VSerialMovement)
 
@@ -982,12 +978,11 @@ class FixPlaceMergeAdmin(admin.ModelAdmin):
         return readonly_fields
 
 
-
 @admin.register(Cell)
 class CellAdmin(FiltersMixin, admin.ModelAdmin):
     search_fields = ['name']
     list_display = ['name', 'place']
-    list_filter = (('place', RelatedAutocompleteFilter), )
+    list_filter = (('place', RelatedAutocompleteFilter),)
     form = CellForm
 
 
@@ -1006,7 +1001,7 @@ class TransmutationAdmin(FiltersMixin, admin.ModelAdmin):
     ]
     search_fields = ['source__name', 'transaction_items__category__name']
     inlines = [
-         TransmutationItemInline
+        TransmutationItemInline
     ]
 
     def has_delete_permission(self, request, obj=None):
@@ -1031,13 +1026,12 @@ class TransmutationAdmin(FiltersMixin, admin.ModelAdmin):
         inline_instances = []
 
         if obj and obj.transaction_ptr.is_completed:
-            inlines = [TransmutationItemInlineReadonly, ]
+            _inlines = [TransmutationItemInlineReadonly, ]
         else:
-            inlines = self.inlines
-
+            _inlines = self.inlines
         self._obj = obj
 
-        for inline_class in inlines:
+        for inline_class in _inlines:
             inline = inline_class(self.model, self.admin_site)
             inline_instances.append(inline)
         return inline_instances
@@ -1063,3 +1057,66 @@ class WarrantyAdmin(FiltersMixin, admin.ModelAdmin):
         ('serial__item__category', MPTTRelatedAutocompleteFilter)
     ]
     form = WarrantyForm
+
+
+@admin.register(Return)
+class ReturnAdmin(FiltersMixin, admin.ModelAdmin):
+    class Media:
+        js = ('base/js/transmutation_source_item_autocomplete.js',)
+
+    form = ReturnForm
+    list_display = [
+        '__str__', 'created_at', 'is_completed', 'completed_at', 'source', 'destination',
+    ]
+    list_filter = [
+        ('source', MPTTRelatedAutocompleteFilter),
+        'is_completed',
+    ]
+    search_fields = ['source__name', 'transaction_items__category__name']
+    inlines = [
+        ReturnItemInline
+    ]
+
+    def has_delete_permission(self, request, obj=None):
+        if obj and obj.is_completed:
+            return False
+        else:
+            return super(ReturnAdmin, self).has_delete_permission(request, obj)
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = list(self.readonly_fields)
+        if obj and obj.is_completed:
+            readonly_fields.extend(['source', 'destination', 'completed_at'])
+        return readonly_fields
+
+    def get_fields(self, request, obj=None):
+        fields = super(ReturnAdmin, self).get_fields(request, obj)
+        if obj and obj.is_completed:
+            fields.remove('force_complete')
+        return fields
+
+    def get_inline_instances(self, request, obj=None):
+        inline_instances = []
+
+        if obj and obj.transaction_ptr.is_completed:
+            _inlines = [ReturnItemInlineReadonly, ]
+        else:
+            _inlines = self.inlines
+        self._obj = obj
+
+        for inline_class in _inlines:
+            inline = inline_class(self.model, self.admin_site)
+            inline_instances.append(inline)
+        return inline_instances
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        for instance in instances:
+            instance.save()
+        formset.save_m2m()
+        if self._obj:
+            t = self._obj
+            if hasattr(t, "is_pending") and t.is_pending:
+                # print "complete pending transaction"
+                t.is_pending = False
+                t.ret()
