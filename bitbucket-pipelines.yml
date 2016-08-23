@@ -2,23 +2,38 @@
 # Only use spaces to indent your .yml configuration.
 # -----
 # You can specify a custom docker image from Dockerhub as your build environment
-image: enapiuz/ubuntu-postgres-python
+
+# image: enapiuz/ubuntu-postgres-python
+# preinstalled libs
+
+image: shamanu4/ubuntu-postgres-python
 
 pipelines:
   default:
     - step:
         script: # Modify the commands below to build your repository.
-          - export PG_PASSWORD='bitbucket-pipelines-test'
-          - export SECRET_KEY="1fc96300e817c97510d9c456836b1ed7F^hFdsf"
-          - echo "local   all             all                                     trust" >  /etc/postgresql/9.5/main/pg_hba.conf
-          - echo "host    all             all             127.0.0.1/32            trust" >> /etc/postgresql/9.5/main/pg_hba.conf
+#          - export PG_PASSWORD='bitbucket-pipelines-test'
+#          - export SECRET_KEY="1fc96300e817c97510d9c456836b1ed7F^hFdsf"
+#          - echo "local   all             all                                     trust" >  /etc/postgresql/9.5/main/pg_hba.conf
+#          - echo "host    all             all             127.0.0.1/32            trust" >> /etc/postgresql/9.5/main/pg_hba.conf
           - /etc/init.d/postgresql start
           - psql -c "CREATE USER moneypot WITH PASSWORD '"$PG_PASSWORD"';" -U postgres
           - psql -c "ALTER USER moneypot WITH SUPERUSER;" -U postgres
           - psql -c "CREATE DATABASE moneypot_dist;" -U postgres
           - psql -c "GRANT ALL PRIVILEGES ON DATABASE moneypot_dist to moneypot;" -U postgres                    
-          - apt-get update
-          - apt-get install -y python3-venv git libjpeg8-dev zlib1g-dev libgeos-dev
+#          - apt-get update
+#          - apt-get install -y \
+#                python3-venv \
+#                git \
+#                libjpeg8-dev \
+#                zlib1g-dev \
+#                binutils \
+#                libproj-dev \
+#                gdal-bin \
+#                swig \
+#                python3.5-dev \
+#                libgeos++-dev \
+#                libgeos-dev \
           - python3.5 -m venv env 
           - source env/bin/activate
           - cp moneypot/settings/local-dist.py moneypot/settings/local.py
