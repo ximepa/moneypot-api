@@ -37,7 +37,7 @@ def update_env():
     env.project_dir = '/home/maxim/production/%s/%s' % (env.project_name, env.project_main_app)
     env.static_root = '/home/maxim/production/%s/static/' % env.project_name
     env.virtualenv = '/home/maxim/production/%s/env' % env.project_name
-    env.code_repo = 'git@bitbucket.org:timstaff/moneypot-api.git'
+    env.code_repo = 'git@bitbucket.org:timdevs/moneypot-api.git'
     env.django_settings_module = '%s.settings' % env.project_main_app
 
 
