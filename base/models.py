@@ -1510,7 +1510,10 @@ class Return(Transaction):
                 )
                 ti = None
                 try:
-                    serial = ItemSerial.objects.get(serial=ri.serial, item__category=ri.category)
+                    if ri.serial:
+                        serial = ItemSerial.objects.get(serial=ri.serial, item__category=ri.category)
+                    else:
+                        serial = None
                     ti = TransactionItem.objects.create(
                         transaction=t_prep,
                         category=ri.category,
@@ -1538,11 +1541,14 @@ class Return(Transaction):
                         cell=ri.cell
                     )
                     p_prep.complete()
-                    serial = ItemSerial.objects.get(
-                            serial=ri.serial,
-                            item__category=ri.category,
-                            item__place=ri.source
-                    )
+                    if ri.serial:
+                        serial = ItemSerial.objects.get(
+                                serial=ri.serial,
+                                item__category=ri.category,
+                                item__place=ri.source
+                        )
+                    else:
+                        serial = None
                     if not ti:
                         ti = TransactionItem.objects.create(
                             transaction=t_prep,
@@ -1555,11 +1561,14 @@ class Return(Transaction):
                         ri.save()
                     t_prep.force_complete()
 
-            serial = ItemSerial.objects.get(
-                serial=ri.serial,
-                item__category=ri.category,
-                item__place=self.source
-            )
+            if ri.serial:
+                serial = ItemSerial.objects.get(
+                    serial=ri.serial,
+                    item__category=ri.category,
+                    item__place=ri.source
+                )
+            else:
+                serial = None
 
             TransactionItem.objects.create(
                 transaction_id=self.transaction_ptr_id,
