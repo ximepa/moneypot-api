@@ -1,6 +1,7 @@
 coverage
 Django
 django-autocomplete-light
+django-cors-headers
 django-daterange-filter
 django-debug-panel
 django-debug-toolbar

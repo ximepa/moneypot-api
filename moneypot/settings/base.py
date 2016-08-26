@@ -47,6 +47,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.flatpages',
     # batteries
+    'corsheaders',
     'mptt',
     'django_mptt_admin',
     'djorm_pgtrgm',
@@ -62,6 +63,7 @@ INSTALLED_APPS = (
 
 MIDDLEWARE_CLASSES = (
     'downtime.middleware.DowntimeMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -106,6 +108,8 @@ AUTHENTICATION_BACKENDS = (
     # 'guardian.backends.ObjectPermissionBackend',
 )
 
+CORS_ORIGIN_ALLOW_ALL = True
+
 ANONYMOUS_USER_ID = -1
 
 ROOT_URLCONF = 'moneypot.urls'
@@ -144,7 +148,16 @@ VERSIONS_BASEDIR = "_versions"
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
-    )
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_FILTER_BACKENDS': (
+        'rest_framework.filters.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 20
 }
 
 VERSION = "1.0.4"
