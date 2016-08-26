@@ -79,7 +79,7 @@ def ensure_virtualenv():
         return
 
     with cd(env.code_dir):
-       run("virtualenv --no-site-packages --python=%s %s" %
+       run("%s -m venv %s" %
            (PYTHON_BIN, env.virtualenv))
        run("echo %s > %s/lib/%s/site-packages/projectsource.pth" %
            (env.project_dir, env.virtualenv, PYTHON_BIN))
