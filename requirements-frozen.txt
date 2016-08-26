@@ -5,6 +5,7 @@ Django==1.8.5
 django-appconf==1.0.1
 django-autocomplete-light==2.2.10
 django-compressor==1.5
+django-cors-headers==1.1.0
 django-daterange-filter==1.1.1
 django-debug-panel==0.8.1
 django-debug-toolbar==1.4
