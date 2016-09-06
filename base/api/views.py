@@ -15,4 +15,4 @@ class HomeView(APIView):
     """
     def get(self, request):
         p = Place.objects.get(pk=896)
-        return Response(PlaceSerializer(p).data)
+        return Response(PlaceSerializer(p, context={'request': request}).data)

@@ -57,6 +57,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'rest_framework.authtoken',
     'gitrevision',
+    'sorl.thumbnail',
     # project apps
     'base',
 )
@@ -164,6 +165,9 @@ REST_FRAMEWORK = {
 VERSION = "1.0.4"
 RELEASE_NOTES_URL = "/p/release-1.0.4/"
 GRAPPELLI_ADMIN_TITLE = "Склад. версія %s" % VERSION
+
+THUMBNAIL_DUMMY = True
+PLACEHOLDER_IMAGE_PATH = "%s/%s" % (STATIC_ROOT, "base/img/empty.gif")
 
 APP_FILTERS = {
     'CAT_ORDERS_ID': 85,

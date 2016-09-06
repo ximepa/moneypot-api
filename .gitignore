@@ -118,3 +118,4 @@ env-py3
 py27-env
 *.pid
 __stash
+/media/

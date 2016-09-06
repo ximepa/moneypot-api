@@ -12,9 +12,13 @@ from django.utils import timezone
 from django.db import transaction
 from django.conf import settings
 from filebrowser.fields import FileBrowseField
+from sorl.thumbnail import get_thumbnail
 import re
-import json
 from copy import copy
+
+
+class Object(object):
+    pass
 
 
 class IncompatibleUnitException(ValueError):
@@ -39,6 +43,17 @@ class DryRun(RuntimeError):
 
 class TransactionNotReady(RuntimeError):
     pass
+
+
+def get_placeholder_image():
+    from django.core.files.images import ImageFile
+    from django.core.files.storage import get_storage_class
+    storage_class = get_storage_class(settings.STATICFILES_STORAGE)
+    storage = storage_class()
+    placeholder = storage.open(settings.PLACEHOLDER_IMAGE_PATH)
+    image = ImageFile(placeholder)
+    image.storage = storage
+    return image
 
 
 class GeoName(models.Model):
@@ -121,6 +136,15 @@ class ItemCategory(MPTTModel):
     @staticmethod
     def autocomplete_search_fields():
         return "id__iexact", "name__icontains",
+
+    @property
+    def thumbnail(self):
+        # TODO: need better implementation (1)
+        im = get_thumbnail(self.photo or get_placeholder_image(), '128x128', crop='center', quality=99)
+        # if not im:
+        #     im = Object()
+        #     im.url = "/static/base/img/empty.gif"
+        return im
 
 
 class ItemCategoryComment(models.Model):

@@ -23,9 +23,10 @@ class StaticRevision(object):
         request.release_notes_url = settings.RELEASE_NOTES_URL
 
     def process_response(self, request, response):
-        if hasattr(response, 'content') and not response.has_header('Content-Disposition'):
-            revision = getattr(request, "git_revision", "UNKNOWN_REVISION")
-            html = response.content.decode("utf-8")
-            html = re.sub("\.(js|css)(\")", ".\\1?rev=%s\\2" % revision, html)
-            response.content = html.encode("utf-8")
+        if response.has_header('Content-Type'):
+            if "text/html" in response['Content-Type']:
+                revision = getattr(request, "git_revision", "UNKNOWN_REVISION")
+                html = response.content
+                html = re.sub(b"\.(js|css)(\")", b".\\1?rev=%s\\2" % revision.encode('utf-8'), html, re.UNICODE)
+                response.content = html
         return response
