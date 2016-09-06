@@ -24,7 +24,7 @@ django-nose==1.4.2
 django-pipeline==1.5.4
 git+https://github.com/jorgecarleitao/django-sphinxql.git
 djangorestframework==3.4.6
-djorm-ext-pgtrgm==0.3
+djorm-ext-pgtrgm==0.1
 ecdsa==0.13
 Fabric3==1.12.post1
 futures==3.0.3
