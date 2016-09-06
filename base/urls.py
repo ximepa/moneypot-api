@@ -3,6 +3,7 @@ from __future__ import print_function, division, unicode_literals, absolute_impo
 
 from django.conf.urls import patterns, url
 
+
 urlpatterns = patterns('base.views',
                        url(r'^index/', 'index',
                            name="index"),
@@ -26,4 +27,6 @@ urlpatterns = patterns('base.views',
                            name="ajax_serial_warranty"),
                        url(r'^ajax/serial_warranty_delete/(?P<serial_id>\d+)/', 'ajax_serial_warranty',
                            name="ajax_serial_warranty_delete"),
+                       url(r'^place_item/(?P<place_id>\d+)/export', 'export_items',
+                           name="export_items"),
                        )

@@ -1,16 +1,15 @@
 # -*- encoding: utf-8 -*-
 from __future__ import print_function, division, unicode_literals, absolute_import
 
+import re
 import sys
 
-from django.views.debug import ExceptionReporter
-from django.http import HttpResponse
 from django.conf import settings
-import re
+from django.http import HttpResponse
+from django.views.debug import ExceptionReporter
 
 
 class ExceptionMiddleware(object):
-
     def process_exception(self, request, exception):
         print(exception)
         exc_type, exc_value, tb = sys.exc_info()
@@ -20,12 +19,11 @@ class ExceptionMiddleware(object):
 
 
 class StaticRevision(object):
-
     def process_request(self, request):
         request.release_notes_url = settings.RELEASE_NOTES_URL
 
     def process_response(self, request, response):
-        if hasattr(response, 'content'):
+        if hasattr(response, 'content') and not response.has_header('Content-Disposition'):
             revision = getattr(request, "git_revision", "UNKNOWN_REVISION")
             html = response.content.decode("utf-8")
             html = re.sub("\.(js|css)(\")", ".\\1?rev=%s\\2" % revision, html)
