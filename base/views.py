@@ -285,7 +285,7 @@ def export_items(request, place_id=None):
     norm_fmt.set_text_wrap()
 
     sheet = book.add_worksheet(safe_name)
-    sheet.merge_range('A1:D1', pl.name, blue_fmt)
+    sheet.merge_range('A1:E1', "%s -- %s" % (pl.name, time_str), blue_fmt)
     sheet.set_column(0, 0, 25)
     sheet.set_column(1, 1, 50)
     sheet.set_column(2, 2, 8)
@@ -303,6 +303,9 @@ def export_items(request, place_id=None):
     for p in places:
         items = p.items.filter(quantity__gt=0).select_related(
             'place', 'category', 'category__unit').order_by('category__name')
+        row += 1
+        sheet.merge_range(row, 0, row, 4, p.name, bold_fmt)
+        sheet.set_row(row, None, None, {'level': p.level - base_level})
         for i in items:
             row += 1
             sheet.write(row, 0, i.place.name, norm_fmt)
@@ -312,7 +315,7 @@ def export_items(request, place_id=None):
             sheet.write(row, 4,
                         ', '.join(map(lambda x: x.serial, i.serials.all()))
                         , norm_fmt)
-            sheet.set_row(row, None, None, {'level': p.level - base_level})
+            sheet.set_row(row, None, None, {'level': p.level - base_level + 1})
 
     book.close()
 
