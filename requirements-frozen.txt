@@ -22,9 +22,9 @@ django-mptt==0.7.4
 django-mptt-admin==0.3.1
 django-nose==1.4.2
 django-pipeline==1.5.4
-django-sphinxql==1.0.0
+git+https://github.com/jorgecarleitao/django-sphinxql.git
 djangorestframework==3.4.6
-djorm-ext-pgtrgm==0.1
+djorm-ext-pgtrgm==0.3
 ecdsa==0.13
 Fabric3==1.12.post1
 futures==3.0.3
