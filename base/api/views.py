@@ -23,8 +23,10 @@ class HomeView(APIView):
 
         q = request.GET.get('q', None)
         items = place.items.all()
-        if q:
+        if len(q) > 3:
             items = items.filter(category__name__similar=q)
+        elif q:
+            items = items.filter(category__name__icontains=q)
         data = PlaceSerializer(place, context={'request': request}).data
         data['items'] = ItemSerializer(items, many=True, context={'request': request}).data
 
