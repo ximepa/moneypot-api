@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 from rest_framework import serializers
 
-from base.models import ItemCategory, Item, ItemSerial, Place, VItemMovement
+from base.models import ItemCategory, Item, ItemSerial, Place, VItemMovement, VSerialMovement
 
 
 class CategorySerializer(serializers.HyperlinkedModelSerializer):
@@ -48,3 +48,11 @@ class VItemMovementSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = VItemMovement
         fields = ('item_category_name', 'category', 'quantity', 'source_name', 'destination_name', 'completed_at')
+
+
+class VSerialMovementSerializer(serializers.HyperlinkedModelSerializer):
+    category = CategorySerializer(read_only=True)
+
+    class Meta:
+        model = VSerialMovement
+        fields = ('item_category_name', 'category', 'serial', 'source_name', 'destination_name', 'completed_at')

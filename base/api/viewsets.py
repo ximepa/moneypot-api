@@ -2,9 +2,9 @@
 from rest_framework import viewsets, filters
 from rest_framework.exceptions import NotFound
 from django.db.models import Q
-from base.models import ItemCategory, VItemMovement
+from base.models import ItemCategory, VItemMovement, VSerialMovement
 
-from .serializers import CategorySerializer, VItemMovementSerializer
+from .serializers import CategorySerializer, VItemMovementSerializer, VSerialMovementSerializer
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -21,16 +21,10 @@ class CategoryViewSet(viewsets.ModelViewSet):
 #         fields = ['category', 'in_stock', 'min_price', 'max_price']
 
 
-class VItemMovementViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = VItemMovement.objects.all()
-    serializer_class = VItemMovementSerializer
-    search_fields = ('item_category_name', )
-    filter_fields = ('category', )
-
+class FilteredByPlaceMixin(object):
     def get_queryset(self):
         """
-        This ViewSet should return a list of all item movements
-        for the currently authenticated user.
+        queryset filtered for current user
         """
         place = None
         try:
@@ -39,5 +33,18 @@ class VItemMovementViewSet(viewsets.ReadOnlyModelViewSet):
             print(e)
         if not place:
             raise NotFound()
-        return VItemMovement.objects.filter(Q(source=place)|Q(destination=place)).order_by('-completed_at')
+        return self.queryset.filter(Q(source=place)|Q(destination=place)).order_by('-completed_at')
 
+
+class VItemMovementViewSet(FilteredByPlaceMixin, viewsets.ReadOnlyModelViewSet):
+    queryset = VItemMovement.objects.all()
+    serializer_class = VItemMovementSerializer
+    search_fields = ('item_category_name', )
+    filter_fields = ('category', )
+
+
+class VSerialMovementViewSet(FilteredByPlaceMixin, viewsets.ReadOnlyModelViewSet):
+    queryset = VSerialMovement.objects.all()
+    serializer_class = VSerialMovementSerializer
+    search_fields = ('item_category_name', 'serial')
+    filter_fields = ('serial', )
