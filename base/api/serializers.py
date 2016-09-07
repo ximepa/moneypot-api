@@ -35,11 +35,14 @@ class ItemSerializer(serializers.HyperlinkedModelSerializer):
 
 class PlaceSerializer(serializers.HyperlinkedModelSerializer):
 
-    items = ItemSerializer(many=True, read_only=True)
+    items = serializers.SerializerMethodField('get_items_empty')
 
     class Meta:
         model = Place
         fields = ('id', 'name', 'items')
+
+    def get_items_empty(self, obj):
+        return []
 
 
 class VItemMovementSerializer(serializers.HyperlinkedModelSerializer):

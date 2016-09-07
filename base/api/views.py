@@ -3,8 +3,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from base.models import Place
-from .serializers import PlaceSerializer
+from .serializers import PlaceSerializer, ItemSerializer
 
 
 class HomeView(APIView):
@@ -21,4 +20,12 @@ class HomeView(APIView):
             print(e)
         if not place:
             raise NotFound()
-        return Response(PlaceSerializer(place, context={'request': request}).data)
+
+        q = request.GET.get('q', None)
+        items = place.items.all()
+        if q:
+            items = items.filter(category__name__similar=q)
+        data = PlaceSerializer(place, context={'request': request}).data
+        data['items'] = ItemSerializer(items, many=True, context={'request': request}).data
+
+        return Response(data)
