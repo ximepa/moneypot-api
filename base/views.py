@@ -249,23 +249,6 @@ def ajax_serial_warranty(request, serial_id, datestr=None):
 
 
 def export_items(request, place_id=None):
-
-    # book = xlsxwriter.Workbook(output)
-    # sheet = book.add_worksheet('test')
-    # sheet.write(0, 0, 'Тест!')
-    # sheet.set_row(1, None, None, {'level': 2})
-    # sheet.set_row(2, None, None, {'level': 2})
-    # sheet.set_row(3, None, None, {'level': 2})
-    # sheet.set_row(4, None, None, {'level': 2})
-    # sheet.set_row(5, None, None, {'level': 1})
-    #
-    # sheet.set_row(6, None, None, {'level': 2})
-    # sheet.set_row(7, None, None, {'level': 2})
-    # sheet.set_row(8, None, None, {'level': 2})
-    # sheet.set_row(9, None, None, {'level': 2})
-    # sheet.set_row(10, None, None, {'level': 1})
-    # book.close()
-
     try:
         pl = Place.objects.get(pk=place_id)
     except Place.DoesNotExist:
