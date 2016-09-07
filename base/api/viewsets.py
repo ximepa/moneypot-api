@@ -39,5 +39,5 @@ class VItemMovementViewSet(viewsets.ReadOnlyModelViewSet):
             print(e)
         if not place:
             raise NotFound()
-        return VItemMovement.objects.filter(Q(source=place)|Q(destination=place))
+        return VItemMovement.objects.filter(Q(source=place)|Q(destination=place)).order_by('-completed_at')
 
