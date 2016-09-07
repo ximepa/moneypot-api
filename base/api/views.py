@@ -22,11 +22,12 @@ class HomeView(APIView):
             raise NotFound()
 
         q = request.GET.get('q', None)
-        items = place.items.all()
-        if len(q) > 3:
-            items = items.filter(category__name__similar=q)
+        if not q:
+            items = place.items.all()
+        elif len(q) > 3:
+            items = place.items.filter(category__name__similar=q)
         elif q:
-            items = items.filter(category__name__icontains=q)
+            items = place.items.filter(category__name__icontains=q)
         data = PlaceSerializer(place, context={'request': request}).data
         data['items'] = ItemSerializer(items, many=True, context={'request': request}).data
 
