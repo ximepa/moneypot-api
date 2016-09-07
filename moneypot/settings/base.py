@@ -59,6 +59,7 @@ INSTALLED_APPS = (
     'gitrevision',
     'sorl.thumbnail',
     # project apps
+    'profile',
     'base',
 )
 
