@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-
+from rest_framework.exceptions import NotFound
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -14,5 +14,11 @@ class HomeView(APIView):
     * Requires token authentication.
     """
     def get(self, request):
-        p = Place.objects.get(pk=896)
-        return Response(PlaceSerializer(p, context={'request': request}).data)
+        place = None
+        try:
+            place = request.user.profile.place
+        except Exception as e:
+            print(e)
+        if not place:
+            raise NotFound()
+        return Response(PlaceSerializer(place, context={'request': request}).data)
