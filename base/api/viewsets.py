@@ -92,7 +92,6 @@ class TransactionViewSet(FilteredByPlaceMixin, viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         data = request.data
-        pprint(data)
         try:
             source = Place.objects.get(pk=data['source']['id'])
         except (Place.DoesNotExist, KeyError):
