@@ -13,6 +13,7 @@ def validate_place_name(value, fix=False):
     вул. С.Перовської, 19, кв. 24
     пров. Смідовича, 5, кв. 4
     с. Кочержинці, вул. Черняховського, 13 (груша)
+    с. Родниківка, 2-й пров. Київський, (лінія)
     """
 
     def geoname_lookup(q, fix=False):
@@ -34,24 +35,28 @@ def validate_place_name(value, fix=False):
         return geoname
 
     def street_parse(street_match):
-        if 'п' in street_match.group(1):
+        numerator = street_match.group(1)
+        if 'п' in street_match.group(2):
             prefix = "пров."
-        elif 'в' in street_match.group(1):
+        elif 'в' in street_match.group(2):
             prefix = "вул."
         else:
             raise ValidationError("%s: вулиця чи провулок?" % value)
         print(street_match.groups())
-        ext = street_match.group(3)
-        q = street_match.group(2)
+        ext = street_match.group(4)
+        q = street_match.group(3)
         geoname = geoname_lookup(q, fix)
         part = "%s %s" % (prefix, geoname)
         if ext:
             part = "%s %s" % (part, ext)
+        if numerator:
+            part = "%s %s" % (numerator, part)
         return part
 
     addrs_re = re.compile(r"(\bм\b\.?|\bс\b\.?|\bв\b\.?|\bвул\b\.?|\bпров\b\.?|\bпер\b\.?|\bпр\b\.?)", re.IGNORECASE)
     city_re = re.compile(r"(\bм\b\.?|\bс\b\.?) *(.+)", re.IGNORECASE, )
-    street_re = re.compile(r"(\bв\b\.?|\bвул\b\.?|\bпров\b\.?|\bпер\b\.?|\bпр\b\.?)"
+    street_re = re.compile(r"(\d+-[А-Я]+)? *"
+                           r"(\bв\b\.?|\bвул\b\.?|\bпров\b\.?|\bпер\b\.?|\bпр\b\.?)"
                            r" *([^\(\)\"]+)"
                            r" *(\(.*\)|\".*\")?", re.IGNORECASE, )
     house_re = re.compile(r"^(\d+) *([А-Я]?)(\/\d+ *[А-Я]?)? *(\(.*\)|\".*\")?$", re.IGNORECASE, )
@@ -144,3 +149,4 @@ def validate_place_name(value, fix=False):
 
 if __name__ == "__main__":
     validate_place_name("вул. С.Перовської, 19, кв. 24")
+    validate_place_name("с. Родниківка, 2-й пров. Київський, (лінія)")
