@@ -1,12 +1,11 @@
 # -*- encoding: utf-8 -*-
 from rest_framework import serializers
-from django.core.serializers.json import DjangoJSONEncoder
 
-from base.models import ItemCategory, Item, TransactionItem, ItemSerial, Place, VItemMovement, VSerialMovement, Transaction
+from base.models import ItemCategory, Item, TransactionItem, ItemSerial, Place, VItemMovement, VSerialMovement, \
+    Transaction
 
 
 class CategorySerializer(serializers.HyperlinkedModelSerializer):
-
     photo = serializers.SerializerMethodField('get_static_thumbnail_url')
     relevance = serializers.SerializerMethodField()
 
@@ -31,7 +30,6 @@ class ItemSerialSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class ItemSerializer(serializers.HyperlinkedModelSerializer):
-
     serials = ItemSerialSerializer(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
 
@@ -41,7 +39,6 @@ class ItemSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class TransactionItemSerializer(serializers.HyperlinkedModelSerializer):
-
     serial = ItemSerialSerializer()
     category = CategorySerializer()
 
@@ -51,7 +48,6 @@ class TransactionItemSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class PlaceSerializer(serializers.HyperlinkedModelSerializer):
-
     items = serializers.SerializerMethodField('get_items_empty')
     relevance = serializers.SerializerMethodField()
 
