@@ -11,7 +11,6 @@ from django.views.debug import ExceptionReporter
 
 class ExceptionMiddleware(object):
     def process_exception(self, request, exception):
-        print(exception)
         exc_type, exc_value, tb = sys.exc_info()
         reporter = ExceptionReporter(request, exc_type, exc_value, tb)
         html = reporter.get_traceback_html()
