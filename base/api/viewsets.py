@@ -94,11 +94,11 @@ class TransactionViewSet(FilteredByPlaceMixin, viewsets.ModelViewSet):
         data = request.data
         try:
             source = Place.objects.get(pk=data['source']['id'])
-        except (Place.DoesNotExist, KeyError):
+        except (Place.DoesNotExist, KeyError, ValueError):
             source = Place.objects.create(name=data['source']['name'])
         try:
             destination = Place.objects.get(pk=data['destination']['id'])
-        except (Place.DoesNotExist, KeyError):
+        except (Place.DoesNotExist, KeyError, ValueError):
             destination = Place.objects.create(name=data['destination']['name'])
         transaction = Transaction.objects.create(source=source, destination=destination)
         serializer = TransactionSerializerDetailed(transaction)
