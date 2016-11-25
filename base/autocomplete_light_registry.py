@@ -11,10 +11,19 @@ from .models import Place, ItemCategory, Item, ItemSerial, ItemChunk, Cell, Purc
 ###################################################################################
 
 
+def addslashes(value):
+    """
+    Adds slashes before quotes. Useful for escaping strings in CSV, for
+    example. Less useful for escaping JavaScript; use the ``escapejs``
+    filter instead.
+    """
+    return value.replace('\\', '\\\\').replace('"', '\\"').replace("'", "\\'")
+
+
 class ItemCategoryAutocomplete(autocomplete_light.AutocompleteModelBase):
 
     def choices_for_request(self):
-        q = self.request.GET.get('q', '')
+        q = addslashes(self.request.GET.get('q', ''))
         all_nodes = int(self.request.GET.get('all_nodes', "0"))
         source_id = self.request.GET.get('source_id', None)
 
