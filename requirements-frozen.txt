@@ -7,8 +7,8 @@ django-autocomplete-light==2.2.10
 django-compressor==1.5
 django-cors-headers==1.1.0
 django-daterange-filter==1.1.1
-django-debug-panel==0.8.1
-django-debug-toolbar==1.4
+django-debug-panel==0.8.3
+django-debug-toolbar==1.6
 django-downtime==1.0.4
 django-extensions==1.5.7
 django-filebrowser==3.6.1
@@ -22,9 +22,9 @@ django-mptt==0.7.4
 django-mptt-admin==0.3.1
 django-nose==1.4.2
 django-pipeline==1.5.4
-git+https://github.com/jorgecarleitao/django-sphinxql.git
+django-sphinxql==1.0.0
 djangorestframework==3.4.6
-git+https://github.com/jleivaizq/djorm-ext-pgtrgm
+djorm-ext-pgtrgm==0.1
 ecdsa==0.13
 Fabric3==1.12.post1
 futures==3.0.3
@@ -55,7 +55,7 @@ simplegeneric==0.8.1
 six==1.10.0
 smmap==0.9.0
 sorl-thumbnail==12.3
-sqlparse==0.1.16
+sqlparse==0.2.2
 tablib==0.10.0
 traitlets==4.0.0
 Unidecode==0.4.18
