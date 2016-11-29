@@ -257,7 +257,7 @@ def export_items(request, place_id=None):
     output = BytesIO()
 
     base_level = pl.level
-    safe_name = unidecode(pl.name)
+    safe_name = unidecode(pl.name)[:30]
     time_str = datetime.now().strftime("%Y-%m-%d %H:%M")
     filename = slugify("%s-%s" % (safe_name, time_str))
 
