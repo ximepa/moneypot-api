@@ -22,6 +22,10 @@
     <h1>{{ cl_header|capfirst }} {{ cl_header_addon }}</h1>
     {% endif %}
     <h2>
+        <a href="export/" target="_blank">
+            <img src="{% static "base/img/file_extension_xls.png" %}" width="22" height="22">
+        </a>
+        &nbsp;&nbsp;&nbsp;
         <a href="?{{ show_zero_params }}">
         {% if show_zero == 1 %}
             <img src="{% static "glyphicons/glyphicons-546-eye-minus.png" %}" width="31" height="22">
@@ -31,6 +35,5 @@
             {% trans "show zero" %}
         {% endif %}
         </a>
-        <a href="export/" target="_blank">XLS</a>
     </h2>
 {% endblock %}
