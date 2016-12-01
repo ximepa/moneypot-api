@@ -29,11 +29,11 @@ def parse_serials_data(serials):
             l, r = raw_serial.split('--')
             if not len(r) == len(l):
                 raise InvalidParameters(ugettext(
-                    u'serials range left and rigth parts length mismatch: {raw_serial}'.format(
+                    u'serials range left and right parts length mismatch: {raw_serial}'.format(
                         raw_serial=raw_serial
                     )
                 ))
-            rxp = re.compile(r"^([a-z0-9]*?)([0-9]+)$", re.I)
+            rxp = re.compile(r"^([a-z0-9\-]*?)([0-9]+)$", re.I)
             lm = rxp.match(l)
             rm = rxp.match(r)
             if not lm or not rm:
@@ -47,7 +47,7 @@ def parse_serials_data(serials):
             ln = len(li)
             if not lb == rb:
                 raise InvalidParameters(ugettext(
-                    u'serials range left and rigth parts base mismatch: {raw_serial}, {lb}≠{rb}'.format(
+                    u'serials range left and right parts base mismatch: {raw_serial}, {lb}≠{rb}'.format(
                         raw_serial=raw_serial,
                         rb=rb,
                         lb=lb,
