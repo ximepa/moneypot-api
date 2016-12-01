@@ -6,7 +6,7 @@
         $("#id_source-wrapper").closest("div").append(
             '&nbsp;' +
             '<img class="js-add-source" ' +
-            'src="/static/base/img/warehouse-128.png" width="24px" height="24px" ' +
+            'src="/static/base/img/warehouse-128.png" width="22px" height="22px" ' +
             'style="background-color:grey; cursor:pointer;">'
         );
 
@@ -14,6 +14,19 @@
             var widget = $("#id_source").parents('.autocomplete-light-widget').yourlabsWidget();
             widget.selectChoice($('<span data-value="6">ОСНОВНИЙ СКЛАД</span>'));
         });
+
+        $("#id_destination-wrapper").closest("div").append(
+            '&nbsp;' +
+            '<img class="js-add-destination" ' +
+            'src="/static/base/img/warehouse-128.png" width="22px" height="22px" ' +
+            'style="background-color:grey; cursor:pointer;">'
+        );
+
+        $(".js-add-destination").click(function(){
+            var widget = $("#id_destination").parents('.autocomplete-light-widget').yourlabsWidget();
+            widget.selectChoice($('<span data-value="6">ОСНОВНИЙ СКЛАД</span>'));
+        });
+
 
         var set_source = function() {
 
