@@ -74,3 +74,17 @@
     left: 20px;
     top: 4px;
 }
+
+.js-quick-link {
+    border: 1px solid darkgrey;
+    cursor: pointer;
+    opacity: 0.65;
+    -webkit-transition: opacity 0.25s ease-in-out;
+    -moz-transition: opacity 0.25s ease-in-out;
+    -o-transition: opacity 0.25s ease-in-out;
+    transition: opacity 0.25s ease-in-out;
+}
+
+.js-quick-link:hover {
+    opacity: 1;
+}

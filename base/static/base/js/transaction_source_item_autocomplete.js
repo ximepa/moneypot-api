@@ -5,7 +5,7 @@
 
         $("#id_source-wrapper").closest("div").append(
             '&nbsp;' +
-            '<img class="js-add-source" ' +
+            '<img class="js-quick-link js-add-source" ' +
             'src="/static/base/img/warehouse-128.png" width="22px" height="22px" ' +
             'style="background-color:grey; cursor:pointer;">'
         );
@@ -17,14 +17,23 @@
 
         $("#id_destination-wrapper").closest("div").append(
             '&nbsp;' +
-            '<img class="js-add-destination" ' +
+            '<img class="js-quick-link js-add-destination" ' +
             'src="/static/base/img/warehouse-128.png" width="22px" height="22px" ' +
             'style="background-color:grey; cursor:pointer;">'
+        ).append(
+            '&nbsp;' +
+            '<img class="js-quick-link js-add-destination2" ' +
+            'src="/static/base/img/city-200.png" width="22px" height="22px" ' +
+            'style="background-color:white; cursor:pointer;">'
         );
 
         $(".js-add-destination").click(function(){
             var widget = $("#id_destination").parents('.autocomplete-light-widget').yourlabsWidget();
             widget.selectChoice($('<span data-value="6">ОСНОВНИЙ СКЛАД</span>'));
+        });
+        $(".js-add-destination2").click(function(){
+            var widget = $("#id_destination").parents('.autocomplete-light-widget').yourlabsWidget();
+            widget.selectChoice($('<span data-value="40">Адреси</span>'));
         });
 
 
