@@ -3,6 +3,18 @@
         var $body = $('body');
         var $inlines = $('.grp-tabular');
 
+        $("#id_source-wrapper").closest("div").append(
+            '&nbsp;' +
+            '<img class="js-add-source" ' +
+            'src="/static/base/img/warehouse-128.png" width="24px" height="24px" ' +
+            'style="background-color:grey; cursor:pointer;">'
+        );
+
+        $(".js-add-source").click(function(){
+            var widget = $("#id_source").parents('.autocomplete-light-widget').yourlabsWidget();
+            widget.selectChoice($('<span data-value="6">ОСНОВНИЙ СКЛАД</span>'));
+        });
+
         var set_source = function() {
 
             var value = $(".autocomplete-light-widget #id_source").val();
