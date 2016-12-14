@@ -4,7 +4,9 @@ from __future__ import print_function, division, unicode_literals, absolute_impo
 from decimal import Decimal
 
 from django.db import models, IntegrityError
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _, ugettext
+from django.contrib.staticfiles.templatetags.staticfiles import static
 from mptt.models import MPTTModel
 from django.core.urlresolvers import reverse
 from django.core.exceptions import ValidationError
@@ -15,6 +17,8 @@ from filebrowser.fields import FileBrowseField
 from sorl.thumbnail import get_thumbnail
 import re
 from copy import copy
+
+from base.decorators import lazyprop
 
 
 class Object(object):
@@ -145,6 +149,62 @@ class ItemCategory(MPTTModel):
         #     im = Object()
         #     im.url = "/static/base/img/empty.gif"
         return im
+
+    @lazyprop
+    def node_view_url(self):
+        return reverse("admin:base_category_item_changelist", args=[self.pk])
+
+    def node_view_link(self):
+        return mark_safe('<a href="%s"><img src="%s" width="16" height="8" alt="%s"></a>' % (
+            self.node_view_url,
+            static("glyphicons/glyphicons-52-eye-open.png"),
+            _("view"),
+        ))
+
+    node_view_link.short_description = mark_safe('<img src="%s" width="16" height="8" alt="%s">' % (
+        static("glyphicons/glyphicons-52-eye-open.png"),
+        _("view"),
+    ))
+    node_view_link.allow_rags = True
+
+    @lazyprop
+    def node_transfer_url(self):
+        if self.items.count():
+            return reverse("admin:base_item_movement_filtered_changelist", args=[0, self.pk])
+        return ''
+
+    def node_transfer_link(self):
+        return mark_safe('<a href="%s"><img src="%s" width="11" height="10" alt="%s"></a>' % (
+            self.node_transfer_url,
+            static("glyphicons/glyphicons-458-transfer.png"),
+            _("view movement"),
+        ))
+
+    node_transfer_link.short_description = mark_safe('<img src="%s" width="11" height="10" alt="%s">' % (
+        static("glyphicons/glyphicons-458-transfer.png"),
+        _("view movement"),
+    ))
+    node_transfer_link.allow_rags = True
+
+    @lazyprop
+    def node_storage_url(self):
+        return reverse(
+            'admin:base_place_item_changelist',
+            args=(settings.APP_FILTERS["PLACE_STORAGE_ID"],)
+        ) + "?category__id__in=%s" % self.pk
+
+    def node_storage_link(self):
+        return mark_safe('<a href="%s"><img src="%s" width="10" height="10" alt="%s"></a>' % (
+            self.node_storage_url,
+            static("glyphicons/glyphicons-157-show-thumbnails.png"),
+            _("view storage"),
+        ))
+
+    node_storage_link.short_description = mark_safe('<img src="%s" width="10" height="10" alt="%s">' % (
+        static("glyphicons/glyphicons-157-show-thumbnails.png"),
+        _("view storage"),
+    ))
+    node_storage_link.allow_rags = True
 
 
 class ItemCategoryComment(models.Model):

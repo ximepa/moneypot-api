@@ -64,7 +64,8 @@ class ItemCategoryAdmin(DjangoMpttAdmin):
     search_fields = ['name', ]
     tree_auto_open = False
     inlines = [ItemCategoryCommentInline]
-    list_display = ['name', 'image_thumbnail', 'timestamp']
+    list_display = ['name', 'image_thumbnail', 'timestamp',
+                    'node_view_link', 'node_transfer_link', 'node_storage_link']
     list_filter = [('timestamp', DateRangeFilter), ]
     readonly_fields = ['timestamp', ]
 
