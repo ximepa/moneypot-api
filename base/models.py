@@ -174,11 +174,14 @@ class ItemCategory(MPTTModel):
         return ''
 
     def node_transfer_link(self):
-        return mark_safe('<a href="%s"><img src="%s" width="11" height="10" alt="%s"></a>' % (
-            self.node_transfer_url,
-            static("glyphicons/glyphicons-458-transfer.png"),
-            _("view movement"),
-        ))
+        if self.node_transfer_url:
+            return mark_safe('<a href="%s"><img src="%s" width="11" height="10" alt="%s"></a>' % (
+                self.node_transfer_url,
+                static("glyphicons/glyphicons-458-transfer.png"),
+                _("view movement"),
+            ))
+        else:
+            return ''
 
     node_transfer_link.short_description = mark_safe('<img src="%s" width="11" height="10" alt="%s">' % (
         static("glyphicons/glyphicons-458-transfer.png"),
@@ -337,6 +340,51 @@ class Place(MPTTModel):
     @staticmethod
     def autocomplete_search_fields():
         return "id__iexact", "name__icontains",
+
+    @lazyprop
+    def node_view_url(self):
+        if self.items.count():
+            return reverse("admin:base_place_item_changelist", args=[self.pk])
+        else:
+            return ''
+
+    def node_view_link(self):
+        if self.node_view_url:
+            return mark_safe('<a href="%s"><img src="%s" width="16" height="8" alt="%s"></a>' % (
+                self.node_view_url,
+                static("glyphicons/glyphicons-52-eye-open.png"),
+                _("view"),
+            ))
+        else:
+            return ''
+
+    node_view_link.short_description = mark_safe('<img src="%s" width="16" height="8" alt="%s">' % (
+        static("glyphicons/glyphicons-52-eye-open.png"),
+        _("view"),
+    ))
+    node_view_link.allow_rags = True
+
+    @lazyprop
+    def node_transfer_url(self):
+        if self.items.count():
+            return reverse("admin:base_item_movement_filtered_changelist", args=[self.pk]),
+        return ''
+
+    def node_transfer_link(self):
+        if self.node_transfer_url:
+            return mark_safe('<a href="%s"><img src="%s" width="11" height="10" alt="%s"></a>' % (
+                self.node_transfer_url,
+                static("glyphicons/glyphicons-458-transfer.png"),
+                _("view movement"),
+            ))
+        else:
+            return ''
+
+    node_transfer_link.short_description = mark_safe('<img src="%s" width="11" height="10" alt="%s">' % (
+        static("glyphicons/glyphicons-458-transfer.png"),
+        _("view movement"),
+    ))
+    node_transfer_link.allow_rags = True
 
 
 class MovementItem(models.Model):
