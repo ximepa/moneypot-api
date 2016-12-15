@@ -87,13 +87,15 @@ jQuery(function() {
     if(parts.length == 2) {
         $.getJSON("/base/get_object_ancestors/" + hash + "/", function(response) {
             var ancestors = response;
-            var node_id = ancestors.pop();
             if(ancestors.length) {
+                var node_id = ancestors.pop();
                 var state = {
                     "open_nodes":ancestors,
                     "selected_node":[node_id]
                 };
                 localStorage.setItem('base_' + parts[0].toLowerCase(), JSON.stringify(state));
+                initTree($tree, autoopen, autoescape);
+            } else {
                 initTree($tree, autoopen, autoescape);
             }
         });
