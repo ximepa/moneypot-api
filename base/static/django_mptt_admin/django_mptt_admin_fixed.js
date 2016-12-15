@@ -81,6 +81,25 @@ jQuery(function() {
     var autoopen = $tree.data('auto_open');
     var autoescape = $tree.data('autoescape');
 
-    initTree($tree, autoopen, autoescape);
+    var hash = document.location.hash.substr(1);
+    var parts = hash.split("/");
+
+    if(parts.length == 2) {
+        $.getJSON("/base/get_object_ancestors/" + hash + "/", function(response) {
+            var ancestors = response;
+            var node_id = ancestors.pop();
+            if(ancestors.length) {
+                var state = {
+                    "open_nodes":ancestors,
+                    "selected_node":[node_id]
+                };
+                localStorage.setItem('base_' + parts[0].toLowerCase(), JSON.stringify(state));
+                initTree($tree, autoopen, autoescape);
+            }
+        });
+        document.location.hash = "";
+    } else {
+        initTree($tree, autoopen, autoescape);
+    }
 
 });

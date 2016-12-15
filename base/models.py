@@ -165,7 +165,7 @@ class ItemCategory(MPTTModel):
         static("glyphicons/glyphicons-52-eye-open.png"),
         _("view"),
     ))
-    node_view_link.allow_rags = True
+    node_view_link.allow_tags = True
 
     @lazyprop
     def node_transfer_url(self):
@@ -187,7 +187,7 @@ class ItemCategory(MPTTModel):
         static("glyphicons/glyphicons-458-transfer.png"),
         _("view movement"),
     ))
-    node_transfer_link.allow_rags = True
+    node_transfer_link.allow_tags = True
 
     @lazyprop
     def node_storage_url(self):
@@ -207,7 +207,24 @@ class ItemCategory(MPTTModel):
         static("glyphicons/glyphicons-157-show-thumbnails.png"),
         _("view storage"),
     ))
-    node_storage_link.allow_rags = True
+    node_storage_link.allow_tags = True
+
+    @lazyprop
+    def node_tree_url(self):
+        return "%s#ItemCategory/%s" % (reverse("admin:base_itemcategory_changelist"), self.pk)
+
+    def node_tree_link(self):
+        return mark_safe('<a href="%s"><img src="%s" width="13" height="15" alt="%s"></a>' % (
+            self.node_tree_url,
+            static("glyphicons/glyphicons-427-git-merge.png"),
+            _("view in tree"),
+        ))
+
+    node_tree_link.short_description = mark_safe('<img src="%s" width="13" height="15" alt="%s">' % (
+        static("glyphicons/glyphicons-427-git-merge.png"),
+        _("view in tree"),
+    ))
+    node_tree_link.allow_tags = True
 
 
 class ItemCategoryComment(models.Model):
@@ -362,12 +379,12 @@ class Place(MPTTModel):
         static("glyphicons/glyphicons-52-eye-open.png"),
         _("view"),
     ))
-    node_view_link.allow_rags = True
+    node_view_link.allow_tags = True
 
     @lazyprop
     def node_transfer_url(self):
         if self.items.count():
-            return reverse("admin:base_item_movement_filtered_changelist", args=[self.pk]),
+            return reverse("admin:base_item_movement_filtered_changelist", args=[self.pk])
         return ''
 
     def node_transfer_link(self):
@@ -384,7 +401,24 @@ class Place(MPTTModel):
         static("glyphicons/glyphicons-458-transfer.png"),
         _("view movement"),
     ))
-    node_transfer_link.allow_rags = True
+    node_transfer_link.allow_tags = True
+
+    @lazyprop
+    def node_tree_url(self):
+        return "%s#Place/%s" % (reverse("admin:base_place_changelist"), self.pk)
+
+    def node_tree_link(self):
+        return mark_safe('<a href="%s"><img src="%s" width="13" height="15" alt="%s"></a>' % (
+            self.node_tree_url,
+            static("glyphicons/glyphicons-427-git-merge.png"),
+            _("view in tree"),
+        ))
+
+    node_tree_link.short_description = mark_safe('<img src="%s" width="13" height="15" alt="%s">' % (
+        static("glyphicons/glyphicons-427-git-merge.png"),
+        _("view in tree"),
+    ))
+    node_tree_link.allow_tags = True
 
 
 class MovementItem(models.Model):

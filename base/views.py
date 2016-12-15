@@ -6,6 +6,7 @@ import xlsxwriter
 from io import BytesIO
 from unidecode import unidecode
 
+from django.apps import apps
 from django.http import HttpResponse, Http404
 from django.shortcuts import render_to_response
 from django.template.defaultfilters import slugify
@@ -308,3 +309,19 @@ def export_items(request, place_id=None):
     response['Content-Disposition'] = "attachment; filename=%s.xlsx" % filename
 
     return response
+
+
+def get_object_ancestors(request, model_name, object_id):
+    try:
+        model_class = apps.get_model('base', model_name)
+    except LookupError:
+        data = []
+    else:
+        try:
+            data = list(model_class.objects.get(pk=object_id).get_ancestors(
+                include_self=True).values_list('id', flat=True))
+        except Place.DoesNotExist:
+            data = []
+    return HttpResponse(json.dumps(data), content_type="application/json")
+
+

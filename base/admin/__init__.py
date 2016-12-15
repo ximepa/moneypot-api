@@ -65,7 +65,7 @@ class ItemCategoryAdmin(DjangoMpttAdmin):
     tree_auto_open = False
     inlines = [ItemCategoryCommentInline]
     list_display = ['name', 'image_thumbnail', 'timestamp',
-                    'node_view_link', 'node_transfer_link', 'node_storage_link']
+                    'node_view_link', 'node_transfer_link', 'node_storage_link', 'node_tree_link']
     list_filter = [('timestamp', DateRangeFilter), ]
     readonly_fields = ['timestamp', ]
 
@@ -111,7 +111,8 @@ class PlaceAdmin(DjangoMpttAdmin):
     search_fields = ['name', ]
     tree_auto_open = False
     form = PlaceForm
-    list_display = ['name', 'is_shop', 'items_changelist_link', 'timestamp', 'node_view_link', 'node_transfer_link']
+    list_display = ['name', 'is_shop', 'items_changelist_link', 'timestamp',
+                    'node_view_link', 'node_transfer_link', 'node_tree_link']
     list_filter = [('timestamp', DateRangeFilter), ]
     readonly_fields = ['timestamp', ]
 

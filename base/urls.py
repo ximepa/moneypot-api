@@ -29,4 +29,6 @@ urlpatterns = patterns('base.views',
                            name="ajax_serial_warranty_delete"),
                        url(r'^place_item/(?P<place_id>\d+)/export', 'export_items',
                            name="export_items"),
+                       url(r'^get_object_ancestors/(?P<model_name>.+)/(?P<object_id>\d+)/', 'get_object_ancestors',
+                           name="get_object_ancestors"),
                        )
