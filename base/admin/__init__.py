@@ -11,11 +11,11 @@ from django.contrib import messages
 from django.contrib.admin.utils import quote
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.template import Template, Context
 from django.utils.html import mark_safe
 from django.utils.translation import ugettext_lazy as _, ugettext
-from django_mptt_admin import util
+from base.admin import util
 from django_mptt_admin.admin import DjangoMpttAdmin
 from filebrowser.settings import ADMIN_THUMBNAIL
 from grappelli_filters import RelatedAutocompleteFilter, FiltersMixin
@@ -83,12 +83,12 @@ class ItemCategoryAdmin(DjangoMpttAdmin):
     image_thumbnail.short_description = "Thumbnail"
 
     def get_tree_data(self, qs, max_level):
-        pk_attname = self.model._meta.pk.attname
+        qs = qs.prefetch_related('items').annotate(num_items=Count('items'))
 
         def handle_create_node(instance, node_info):
-            pk = quote(getattr(instance, pk_attname))
+            pk = instance.pk
 
-            if Item.objects.filter(category_id=pk).count():
+            if instance.num_items:
                 node_info.update(
                         view_url=reverse("admin:base_category_item_changelist", args=[pk]),
                         transfer_url=reverse("admin:base_item_movement_filtered_changelist", args=[0, pk]),
@@ -101,8 +101,12 @@ class ItemCategoryAdmin(DjangoMpttAdmin):
                     ) + "?category__id__in=%s" % pk,
                     move_url=self.get_admin_url('move', (quote(pk),))
             )
-
         return util.get_tree_from_queryset(qs, handle_create_node, max_level)
+
+    def get_queryset(self, request):
+        qs = super(ItemCategoryAdmin, self).get_queryset(request)
+        qs = qs.prefetch_related('items').annotate(num_items=Count('items'))
+        return qs
 
 
 @admin.register(Place)
@@ -121,10 +125,10 @@ class PlaceAdmin(DjangoMpttAdmin):
         return mark_safe(u'<a href="%s">%s</a>' % (link, _("items list")))
 
     def get_tree_data(self, qs, max_level):
-        pk_attname = self.model._meta.pk.attname
+        qs = qs.prefetch_related('items').annotate(num_items=Count('items'))
 
         def handle_create_node(instance, node_info):
-            pk = quote(getattr(instance, pk_attname))
+            pk = instance.pk
 
             if Item.objects.filter(place_id=pk).count():
                 node_info.update(
@@ -137,6 +141,11 @@ class PlaceAdmin(DjangoMpttAdmin):
             )
 
         return util.get_tree_from_queryset(qs, handle_create_node, max_level)
+
+    def get_queryset(self, request):
+        qs = super(PlaceAdmin, self).get_queryset(request)
+        qs = qs.prefetch_related('items').annotate(num_items=Count('items'))
+        return qs
 
 
 @admin.register(PurchaseItem)
