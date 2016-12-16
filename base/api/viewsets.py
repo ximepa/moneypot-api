@@ -4,14 +4,14 @@ from pprint import pprint
 from django.http import Http404
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import viewsets, filters, status
-from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied, ParseError
 from rest_framework.response import Response
 from django.db.models import Q
 
-from base.models import ItemCategory, VItemMovement, VSerialMovement, Transaction, Place
+from base.models import ItemCategory, VItemMovement, VSerialMovement, Transaction, Place, TransactionItem
 
 from .serializers import CategorySerializer, PlaceSerializer, VItemMovementSerializer, VSerialMovementSerializer, \
-    TransactionSerializer, TransactionSerializerDetailed
+    TransactionSerializer, TransactionSerializerDetailed, TransactionItemSerializer
 
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -111,7 +111,7 @@ class TransactionViewSet(FilteredByPlaceMixin, viewsets.ModelViewSet):
             pass
         else:
             if instance.is_completed:
-                raise PermissionDenied(detail=_("Can't delete completed transaction"))
+                raise PermissionDenied(detail=_("rt  Can't delete completed transaction"))
             else:
                 self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -120,3 +120,26 @@ class TransactionViewSet(FilteredByPlaceMixin, viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = TransactionSerializerDetailed(instance, context={'request': request})
         return Response(serializer.data)
+
+
+class TransactionItemViewSet(viewsets.ViewSet):
+    queryset = TransactionItem.objects.all()
+    serializer_class = TransactionItemSerializer
+    filter_fields = ('transaction',)
+    search_fields = ('item_category_name', 'serial')
+
+    def list(self, request, transaction_pk=None):
+        queryset = self.queryset.filter(transaction=transaction_pk)
+        serializer = TransactionItemSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    def create(self, request, transaction_pk=None):
+        data = request.data
+        serializer = TransactionItemSerializer(data, context={'request': request})
+        if serializer.is_valid() and transaction_pk:
+            ti = serializer.save()
+            ti.transaction_id = transaction_pk
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            raise ParseError()
+

@@ -6,7 +6,7 @@ from django.views.generic import TemplateView
 from filebrowser.sites import site as fb
 from rest_framework.authtoken import views as authtoken_views
 
-from base.api.routers import router
+from base.api.routers import router, transactions_router
 from base.superadmin import admin_site as super_admin
 
 admin.site.disable_action('delete_selected')
@@ -18,6 +18,7 @@ urlpatterns = patterns('',
                        url(r'^filebrowser/', include(fb.urls)),
                        url(r'^grappelli/', include('grappelli.urls')),
                        url(r'^api/', include(router.urls)),
+                       url(r'^api/', include(transactions_router.urls)),
                        url(r'^api/', include("base.api.urls")),
                        url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
                        url(r'^api-token-auth/', authtoken_views.obtain_auth_token),
