@@ -1751,3 +1751,10 @@ class Return(Transaction):
     class Meta:
         verbose_name = _("return")
         verbose_name_plural = _("returns")
+
+
+class StorageToWorkerTransaction(Transaction):
+    class Meta:
+        proxy = True
+        verbose_name = _("withdraw from storage")
+        verbose_name_plural = _("withdraws from storage")

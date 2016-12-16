@@ -6,6 +6,7 @@ from copy import deepcopy
 import autocomplete_light
 from django import forms
 from django.contrib.admin.helpers import ActionForm
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import ugettext_lazy as _, ugettext
 
 from base.admin.validators import validate_place_name
@@ -20,6 +21,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 
 PLACE_UNSORTED_ID = settings.APP_FILTERS['PLACE_UNSORTED_ID']
+GROUP_WORKERS_ID = settings.APP_FILTERS['GROUP_WORKERS_ID']
 
 
 class WorkersAdminAuthenticationForm(AuthenticationForm):
@@ -28,8 +30,10 @@ class WorkersAdminAuthenticationForm(AuthenticationForm):
     """
     error_messages = {
         'invalid_login': _("Please enter the correct %(username)s and password "
-                           "for a staff account. Note that both fields may be "
+                           "for a worker account. Note that both fields may be "
                            "case-sensitive."),
+        'invalid_group': _("You have no access to workers group. Please contact "
+                           "your administrator and ask him to grant you access. "),
     }
     required_css_class = 'required'
 
@@ -38,6 +42,14 @@ class WorkersAdminAuthenticationForm(AuthenticationForm):
             raise forms.ValidationError(
                 self.error_messages['invalid_login'],
                 code='invalid_login',
+                params={'username': self.username_field.verbose_name}
+            )
+        try:
+            user.groups.get(pk=GROUP_WORKERS_ID)
+        except ObjectDoesNotExist:
+            raise forms.ValidationError(
+                self.error_messages['invalid_group'],
+                code='invalid_group',
                 params={'username': self.username_field.verbose_name}
             )
 
@@ -138,7 +150,7 @@ class ItemSerialForm(autocomplete_light.ModelForm):
         fields = ['item', 'purchase', 'serial', 'cell', 'comment']
 
 
-class PlaceForm(autocomplete_light.ModelForm):
+class PlaceForm(forms.ModelForm):
     def clean_name(self):
         name = self.cleaned_data.get('name', '')
         return validate_place_name(name)
@@ -154,40 +166,13 @@ class PlaceForm(autocomplete_light.ModelForm):
         fields = ('name', )
 
 
-class PurchaseItemForm(autocomplete_light.ModelForm):
-    class Meta:
-        model = PurchaseItem
-        exclude = ['_chunks']
-
-    def clean(self):
-
-        cleaned_data = dict(self.cleaned_data)
-
-        _serials = cleaned_data.get('_serials', "")
-        category = cleaned_data.get('category', None)
-
-        try:
-            serials_data = parse_serials_data(_serials)
-        except InvalidParameters as e:
-            raise forms.ValidationError({'_serials': e})
-
-        if len(serials_data) and category and category.unit.unit_type == Unit.DECIMAL:
-            raise forms.ValidationError({'_serials': ugettext(
-                'unit type `%s` can not have serials' % self.category.unit.name
-            )})
-
-        self.cleaned_data['_serials'] = ", ".join(serials_data)
-
-        return self.cleaned_data
-
-
 class TransactionItemForm(autocomplete_light.ModelForm):
     _serials = forms.CharField(required=False, label=_("serials"), widget=forms.Textarea(attrs={'cols': 80, 'rows': 1}))
     serials = []
 
     class Meta:
         model = TransactionItem
-        exclude = ['_chunks', 'purchase', 'purchase_item']
+        fields = ['quantity']
         autocomplete_fields = ('category', 'serial', 'chunk', 'destination')
 
     def clean(self):
@@ -239,11 +224,11 @@ class TransactionItemForm(autocomplete_light.ModelForm):
 
         self.cleaned_data['_serials'] = self.serials
 
-        serial = cleaned_data.get("serial", None)
-        if serial and not serial.item.place == transaction.source:
-            raise forms.ValidationError(({'serial': ugettext(
-                'serial not found: {}. It is in {}'.format(serial, serial.item.place)
-            )}))
+        # serial = cleaned_data.get("serial", None)
+        # # if serial and not serial.item.place == transaction.source:
+        # #     raise forms.ValidationError(({'serial': ugettext(
+        # #         'serial not found: {}. It is in {}'.format(serial, serial.item.place)
+        # #     )}))
 
         return self.cleaned_data
 
@@ -262,135 +247,11 @@ class TransactionItemForm(autocomplete_light.ModelForm):
         return ti
 
 
-class TransmutationItemForm(autocomplete_light.ModelForm):
-    class Meta:
-        model = TransmutationItem
-        fields = ['category', 'quantity', 'serial', 'chunk', 'transmuted', 'cell']
-        autocomplete_fields = ('transmuted', 'category', 'serial', 'chunk')
-
-    def clean(self):
-        cleaned_data = dict(self.cleaned_data)
-        serial = cleaned_data.get('serial', None)
-        chunk = cleaned_data.get('chunk', None)
-        quantity = cleaned_data.get('quantity', 0)
-
-        if serial and not quantity == 1:
-            raise forms.ValidationError({'quantity': "if serial is set, quantity = 1"})
-
-        if chunk and quantity > chunk.chunk:
-            raise forms.ValidationError({'quantity': "if chunk is set, quantity <= chunk length"})
-
-        return self.cleaned_data
-
-
-class PurchaseForm(autocomplete_light.ModelForm):
-    force_complete = forms.BooleanField(required=False, label=_("force complete"))
-
-    class Meta:
-        model = Purchase
-        exclude = ['is_completed', 'is_prepared']
-
-    def save(self, *args, **kwargs):
-        p = super(PurchaseForm, self).save(*args, **kwargs)
-        if self.cleaned_data['force_complete']:
-            # if p.is_completed:
-            #     raise RuntimeError(_("already completed"))
-            # try:
-            p.complete(pending=True)
-            # except Exception, e:
-            # raise forms.ValidationError(e)
-        return p
-
-
-class TransactionForm(autocomplete_light.ModelForm):
-    force_complete = forms.BooleanField(required=False, label=_("force complete"))
+class TransactionForm(forms.ModelForm):
 
     class Meta:
         model = Transaction
-        exclude = ['comment_places', 'is_completed', 'is_prepared', 'is_negotiated_source',
-                   'is_negotiated_destination', 'is_confirmed_source', 'is_confirmed_destination']
-        autocomplete_fields = ('source', 'destination', 'items')
-
-    def save(self, *args, **kwargs):
-        t = super(TransactionForm, self).save(*args, **kwargs)
-        if self.cleaned_data['force_complete']:
-            if t.is_completed:
-                raise RuntimeError(_("already completed"))
-            # try:
-            t.force_complete(pending=True)
-            # except Exception, e:
-            # raise forms.ValidationError(e)
-        return t
-
-
-class TransmutationForm(autocomplete_light.ModelForm):
-    force_complete = forms.BooleanField(required=False, label=_("force complete"))
-
-    class Meta:
-        model = Transmutation
-        fields = ['source', 'comment', 'force_complete']
-        autocomplete_fields = ('source',)
-
-    def save(self, *args, **kwargs):
-        t = super(TransmutationForm, self).save(*args, **kwargs)
-        if self.cleaned_data['force_complete']:
-            if t.is_completed:
-                raise RuntimeError(_("already completed"))
-            # try:
-            t.force_complete(pending=True)
-            # except Exception, e:
-            # raise forms.ValidationError(e)
-        return t
-
-
-class FixCategoryMergeForm(autocomplete_light.ModelForm):
-    class Meta:
-        model = FixCategoryMerge
-        exclude = []
-
-
-class FixPlaceMergeForm(autocomplete_light.ModelForm):
-    class Meta:
-        model = FixPlaceMerge
-        exclude = []
-
-
-class CellForm(autocomplete_light.ModelForm):
-    place = forms.ModelChoiceField(queryset=Place.objects.filter(has_cells=1), empty_label=None)
-
-    class Meta:
-        model = Cell
-        exclude = []
-
-
-class CellItemActionForm(ActionForm):
-    @staticmethod
-    def cell_choices():
-        return Cell.objects.all().values_list("id", "name")
-
-    cell = forms.ModelChoiceField(queryset=Cell.objects.all())
-    # all_serials = forms.ChoiceField(choices=(
-    #     (0, '----------',),
-    #     (1, _('update all serials'))
-    # ))
-
-
-class ItemInlineForm(autocomplete_light.ModelForm):
-    class Meta:
-        model = Item
-        fields = ['cell']
-
-
-class WarrantyForm(autocomplete_light.ModelForm):
-    class Meta:
-        model = Warranty
-        exclude = []
-
-
-class WarrantyInlineForm(forms.ModelForm):
-    class Meta:
-        model = Warranty
-        fields = ['date']
+        fields = ['comment', ]
 
 
 class ReturnItemForm(autocomplete_light.ModelForm):
