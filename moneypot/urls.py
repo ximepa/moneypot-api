@@ -8,6 +8,7 @@ from rest_framework.authtoken import views as authtoken_views
 
 from base.api.routers import router, transactions_router
 from base.superadmin import admin_site as super_admin
+from base.workeradmin import workers_admin_site as workers_admin
 
 admin.site.disable_action('delete_selected')
 
@@ -27,6 +28,7 @@ urlpatterns = patterns('',
                        url(r'^admin/', TemplateView.as_view(template_name="base/redirect.html")),
                        url(r'^p/', include('django.contrib.flatpages.urls')),
                        url(r'^super-admin/', include(super_admin.urls)),
+                       url(r'^workers/', include(workers_admin.urls)),
                        )
 
 if settings.DEBUG:

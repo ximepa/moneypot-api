@@ -14,6 +14,11 @@ class Migration(migrations.Migration):
         migrations.RunSQL(
             sql="""
                   TRUNCATE TABLE userprofile_profile;
+                  CREATE TABLE IF NOT EXISTS profile_profile (
+                        id integer NOT NULL,
+                        place_id integer,
+                        user_id integer NOT NULL
+                    );
                   INSERT INTO userprofile_profile SELECT * FROM profile_profile;
                 """,
             reverse_sql="TRUNCATE TABLE userprofile_profile;"
