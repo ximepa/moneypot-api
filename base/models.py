@@ -1758,3 +1758,19 @@ class StorageToWorkerTransaction(Transaction):
         proxy = True
         verbose_name = _("withdraw from storage")
         verbose_name_plural = _("withdraws from storage")
+
+
+class WorkersItem(Item):
+    class Meta:
+        proxy = True
+        verbose_name = _("worker's item")
+        verbose_name_plural = _("worker's items")
+
+
+class WorkersReturn(Return):
+    class Meta:
+        proxy = True
+        verbose_name = _("worker's return from address")
+        verbose_name_plural = _("worker's returns from addresses")
+
+

@@ -12,9 +12,10 @@ class ReadOnlyMixin(object):
 
     def get_readonly_fields(self, request, obj=None):
         result = list(set(
-            [field.name for field in self.opts.local_fields] +
+            [field.name for field in self.opts.fields] +
             [field.name for field in self.opts.local_many_to_many]
         ))
+        print(self.opts.local_fields)
         if 'id' in result:
             result.remove('id')
         return result

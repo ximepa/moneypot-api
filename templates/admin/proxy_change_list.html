@@ -22,18 +22,22 @@
     <h1>{{ cl_header|capfirst }} {{ cl_header_addon }}</h1>
     {% endif %}
     <h2>
-        <a href="export/" target="_blank">
+        {% if export_place_id %}
+        <a href="{% url "base:export_items" place_id=export_place_id %}" target="_blank">
             <img src="{% static "base/img/file_extension_xls.png" %}" width="22" height="22">
         </a>
-        &nbsp;&nbsp;&nbsp;
-        <a href="?{{ show_zero_params }}">
-        {% if show_zero == 1 %}
-            <img src="{% static "glyphicons/glyphicons-546-eye-minus.png" %}" width="31" height="22">
-            <strike>{% trans "show zero" %}</strike>
-        {% else %}
-            <img src="{% static "glyphicons/glyphicons-545-eye-plus.png" %}" width="31" height="22">
-            {% trans "show zero" %}
         {% endif %}
-        </a>
+        {% if not hide_zero_switch %}&nbsp;&nbsp;
+            &nbsp;
+            <a href="?{{ show_zero_params }}">
+            {% if show_zero == 1 %}
+                <img src="{% static "glyphicons/glyphicons-546-eye-minus.png" %}" width="31" height="22">
+                <strike>{% trans "show zero" %}</strike>
+            {% else %}
+                <img src="{% static "glyphicons/glyphicons-545-eye-plus.png" %}" width="31" height="22">
+                {% trans "show zero" %}
+            {% endif %}
+            </a>
+        {% endif %}
     </h2>
 {% endblock %}
