@@ -26,20 +26,16 @@ from .inlines import TransactionItemInlineReadonly, TransactionItemInline, Retur
     TransactionItemDestinationInline
 
 from base.admin.overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
-
-
-PLACE_STORAGE_ID = settings.APP_FILTERS['PLACE_STORAGE_ID']
-PLACE_USED_ID = settings.APP_FILTERS['PLACE_USED_ID']
-PLACE_ADDRESS_ID = settings.APP_FILTERS['PLACE_ADDRESS_ID']
-
-
+from django.contrib.admin import AdminSite
 
 try:
     from urllib import urlencode
 except ImportError:
     from urllib.parse import urlencode
 
-from django.contrib.admin import AdminSite
+PLACE_STORAGE_ID = settings.APP_FILTERS['PLACE_STORAGE_ID']
+PLACE_USED_ID = settings.APP_FILTERS['PLACE_USED_ID']
+PLACE_ADDRESS_ID = settings.APP_FILTERS['PLACE_ADDRESS_ID']
 
 
 class WorkersAdminSite(AdminSite):
@@ -73,6 +69,10 @@ class GetPlaceMixin(object):
 
     def get_places_ids(self, request):
         return self.get_place(request).get_descendants(include_self=True).values_list('id', flat=True)
+
+    @staticmethod
+    def get_addresses_ids():
+        return Place.objects.get(pk=PLACE_ADDRESS_ID).get_descendants(include_self=True).values_list('id', flat=True)
 
 
 class PlaceAdmin(admin.ModelAdmin):
@@ -314,7 +314,7 @@ class WorkersInstalledAdmin(FiltersMixin, GetPlaceMixin, admin.ModelAdmin):
         places = self.get_places_ids(request)
         qs = super(WorkersInstalledAdmin, self).get_queryset(request).prefetch_related(
             'destination', 'source')
-        return qs.filter(Q(source_id__in=places) & ~Q(destination_id=PLACE_USED_ID)).order_by('-completed_at')
+        return qs.filter(Q(source_id__in=places, destination_id__in=self.get_addresses_ids())).order_by('-completed_at')
 
     def has_delete_permission(self, request, obj=None):
         if obj and obj.is_completed:
