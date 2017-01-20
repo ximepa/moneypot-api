@@ -18,16 +18,20 @@ from filebrowser.settings import ADMIN_THUMBNAIL
 from grappelli_filters import RelatedAutocompleteFilter, FiltersMixin
 
 from base.admin import MPTTRelatedAutocompleteFilter
-from base.models import Place, StorageToWorkerTransaction, WorkersItem, WorkersReturn
+from base.models import Place, StorageToWorkerTransaction, WorkersItem, WorkersReturn, WorkersUsed, WorkersInstalled
 from .forms import WorkersAdminAuthenticationForm, ItemCategoryForm, PlaceForm, TransactionItemForm, \
-    TransactionForm, ItemChunkForm, ItemSerialForm, ReturnForm
+    TransactionForm, ItemChunkForm, ItemSerialForm, ReturnForm, TransactionDestinationForm
 
-from .inlines import TransactionItemInlineReadonly, TransactionItemInline, ReturnItemInline, ReturnItemInlineReadonly
+from .inlines import TransactionItemInlineReadonly, TransactionItemInline, ReturnItemInline, ReturnItemInlineReadonly, \
+    TransactionItemDestinationInline
 
 from base.admin.overrides import AdminReadOnly, InlineReadOnly, HiddenAdminModelMixin
 
 
 PLACE_STORAGE_ID = settings.APP_FILTERS['PLACE_STORAGE_ID']
+PLACE_USED_ID = settings.APP_FILTERS['PLACE_USED_ID']
+PLACE_ADDRESS_ID = settings.APP_FILTERS['PLACE_ADDRESS_ID']
+
 
 
 try:
@@ -233,5 +237,111 @@ class WorkersReturnAdmin(FiltersMixin, GetPlaceMixin, admin.ModelAdmin):
                 t.is_pending = False
                 t.ret()
 
-
 workers_admin_site.register(WorkersReturn, WorkersReturnAdmin)
+
+
+class WorkersUsedAdmin(FiltersMixin, GetPlaceMixin, admin.ModelAdmin):
+    class Media:
+        js = ('base/js/transaction_source_item_autocomplete.js',)
+
+    form = TransactionForm
+    list_display = [
+        '__str__', 'created_at', 'completed_at', 'is_completed',
+    ]
+    list_filter = [
+        'is_completed',
+        ('source', MPTTRelatedAutocompleteFilter),
+    ]
+    search_fields = ['transaction_items__category__name',]
+    inlines = [
+        TransactionItemInline
+    ]
+
+    def get_queryset(self, request):
+        places = self.get_places_ids(request)
+        qs = super(WorkersUsedAdmin, self).get_queryset(request).prefetch_related(
+            'destination', 'source')
+        return qs.filter(source_id__in=places, destination_id=PLACE_USED_ID).order_by('-completed_at')
+
+    def has_delete_permission(self, request, obj=None):
+        if obj and obj.is_completed:
+            return False
+        else:
+            return super(WorkersUsedAdmin, self).has_delete_permission(request, obj)
+
+    def get_inline_instances(self, request, obj=None):
+        inline_instances = []
+
+        if obj and obj.is_completed:
+            _inlines = [TransactionItemInlineReadonly, ]
+        else:
+            _inlines = self.inlines
+
+        for inline_class in _inlines:
+            inline = inline_class(self.model, self.admin_site)
+            inline_instances.append(inline)
+        return inline_instances
+
+    def save_model(self, request, obj, form, change):
+        if not obj.source_id:
+            obj.source_id = self.get_place(request).id
+        if not obj.destination_id:
+            obj.destination_id = PLACE_USED_ID
+        obj.save()
+
+
+workers_admin_site.register(WorkersUsed, WorkersUsedAdmin)
+
+
+class WorkersInstalledAdmin(FiltersMixin, GetPlaceMixin, admin.ModelAdmin):
+    class Media:
+        js = ('base/js/transaction_source_item_autocomplete.js',)
+
+    form = TransactionForm
+    list_display = [
+        '__str__', 'created_at', 'completed_at', 'is_completed',
+    ]
+    list_filter = [
+        'is_completed',
+        ('source', MPTTRelatedAutocompleteFilter),
+    ]
+    search_fields = ['transaction_items__category__name',]
+    inlines = [
+        TransactionItemDestinationInline
+    ]
+
+    def get_queryset(self, request):
+        places = self.get_places_ids(request)
+        qs = super(WorkersInstalledAdmin, self).get_queryset(request).prefetch_related(
+            'destination', 'source')
+        return qs.filter(Q(source_id__in=places) & ~Q(destination_id=PLACE_USED_ID)).order_by('-completed_at')
+
+    def has_delete_permission(self, request, obj=None):
+        if obj and obj.is_completed:
+            return False
+        else:
+            return super(WorkersInstalledAdmin, self).has_delete_permission(request, obj)
+
+    def get_inline_instances(self, request, obj=None):
+        inline_instances = []
+
+        if obj and obj.is_completed:
+            _inlines = [TransactionItemInlineReadonly, ]
+        else:
+            _inlines = self.inlines
+
+        for inline_class in _inlines:
+            inline = inline_class(self.model, self.admin_site)
+            inline_instances.append(inline)
+        return inline_instances
+
+    def save_model(self, request, obj, form, change):
+        if not obj.source_id:
+            obj.source_id = self.get_place(request).id
+        if not obj.destination_id:
+            obj.destination_id = PLACE_ADDRESS_ID
+        obj.save()
+
+
+workers_admin_site.register(WorkersInstalled, WorkersInstalledAdmin)
+

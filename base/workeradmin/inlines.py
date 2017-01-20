@@ -26,6 +26,21 @@ class TransactionItemInline(admin.TabularInline):
     }
 
 
+class TransactionItemDestinationInline(admin.TabularInline):
+    model = TransactionItem
+    form = TransactionItemForm
+    extra = 10
+    fields = ['category', 'quantity', 'serial', 'chunk', 'destination']
+    formfield_overrides = {
+        models.TextField: {'widget': forms.Textarea(
+            attrs={'rows': 1, 'cols': 60}
+        )},
+        models.CharField: {'widget': forms.TextInput(
+            attrs={'width': "120px"}
+        )},
+    }
+
+
 class TransactionItemInlineReadonly(InlineReadOnly):
     model = TransactionItem
     form = TransactionItemForm

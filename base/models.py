@@ -1774,3 +1774,16 @@ class WorkersReturn(Return):
         verbose_name_plural = _("worker's returns from addresses")
 
 
+class WorkersUsed(Transaction):
+    class Meta:
+        proxy = True
+        verbose_name = _("worker's used item")
+        verbose_name_plural = _("worker's used items")
+
+
+class WorkersInstalled(Transaction):
+    class Meta:
+        proxy = True
+        verbose_name = _("worker's installed item")
+        verbose_name_plural = _("worker's installed items")
+

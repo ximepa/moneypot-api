@@ -28,5 +28,11 @@ class UserAdmin(BaseUserAdmin):
         return obj.profile.place
 
 
+class ProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'place')
+
+
+admin.site.register(Profile, ProfileAdmin)
+
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)

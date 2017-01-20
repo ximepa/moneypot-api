@@ -255,6 +255,13 @@ class TransactionForm(forms.ModelForm):
         fields = ['comment', ]
 
 
+class TransactionDestinationForm(forms.ModelForm):
+
+    class Meta:
+        model = Transaction
+        fields = ['comment', 'destination' ]
+
+
 class ReturnItemForm(autocomplete_light.ModelForm):
     class Meta:
         model = ReturnItem
