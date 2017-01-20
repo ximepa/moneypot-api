@@ -1731,7 +1731,7 @@ class Return(Transaction):
                 serial = ItemSerial.objects.get(
                     serial=ri.serial,
                     item__category=ri.category,
-                    item__place=ri.source
+                    item__place=self.source
                 )
             else:
                 serial = None
