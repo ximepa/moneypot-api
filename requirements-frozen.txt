@@ -24,6 +24,7 @@ django-nose==1.4.2
 django-pipeline==1.5.4
 git+https://github.com/jorgecarleitao/django-sphinxql.git
 djangorestframework==3.2.4
+drf-nested-routers==0.11.1
 git+https://github.com/jleivaizq/djorm-ext-pgtrgm
 ecdsa==0.13
 Fabric==1.10.2
@@ -54,6 +55,7 @@ sh==1.11
 simplegeneric==0.8.1
 six==1.10.0
 smmap==0.9.0
+sorl-thumbnail==12.3
 sqlparse==0.1.16
 tablib==0.10.0
 traitlets==4.0.0
