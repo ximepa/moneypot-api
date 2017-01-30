@@ -26,30 +26,61 @@ class Object(object):
 
 
 class IncompatibleUnitException(ValueError):
+    """
+    Thrown when you are trying to store or withdraw decimal amount from
+    item that can have only integer amount.
+    """
     pass
 
 
 class ItemNotFound(ValueError):
+    """
+    Thrown when you try to withdraw Item from Place but there is not any available.
+    """
     pass
 
 
 class QuantityNotEnough(ValueError):
+    """
+    Thrown when you try to withdraw Item from Place but there are no enough quantity available
+    """
     pass
 
 
 class InvalidParameters(ValueError):
+    """
+    Thrown when function expects other type arguments
+    """
     pass
 
 
 class DryRun(RuntimeError):
+    """
+    Thrown when dry_run argument is passed to operation. With atomic requests it will rollback operation.
+    Useful for testing purposes
+    """
     pass
 
 
 class TransactionNotReady(RuntimeError):
+    """
+    Thrown when transaction.complete is called but transaction does not have all 2-step handshake flags:
+    is_negotiated_source
+    is_negotiated_destination
+    is_confirmed_source
+    is_confirmed_destination
+    :note: Now all transaction are managed by storage operator and Transaction.force_complete method
+           ignores all this flags.
+    """
     pass
 
 
 def get_placeholder_image():
+    """
+    Returns empty image for placeholders. Path is set in settings.PLACEHOLDER_IMAGE_PATH
+    :return: Placeholder image object
+    :rtype: ImageFile
+    """
     from django.core.files.images import ImageFile
     from django.core.files.storage import get_storage_class
     storage_class = get_storage_class(settings.STATICFILES_STORAGE)
@@ -61,6 +92,10 @@ def get_placeholder_image():
 
 
 class GeoName(models.Model):
+    """
+    Model with geographical names, cities, villages, streets...
+    Used in validation process for Place.name
+    """
     name = models.CharField(max_length=100, unique=True)
     timestamp = models.DateTimeField(default=timezone.now)
 
@@ -69,6 +104,9 @@ class GeoName(models.Model):
 
 
 class Unit(models.Model):
+    """
+    Model with units.
+    """
     INTEGER = 0
     DECIMAL = 1
     UNIT_TYPES = (
@@ -88,6 +126,11 @@ class Unit(models.Model):
 
 
 class ItemCategory(MPTTModel):
+    """
+    Model with item categories. Tree-like structure is provided by django-mptt app
+     - is_stackable - flag that shows if two chunks can be joined to whole one for this item category.
+       Falce values are used for cables in example.
+    """
     @staticmethod
     def get_upload_dir():
         return "uploads"
@@ -111,6 +154,11 @@ class ItemCategory(MPTTModel):
         return self.name
 
     def clean_unit(self):
+        """
+        Validates ItemCategory.unit. If it is empty - value is taken from closest parent.
+        Throws ValidationError if ItemCategory.unit is empty for this object and all of his parents.
+        :return: None
+        """
         obj = self
         while not obj.unit and obj.parent:
             obj = obj.parent
@@ -120,6 +168,11 @@ class ItemCategory(MPTTModel):
             raise ValidationError({'unit': ugettext('Unit must be set for object or for one of its parents.')})
 
     def clean_is_stackable(self):
+        """
+        Validates ItemCategory.is_stackable. If it is empty - value is taken from closest parent.
+        Throws ValidationError if ItemCategory.is_stackable is empty for this object and all of his parents.
+        :return: None
+        """
         obj = self
         while obj.is_stackable is None and obj.parent:
             obj = obj.parent
@@ -143,24 +196,38 @@ class ItemCategory(MPTTModel):
 
     @property
     def thumbnail(self):
-        # TODO: need better implementation (1)
+        """
+        :return: ItemCategory.photo or placeholder if photo is not set.
+        :rtype: ImageFile
+        """
         im = get_thumbnail(self.photo or get_placeholder_image(), '128x128', crop='center', quality=99)
-        # if not im:
-        #     im = Object()
-        #     im.url = "/static/base/img/empty.gif"
         return im
 
     @lazyprop
     def node_view_url(self):
+        """
+        Url for base_category_item_changelist admin page
+        :return: url
+        :rtype: string
+        """
         return reverse("admin:base_category_item_changelist", args=[self.pk])
 
     def node_view_link(self):
+        """
+        Html code with link for base_category_item_changelist admin page
+        :return: html code with link
+        :rtype: string
+        """
         return mark_safe('<a href="%s"><img src="%s" width="16" height="8" alt="%s"></a>' % (
             self.node_view_url,
             static("glyphicons/glyphicons-52-eye-open.png"),
             _("view"),
         ))
 
+    """
+    short_description for function is used as table header in admin page
+    https://docs.djangoproject.com/en/1.10/ref/contrib/admin/#django.contrib.admin.ModelAdmin.list_display
+    """
     node_view_link.short_description = mark_safe('<img src="%s" width="16" height="8" alt="%s">' % (
         static("glyphicons/glyphicons-52-eye-open.png"),
         _("view"),
@@ -228,6 +295,9 @@ class ItemCategory(MPTTModel):
 
 
 class ItemCategoryComment(models.Model):
+    """
+    Model for additional ItemCategory data. Used serial keys generation and barcode printing
+    """
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"), related_name="comments")
     serial_prefix = models.CharField(max_length=12, verbose_name=_("prefix"), unique=True)
     serial_last_code = models.CharField(max_length=12, verbose_name=_("last code"), blank=True, null=True)
@@ -242,6 +312,17 @@ class ItemCategoryComment(models.Model):
 
 
 class Place(MPTTModel):
+    """
+    Model with places. Tree-like structure is provided by django-mptt app.
+     - is_shop: flag that allows item creation from nothing in this place. Used in Purchase with auto_source.
+     - has_cells: not used yet.
+     - has_chunks:
+        if Transaction.destination = this place and ItemCategory.is_stackable is False for
+        TransactionItem, then ItemChunk will be created in this place.
+        if Transaction.source = this place and ItemCategory.is_stackable is False for
+        TransactionItem, then ItemChunk should be set for TransactionItem.
+        Its quantity will change and if it drops to zero - ItemChunk will be deleted.
+    """
     name = models.CharField(_("name"), max_length=100, unique=True)
     parent = models.ForeignKey('self', verbose_name=_("parent"), null=True, blank=True, related_name='children')
     is_shop = models.BooleanField(_("is shop"), blank=True, default=False)
@@ -256,6 +337,8 @@ class Place(MPTTModel):
         unique_together = (
             ('name', 'parent'),
         )
+        # Permissions not used yet. they are designed for full 2-step handshake transactions.
+        # Now transactions are managed by storage operator.
         permissions = (
             ('view_place', _('view place')),  # can view this
             ('view_items', _('view items')),  # can view items here
@@ -285,9 +368,25 @@ class Place(MPTTModel):
         super(Place, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
+        """
+        url for admin interface
+        :return: url
+        :rtype: str
+        """
         return reverse('admin:base_place_item_changelist', args=[self.pk])
 
     def deposit(self, item, cell=None):
+        """
+        Stores item in this place.
+        If in this place exists item with the same ItemCategory - Item.deposit method will be called to join
+          two items into single one.
+        If in this place no item with the same ItemCategory - item.place can be safely changed into this place.
+        :param item: Item that will be stored in this place
+        :type item: Item
+        :param cell: If not null - Item.cell will be set to this value.
+        :type cell: str
+        :return: None
+        """
         try:
             i = self.items.get(category=item.category, is_reserved=False)
         except Item.DoesNotExist:
@@ -307,6 +406,14 @@ class Place(MPTTModel):
                 new_item.chunks.all().delete()
 
     def withdraw(self, item):
+        """
+        Removes Item from this place. Function finds Item with the same ItemCategory in this place and calls
+        Item.withdraw
+        :param item: Item which is needed to be removed from this place
+        :type item: Item
+        :return: new Item.
+        :rtype: Item
+        """
         try:
             i = self.items.get(category=item.category, is_reserved=False, quantity__gt=0)
         except Item.DoesNotExist:
@@ -337,6 +444,14 @@ class Place(MPTTModel):
             return i.withdraw(quantity=item.quantity, serial=serial, chunk=item.chunk)
 
     def join_to(self, place):
+        """
+        Helper function to join contents of 2 places into one. It creates transaction from this place to provided place
+        and all stored items are moved to provided place by this transaction.
+        This place name will be marked with DEL prefix and can be safely deleted in future by storage manager.
+        :param place:
+        :type place: Place
+        :return: None
+        """
         t = Transaction.objects.create(source=self, destination=place)
         for item in self.items.filter(quantity__gt=0):
             if item.serials.count():
@@ -422,6 +537,10 @@ class Place(MPTTModel):
 
 
 class MovementItem(models.Model):
+    """
+    Abstract class for TransactionItem and PurchaseItem.
+    Common fields and functions placed here
+    """
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"))
     quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
 
@@ -493,6 +612,10 @@ class MovementItem(models.Model):
 
 
 class PurchaseItem(MovementItem):
+    """
+    M2M Model for Purchase and ItemCategory relations
+    Purchase.items = models.ManyToManyField("ItemCategory", through="PurchaseItem" ...)
+    """
     purchase = models.ForeignKey("Purchase", verbose_name=_("Purchase"), related_name="purchase_items")
     price = models.DecimalField(_("price"), max_digits=9, decimal_places=2)
     price_usd = models.DecimalField(_("price usd"), max_digits=9, decimal_places=2, blank=True, null=True)
@@ -525,6 +648,12 @@ class PurchaseItem(MovementItem):
         )
 
     def clean_serials(self):
+        """
+        Validation for _serials value. Multiple serials can be provided with any delimiter except dash ("-").
+        If _serials count does not match with Item.quantity then Validation error raises
+        :return: list of serials
+        :rtype: list[str]
+        """
         if not self._serials:
             return []
 
@@ -542,10 +671,19 @@ class PurchaseItem(MovementItem):
 
     @property
     def serials(self):
+        """
+        getter method for serials
+        :return: list of serials
+        :rtype: list[str]
+        """
         return self.clean_serials()
 
     @serials.setter
     def serials(self, value):
+        """
+        setter method for serials
+        :return: None
+        """
         self._serials = ", ".join(value)
 
     def clean(self):
@@ -557,6 +695,9 @@ class PurchaseItem(MovementItem):
 
 
 class Payer(models.Model):
+    """
+    Model with purchase payer name. Used in Purchase.payer
+    """
     name = models.CharField(_("payer"), max_length=100)
 
     class Meta:
@@ -568,6 +709,10 @@ class Payer(models.Model):
 
 
 class Movement(models.Model):
+    """
+    Abstract class for Transaction and Purchase
+    Common fields and functions placed here
+    """
     items_prepared = []
     created_at = models.DateTimeField(_("created at"), default=timezone.now)
     completed_at = models.DateTimeField(_("completed at"), default=None, blank=True, null=True)
@@ -579,6 +724,10 @@ class Movement(models.Model):
 
 
 class Purchase(Movement):
+    """
+    Model for registering purchases from shops.
+     - is_auto_source: if True, Items will be created in source Place. (True in 100% purchases =) )
+    """
     items = models.ManyToManyField("ItemCategory", through="PurchaseItem", verbose_name=_("items"))
     source = models.ForeignKey("Place", verbose_name=_("source"), related_name="purchase_sources")
     destination = models.ForeignKey("Place", verbose_name=_("destination"), related_name="purchase_destinations")
@@ -604,6 +753,10 @@ class Purchase(Movement):
             # return u'%s -> %s' % (self.source.name, self.destination.name)
 
     def clean_is_auto_source(self):
+        """
+        is_auto_source can be set true only if source Place.is_shop is True too
+        :return: None
+        """
         if self.source_id:
             if self.is_auto_source and not self.source.is_shop:
                 raise ValidationError({'is_auto_source': ugettext('auto source is allowed for shops only')})
@@ -616,6 +769,10 @@ class Purchase(Movement):
         super(Purchase, self).save(*args, **kwargs)
 
     def prepare_items_auto(self):
+        """
+        Creates new items in source. If called more than once - items from previous preparation are removed.
+        :return: None
+        """
         self.items_prepared = []
         self.is_prepared = False
         for purchase_item in self.purchase_items.all():
@@ -662,6 +819,16 @@ class Purchase(Movement):
 
     @transaction.atomic
     def complete(self, pending=False):
+        """
+        Completes this Purchase. Process steps are:
+          - check pending, if it's True - ignore and let PurchaseItems be saved first
+          - check already completed. If true - ignore
+          - prepare items ( see Purchase.prepare_items_auto)
+          - create new transaction, source is purchase source, destination is purchase destination, items ... the same
+        :param pending: flag, if True then formset with PurchaseItems is not saved yet
+        :type pending: bool
+        :return: None
+        """
         if pending:
             # print "purchase complete defer"
             setattr(self, "is_pending", True)
@@ -707,6 +874,11 @@ class Purchase(Movement):
         # self.fill_cells()
 
     def fill_cells(self):
+        """
+        Update Item.cell and ItemSerial.cell values if PurchaseItem.cell is set.
+        creates new objects in Cell model if does not exist
+        :return: None
+        """
         for pi in self.purchase_items.all():
             place = pi.purchase.destination
             if not place.has_cells or not pi.cell:
@@ -718,6 +890,11 @@ class Purchase(Movement):
 
 
 class Item(models.Model):
+    """
+    Model for items
+     - is_reserved: Is True if this item is created for transaction (after Item.withdraw for example)
+     - reserved_by: FK to TransactionItem which reserves this item for transaction.
+    """
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"), related_name='items')
     quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3, default=0)
     is_reserved = models.BooleanField(_("is reserved"), blank=True, default=False)
@@ -761,6 +938,10 @@ class Item(models.Model):
         return "?"
 
     def clean_quantity(self):
+        """
+        Item.quantity validator. Checks unit type to decide if value can be decimal
+        :return: None
+        """
         f = int
         # if self.category.unit.unit_type == Unit.INTEGER:
         #     f = int
@@ -781,11 +962,18 @@ class Item(models.Model):
 
     @property
     def qs(self):
+        """
+        Used for calling function qs.update for atomic operations. Set value then call save is not thread safe.
+        As alternative models.F can be used when setting value, but getting value then is
+        not possible w/o re-fetching object from db.
+        :return: QuerySet with single object (this object).
+        """
         return self.__class__.objects.filter(pk=self.pk)
 
     # noinspection DjangoOrm
     def withdraw_any(self, quantity):
         """
+        Splits item into two. Requested quantity is subtracted from this object.
         :param quantity: Amount of items to withdraw
         :type quantity: int or Decimal
         :returns: Item created in result of withdrawal spit request.
@@ -817,6 +1005,8 @@ class Item(models.Model):
     # noinspection DjangoOrm
     def withdraw_serial(self, quantity, serial):
         """
+        Splits item into two. Requested quantity is subtracted from this object
+        and provided serial is moved to the new item.
         :param quantity: Amount of items to withdraw
         :type quantity: int or Decimal
         :param serial: instance of base.models.ItemSerial
@@ -846,13 +1036,15 @@ class Item(models.Model):
 
     def withdraw_chunk(self, quantity, chunk):
         """
+        Splits item into two. Requested quantity is subtracted from this object and provided chunk.
         :param quantity: Amount of items to withdraw
         :type quantity: int or Decimal
         :param chunk: instance of base.models.ItemChunk
         :type chunk: base.models.ItemChunk()
         :returns: Item created in result of withdrawal spit request.
                   Marked as reserved until transaction will be completed or cancelled
-        :rtype: base.models.Item()
+                  And two chunks: old one and new one.
+        :rtype: tuple[Item, Chunk, Chunk]
         """
         if chunk.chunk < quantity:
             raise InvalidParameters(_("Chunks length lesser than requested quantity"))
@@ -881,6 +1073,8 @@ class Item(models.Model):
     @transaction.atomic
     def withdraw(self, quantity, serial=None, chunk=None, dry_run=False):
         """
+        Splits item into two. Requested quantity is subtracted from this object.
+        If serial or chunk is provided alternative functions will be called.
         :param quantity: Amount of items to withdraw
         :type quantity: int or Decimal
         :param serial: optional, instance of base.models.ItemSerial
@@ -942,6 +1136,7 @@ class Item(models.Model):
     @transaction.atomic
     def deposit(self, item, dry_run=False, cell=None):
         """
+        Joins item from args with self. Serials and Chunks are moving to new item too.
         :param item: item to join with current, categiry must match
         :type item: base.models.Item()
         :returns: updated item (self)
@@ -996,6 +1191,9 @@ class Item(models.Model):
 
 
 class ItemSerial(models.Model):
+    """
+    Model for storing items serials.
+    """
     item = models.ForeignKey("Item", verbose_name=_("item"), related_name='serials')
     serial = models.CharField(_("serial"), max_length=32, unique=True)
     purchase = models.ForeignKey("PurchaseItem", verbose_name=_("purchase"), blank=True, null=True)
@@ -1026,6 +1224,9 @@ class ItemSerial(models.Model):
 
 
 class ItemChunk(models.Model):
+    """
+    Model for storing items chunks.
+    """
     item = models.ForeignKey("Item", verbose_name=_("item"), related_name='chunks')
     chunk = models.DecimalField(max_digits=9, decimal_places=3)
     label = models.CharField(_("label"), max_length=32, unique=True, blank=True, null=True)
@@ -1052,6 +1253,10 @@ class ItemChunk(models.Model):
 
 
 class TransactionItem(MovementItem):
+    """
+    M2M Model for Transaction and ItemCategory relations
+    Transaction.items = models.ManyToManyField("ItemCategory", through="TransactionItem" ...)
+    """
     transaction = models.ForeignKey("Transaction", verbose_name=_("item transaction"), related_name="transaction_items")
     purchase = models.ForeignKey("Purchase", verbose_name=_("Purchase"),
                                  blank=True, null=True, related_name="transaction_items")
@@ -1105,6 +1310,11 @@ class TransactionItem(MovementItem):
 
 
 class Transaction(Movement):
+    """
+    Model for transactions, process for moving Items from source to destination (Places)
+    .. note: flags is_negotiated_source, is_negotiated_destination, is_confirmed_source, is_confirmed_destination
+             are not used yet, and were designed for full 2-step handshake transaction.
+    """
     items = models.ManyToManyField("ItemCategory", through="TransactionItem", verbose_name=_("items"))
     source = models.ForeignKey("Place", verbose_name=_("source"), related_name="transaction_sources")
     destination = models.ForeignKey("Place", verbose_name=_("destination"), related_name="transaction_destinations")
@@ -1132,6 +1342,10 @@ class Transaction(Movement):
         super(Transaction, self).save(*args, **kwargs)
 
     def reset(self):
+        """
+        Resets status of transaction. If there are prepared items for this transaction - return them.
+        :return: None
+        """
         self.is_prepared = False
         self.is_negotiated_source = False
         self.is_negotiated_destination = False
@@ -1150,6 +1364,10 @@ class Transaction(Movement):
 
     @transaction.atomic
     def prepare(self):
+        """
+        Prepares items for moving into Destination place. new items are created by Place.withdraw (source)
+        :return: None
+        """
         self.items_prepared = []
         for trans_item in self.transaction_items.all():
             try:
@@ -1164,6 +1382,10 @@ class Transaction(Movement):
         self.is_prepared = True
 
     def check_prepared(self):
+        """
+        Check validity of prepared items. Set TransactionItem destination if it was not set before.
+        :return: None
+        """
         self.items_prepared = []
         self.transaction_items.filter(destination__isnull=True).update(destination=self.destination)
         for ti in self.transaction_items.all():
@@ -1175,6 +1397,12 @@ class Transaction(Movement):
             self.items_prepared.append(item)
 
     def force_complete(self, pending=False):
+        """
+        Ignores 2-step handshake and completes transaction w/o any conditions.
+        :param pending: see Transaction.complete
+        :type pending: bool
+        :return: None
+        """
         self.is_negotiated_source = True
         self.is_negotiated_destination = True
         self.is_confirmed_source = True
@@ -1183,7 +1411,18 @@ class Transaction(Movement):
 
     @transaction.atomic
     def complete(self, pending=False, transmutation=False):
-        # print("TRANSACTION COMPLETED!")
+        """
+        Completes this Transaction. Process steps are:
+          - check pending, if it's True - ignore and let TransactionItems be saved first
+          - check already completed. If true - ignore
+          - prepare items (see Transaction.prepare)
+          - if not Transmutation - validate prepared items. For more info see base.models.Transmutation
+          - deposit prepared items into destination Places
+          - mark as completed and place timestamp
+        :param pending: flag, if True then formset with TransactionItems is not saved yet
+        :type pending: bool
+        :return: None
+        """
         if pending:
             # print "transaction complete defer"
             setattr(self, "is_pending", True)
@@ -1223,6 +1462,13 @@ class Transaction(Movement):
 
     @staticmethod
     def fill_cells(ti):
+        """
+        Update Item.cell and ItemSerial.cell values if ti.cell is set.
+        Creates new objects in Cell model, if it does not exist.
+        :param ti: TransactionItem
+        :type ti: TransactionItem
+        :return: None
+        """
         place = ti.destination or ti.transaction.destination
         if place.has_cells and ti.cell:
             cell, created = Cell.objects.get_or_create(place_id=place.id, name=ti.cell)
@@ -1233,6 +1479,9 @@ class Transaction(Movement):
 
 
 class ProcessSerialMixin(object):
+    """
+    Mixin class for movign item with specific serial key into Void place.
+    """
     def __init__(self):
         self.void = Place.objects.get(pk=settings.APP_FILTERS["PLACE_VOID"])
         self.item = self.item or {}
@@ -1247,6 +1496,17 @@ class ProcessSerialMixin(object):
 
 
 def get_descendants_ids(model, pk, include_self=False):
+    """
+    Helper function for MPTT models
+    :param model: any MPTT model class
+    :type model: MPTTModel
+    :param pk: object's primary key in this model
+    :type pk: int
+    :param include_self: if True, specified id should be listed in result
+    :type include_self: bool
+    :return: list with id's - object's descendants
+    :rtype: list[int]
+    """
     try:
         obj = model.objects.get(pk=pk)
     except model.DoesNotExist:
@@ -1257,6 +1517,10 @@ def get_descendants_ids(model, pk, include_self=False):
 
 
 class OrderItemSerial(ItemSerial, ProcessSerialMixin):
+    """
+    Proxy model for filtering ItemSerial only for specific ItemCategory
+    See base.admin.OrderItemSerialAdmin
+    """
     class Meta:
         proxy = True
         verbose_name = _("order serial")
@@ -1264,6 +1528,10 @@ class OrderItemSerial(ItemSerial, ProcessSerialMixin):
 
 
 class ContractItemSerial(ItemSerial, ProcessSerialMixin):
+    """
+    Proxy model for filtering ItemSerial only for specific ItemCategory
+    See base.admin.ContractItemSerialAdmin
+    """
     class Meta:
         proxy = True
         verbose_name = _("contract serial")
@@ -1272,6 +1540,8 @@ class ContractItemSerial(ItemSerial, ProcessSerialMixin):
 
 class VItemMovement(models.Model):
     """
+     Readonly model for display ing data from Postgresql's view.
+
      item_category_name | character varying(100)   |           | extended |
      source_name        | character varying(100)   |           | extended |
      destination_name   | character varying(100)   |           | extended |
@@ -1322,6 +1592,8 @@ class VItemMovement(models.Model):
 
 class VSerialMovement(models.Model):
     """
+     Readonly model for display ing data from Postgresql's view.
+
      source         | character varying(100)   |           | extended |
      destination    | character varying(100)   |           | extended |
      item_category  | character varying(100)   |           | extended |
@@ -1378,6 +1650,11 @@ class VSerialMovement(models.Model):
 
 
 class FixSerialTransform(models.Model):
+    """
+    Helper model.
+    Save object with old serial and new serial,  and serial key will be fixed in database.
+    Serial keys can not be fixed directly.
+    """
     old_serial = models.CharField(_("old serial"), max_length=32)
     new_serial = models.CharField(_("new serial"), max_length=32)
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"), on_delete=models.DO_NOTHING,
@@ -1432,6 +1709,14 @@ class FixSerialTransform(models.Model):
 
 
 class FixCategoryMerge(models.Model):
+    """
+    Helper model.
+    Save object with old ItemCategory and new ItemCategory. Items from the old ItemCategory will be moved
+    to the new ItemCategory. All related data will be updated too. Old ItemCategory will be deleted.
+     - data: logs in json format will be stored here.
+     - old_category_sav_id: id of old category will be saved here.
+     - old_category_sav_name: name of old category will be saved here.
+    """
     old_category = models.ForeignKey("ItemCategory", verbose_name=_("old item category"),
                                      null=True, related_name="old_categoriess", on_delete=models.SET_NULL)
     new_category = models.ForeignKey("ItemCategory", verbose_name=_("new item category"),
@@ -1448,6 +1733,11 @@ class FixCategoryMerge(models.Model):
 
     @staticmethod
     def get_related_models():
+        """
+        Setup which data will be altered and gathered for logging.
+        PS: Ugly shit but it works.
+        :return: list[list[model, *fields]]
+        """
         return [
             [ItemCategoryComment, 'category_id', None, None, None],
             [Item, 'category_id', 'quantity', 'place_id', {'item': ['serials', 'chunks']}],
@@ -1458,37 +1748,69 @@ class FixCategoryMerge(models.Model):
         ]
 
     def do_merge(self):
+        """
+        Don't touch this! Nobody knows how it works.
+
+        Iterate via list of related models and alter data to merge contents of two item categories.
+        :return:
+        """
         data = {}
+        # remove zero quantity items before merge
         Item.objects.filter(quantity=0, category=self.old_category).delete()
         Item.objects.filter(quantity=0, category=self.new_category).delete()
+        """
+        model - name of models which has relation with ItemCategory,
+        field - name of field which points to ItemCategory,
+        qf - quantity field - field which need to be summarized for two ItemCategories (actual only for Item)
+        uniq - summarize qf field grouping by this field (Item.place_id)
+        rel - reverse relation fields that need to be updated after summarization (ItemSerial, ItemChunk)
+        """
         for model, field, qf, uniq, rel in self.get_related_models():
             q = {field: self.old_category_sav_id}
             u = {field: self.new_category_id}
             qs = model.objects.filter(**q)
             qs_list = copy(qs.values_list('id', flat=True))
+
+            # store data for logging
             data.update({
                 model.__name__: qs_list
             })
+
+            # quantity field summarization
             if qf:
+
                 for new_ins in qs:
+                    # make filter for getting proper Item
+                    # place_id and category_id are in `cu` filter
                     cu = copy(u)
                     cu.update({
                         uniq: getattr(new_ins, uniq)
                     })
+
                     try:
+                        # try to get Item instance with new ItemCategory and specific place_id
                         old_ins = model.objects.get(**cu)
                     except model.DoesNotExist:
+                        # no Item there: simply change category_id from old to new.
                         model.objects.filter(pk=new_ins.pk).update(**{field: self.new_category_id})
                     else:
+                        # Item found there: update quantity of that item.
                         model.objects.filter(pk=old_ins.pk).update(**{qf: models.F(qf) + getattr(new_ins, qf)})
+                        # And update item_id for all ItemSerial and ItemChunk related to destroyed item
                         for k in rel:
                             for r in rel[k]:
                                 getattr(new_ins, r).all().update(**{k: old_ins})
+                        # destroy item.
                         new_ins.delete()
             else:
+                # if we don't need to fix quantity (all models except Item): simply update category_id value
                 qs.update(**u)
+
+        # save log data. We don't use self.data=data and self.save() to avoid merge infinite loop calling.
         self.__class__.objects.filter(pk=self.pk).update(data=str(data))
         c = self.old_category
+
+        # delete old category.
         c.delete()
 
     def save(self, *args, **kwargs):
@@ -1501,6 +1823,12 @@ class FixCategoryMerge(models.Model):
 
 
 class FixPlaceMerge(models.Model):
+    """
+    Helper model.
+    Save object with old Place and new Place. Items from the old Place will be moved
+    to the new Place. Old Place can be deleted safely after this process.
+    See Place.join_to for details
+    """
     old_place = models.ForeignKey("Place", related_name="old_places", verbose_name=_("old place"), null=True,
                                   on_delete=models.SET_NULL)
     new_place = models.ForeignKey("Place", related_name="new_places", verbose_name=_("new place"))
@@ -1522,6 +1850,9 @@ class FixPlaceMerge(models.Model):
 
 
 class Cell(models.Model):
+    """
+    Models for storing cells data
+    """
     place = models.ForeignKey("Place", verbose_name=_("place"), related_name="cells")
     name = models.CharField(max_length=32)
 
@@ -1539,6 +1870,10 @@ class Cell(models.Model):
 
 
 class TransmutationItem(MovementItem):
+    """
+    M2M Model for Transmutation and ItemCategory relations
+    Transmutation.items = models.ManyToManyField("ItemCategory", through="TransmutationItem" ...)
+    """
     transmuted = models.ForeignKey("ItemCategory", verbose_name=_("transmuted item category"),
                                    related_name="transmuted_categories")
     transmutation = models.ForeignKey("Transmutation", verbose_name=_("transmutation"),
@@ -1585,6 +1920,12 @@ class Transmutation(Transaction):
 
     @transaction.atomic
     def complete(self, pending=False, transmutation=True):
+        """
+        Same as Transaction.complete but prepared items will change_item category.
+        :param pending:
+        :param transmutation:
+        :return:
+        """
         if pending:
             # print "transaction complete defer"
             setattr(self, "is_pending", True)
@@ -1602,6 +1943,11 @@ class Transmutation(Transaction):
         super(Transmutation, self).complete(pending=False, transmutation=True)
 
     def transmute(self):
+        """
+        Called from base.admin.TransmutationAdmin.save_formset
+        Creates reversed transaction to return items with new categories from transmutator back to source Place
+        :return:
+        """
         if not self.transmutation_items.count():
             raise RuntimeError(ugettext("No transmutation items added"))
         # t = Transaction.objects.create(
@@ -1639,6 +1985,9 @@ class Transmutation(Transaction):
 
 
 class Warranty(models.Model):
+    """
+    Warranty data for item serials.
+    """
     serial = models.OneToOneField("ItemSerial", verbose_name=_("serial"))
     date = models.DateField(_("warranty date"))
     comment = models.TextField(_("comment"), blank=True, null=True)
@@ -1655,6 +2004,10 @@ class Warranty(models.Model):
 
 
 class ReturnItem(MovementItem):
+    """
+    M2M Model for Return and ItemCategory relations
+    Return.items = models.ManyToManyField("ItemCategory", through="ReturnItem" ...)
+    """
     source = models.ForeignKey("Place", verbose_name=_("source"),
                                related_name="return_items", blank=True, null=True, on_delete=models.SET_NULL)
     ret = models.ForeignKey("Return", verbose_name=_("return"),
@@ -1676,8 +2029,21 @@ class ReturnItem(MovementItem):
 
 
 class Return(Transaction):
+    """
+    Model which creates one Purchase and two Transactions at once for each ReturnItem.
+    Purchase: from Old Sklad `shop` to ReturnItem.destination
+    Transaction: from ReturnItem.destination to Return.source
+    Transaction: from Return.source to Return.destination
+
+    One transaction can be omitted when ReturnItem.destination == Return.source. Not tested! Use carefully.
+    Purchase can be omitted if ReturnItem.destination has Item available to withdraw.
+    """
     @transaction.atomic
     def ret(self):
+        """
+        called from base.admin.ReturnAdmin.save_formset
+        :return:
+        """
         if not self.return_items.count():
             raise RuntimeError(ugettext("No return items added"))
         for ri in self.return_items.all():
@@ -1766,6 +2132,9 @@ class Return(Transaction):
 
 
 class StorageToWorkerTransaction(Transaction):
+    """
+    Proxy model for WorkersAdmin
+    """
     class Meta:
         proxy = True
         verbose_name = _("withdraw from storage")
@@ -1773,6 +2142,9 @@ class StorageToWorkerTransaction(Transaction):
 
 
 class WorkersItem(Item):
+    """
+    Proxy model for WorkersAdmin
+    """
     class Meta:
         proxy = True
         verbose_name = _("worker's item")
@@ -1780,6 +2152,9 @@ class WorkersItem(Item):
 
 
 class WorkersReturn(Return):
+    """
+    Proxy model for WorkersAdmin
+    """
     class Meta:
         proxy = True
         verbose_name = _("worker's return from address")
@@ -1787,6 +2162,9 @@ class WorkersReturn(Return):
 
 
 class WorkersUsed(Transaction):
+    """
+    Proxy model for WorkersAdmin
+    """
     class Meta:
         proxy = True
         verbose_name = _("worker's used item")
@@ -1794,6 +2172,9 @@ class WorkersUsed(Transaction):
 
 
 class WorkersInstalled(Transaction):
+    """
+    Proxy model for WorkersAdmin
+    """
     class Meta:
         proxy = True
         verbose_name = _("worker's installed item")
