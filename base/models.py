@@ -1741,7 +1741,7 @@ class Return(Transaction):
                 serial = ItemSerial.objects.get(
                     serial=ri.serial,
                     item__category=ri.category,
-                    item__place=ri.source
+                    item__place=self.source
                 )
             else:
                 serial = None
@@ -1768,3 +1768,32 @@ class StorageToWorkerTransaction(Transaction):
         proxy = True
         verbose_name = _("withdraw from storage")
         verbose_name_plural = _("withdraws from storage")
+
+
+class WorkersItem(Item):
+    class Meta:
+        proxy = True
+        verbose_name = _("worker's item")
+        verbose_name_plural = _("worker's items")
+
+
+class WorkersReturn(Return):
+    class Meta:
+        proxy = True
+        verbose_name = _("worker's return from address")
+        verbose_name_plural = _("worker's returns from addresses")
+
+
+class WorkersUsed(Transaction):
+    class Meta:
+        proxy = True
+        verbose_name = _("worker's used item")
+        verbose_name_plural = _("worker's used items")
+
+
+class WorkersInstalled(Transaction):
+    class Meta:
+        proxy = True
+        verbose_name = _("worker's installed item")
+        verbose_name_plural = _("worker's installed items")
+

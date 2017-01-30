@@ -486,6 +486,7 @@ class PlaceItemAdmin(HiddenAdminModelMixin, ItemAdmin):
             cl_header = place.name
             params_get = request.GET.copy()
             params_get.update({'show_zero': int(not self.show_zero)})
+            extra_context.update({'export_place_id': self.place.id})
             extra_context.update({'show_zero_params': urlencode(params_get)})
             extra_context.update({'show_zero': self.show_zero})
             extra_context.update({'cl_header_addon': _("> ALL")})
@@ -556,9 +557,11 @@ class CategoryItemAdmin(HiddenAdminModelMixin, ItemAdmin):
         else:
             self.category = category
             cl_header = _(u"<{name}> items".format(name=category.name))
+            extra_context.update({'export_place_id': None})
             extra_context.update({'show_zero': self.show_zero})
             extra_context.update({'rq_qs': rq_qs})
             extra_context.update({'cl_header': mark_safe(cl_header)})
+            extra_context.update({'hide_zero_switch': True})
         view = super(CategoryItemAdmin, self).changelist_view(request, extra_context=extra_context)
         return view
 

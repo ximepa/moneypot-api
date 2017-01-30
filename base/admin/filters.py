@@ -9,9 +9,10 @@ from django.utils.translation import ugettext_lazy as _
 class MPTTRelatedAutocompleteFilter(RelatedAutocompleteFilter):
 
     def __init__(self, field, request, params, model, model_admin, field_path):
+        super(MPTTRelatedAutocompleteFilter, self).__init__(field, request, params, model, model_admin, field_path)
+        self.model = model
         self.model_admin = model_admin
         self.field_path = field_path
-        super(MPTTRelatedAutocompleteFilter, self).__init__(field, request, params, model, model_admin, field_path)
 
     def get_parameter_name(self, field_path):
         if self.url_parameter:

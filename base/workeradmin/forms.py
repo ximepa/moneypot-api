@@ -2,6 +2,7 @@
 from __future__ import print_function, division, unicode_literals, absolute_import
 
 from copy import deepcopy
+from datetime import datetime
 
 import autocomplete_light
 from django import forms
@@ -254,11 +255,18 @@ class TransactionForm(forms.ModelForm):
         fields = ['comment', ]
 
 
+class TransactionDestinationForm(forms.ModelForm):
+
+    class Meta:
+        model = Transaction
+        fields = ['comment', 'destination' ]
+
+
 class ReturnItemForm(autocomplete_light.ModelForm):
     class Meta:
         model = ReturnItem
-        fields = ['category', 'quantity', 'serial', 'source', 'cell']
-        autocomplete_fields = ('category', 'source', 'cell')
+        fields = ['category', 'quantity', 'serial', 'source']
+        autocomplete_fields = ('category', 'source')
 
     def clean(self):
         cleaned_data = dict(self.cleaned_data)
@@ -276,21 +284,14 @@ class ReturnItemForm(autocomplete_light.ModelForm):
 
 
 class ReturnForm(autocomplete_light.ModelForm):
-    force_complete = forms.BooleanField(required=False, label=_("force complete"))
-
     class Meta:
         model = Return
         exclude = ['comment_places', 'is_completed', 'is_prepared', 'is_negotiated_source',
-                   'is_negotiated_destination', 'is_confirmed_source', 'is_confirmed_destination']
+                   'is_negotiated_destination', 'is_confirmed_source', 'is_confirmed_destination',
+                   'source', 'destination', 'completed_at', 'created_at']
         autocomplete_fields = ('source', 'destination', 'items')
 
-    def save(self, *args, **kwargs):
-        t = super(ReturnForm, self).save(*args, **kwargs)
-        if self.cleaned_data['force_complete']:
-            if t.is_completed:
-                raise RuntimeError(_("already completed"))
-            # try:
-            t.force_complete(pending=True)
-            # except Exception, e:
-            # raise forms.ValidationError(e)
+    def save(self, commit=False):
+        t = super(ReturnForm, self).save(commit=False)
+        t.created_at = datetime.now()
         return t
