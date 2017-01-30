@@ -127,7 +127,7 @@ class ItemCategory(MPTTModel):
             self.is_stackable = obj.is_stackable
         else:
             raise ValidationError(
-                    {'is_stackable': ugettext('Stackable must be set for object or for one of its parents.')})
+                {'is_stackable': ugettext('Stackable must be set for object or for one of its parents.')})
 
     def clean(self):
         self.clean_unit()
@@ -311,26 +311,26 @@ class Place(MPTTModel):
             i = self.items.get(category=item.category, is_reserved=False, quantity__gt=0)
         except Item.DoesNotExist:
             raise ItemNotFound(_("Can not withdraw <{item}> from <{place}>: not found.".format(
-                    item=item,
-                    place=self
+                item=item,
+                place=self
             )))
         else:
             serial = None
             if item.serial:
                 if not item.quantity == 1:
                     raise InvalidParameters(
-                            _("Can not withdraw <{item}> from <{place}>: quantity >1 for serial <{serial}> ".format(
-                                    item=item,
-                                    place=self,
-                                    serial=serial
-                            )))
+                        _("Can not withdraw <{item}> from <{place}>: quantity >1 for serial <{serial}> ".format(
+                            item=item,
+                            place=self,
+                            serial=serial
+                        )))
                 try:
                     serial = i.serials.get(serial=item.serial)
                 except ItemSerial.DoesNotExist:
                     raise ItemNotFound(_("Can not withdraw <{item}> from <{place}>: serial <{serial}> not found".format(
-                            item=item,
-                            place=self,
-                            serial=serial
+                        item=item,
+                        place=self,
+                        serial=serial
                     )))
                 serial.cell = None
                 serial.save()
@@ -470,7 +470,7 @@ class MovementItem(models.Model):
             self.category
         except ItemCategory.DoesNotExist:
             raise ValidationError({'category': ugettext(
-                    'this field is required'
+                'this field is required'
             )})
         f = None
         if self.category.unit.unit_type == Unit.INTEGER:
@@ -480,7 +480,7 @@ class MovementItem(models.Model):
 
         if self.quantity and not f(self.quantity) == self.quantity:
             raise ValidationError({'quantity': ugettext(
-                    'unit type `%s` can not be decimal' % self.category.unit.name
+                'unit type `%s` can not be decimal' % self.category.unit.name
             )})
 
     def clean(self):
@@ -530,12 +530,12 @@ class PurchaseItem(MovementItem):
 
         if self.category.unit.unit_type == Unit.DECIMAL:
             raise ValidationError({'_serials': ugettext(
-                    'unit type `%s` can not have serials' % self.category.unit.name
+                'unit type `%s` can not have serials' % self.category.unit.name
             )})
         serials_data = re.findall(r"[\w-]+", self._serials)
         if not self.quantity == len(serials_data):
             raise ValidationError({'_serials': ugettext(
-                    u'serials count error: {count}≠{quantity}'.format(count=len(serials_data), quantity=self.quantity)
+                u'serials count error: {count}≠{quantity}'.format(count=len(serials_data), quantity=self.quantity)
             )})
         self._serials = ", ".join(map(str, serials_data))
         return serials_data
@@ -769,7 +769,7 @@ class Item(models.Model):
 
         if self.quantity and not f(self.quantity) == self.quantity:
             raise ValidationError({'quantity': ugettext(
-                    'unit type `%s` can not be decimal' % self.category.unit.name
+                'unit type `%s` can not be decimal' % self.category.unit.name
             )})
 
     def clean(self):
@@ -805,12 +805,12 @@ class Item(models.Model):
         else:
             self.chunks.all().delete()
         item = Item.objects.create(
-                quantity=quantity,
-                is_reserved=True,
-                purchase=self.purchase,
-                category=self.category,
-                place=self.place,
-                parent=self,
+            quantity=quantity,
+            is_reserved=True,
+            purchase=self.purchase,
+            category=self.category,
+            place=self.place,
+            parent=self,
         )
         return item
 
@@ -829,16 +829,16 @@ class Item(models.Model):
             raise InvalidParameters(_("Serials count does not match requested quantity"))
         if not serial.item == self:
             raise InvalidParameters(_("Serial {serial} doesn't belong to item {item}".format(
-                    serial=serial.serial,
-                    item=self.__str__()
+                serial=serial.serial,
+                item=self.__str__()
             )))
         item = Item.objects.create(
-                quantity=quantity,
-                is_reserved=True,
-                purchase=self.purchase,
-                category=self.category,
-                place=self.place,
-                parent=self,
+            quantity=quantity,
+            is_reserved=True,
+            purchase=self.purchase,
+            category=self.category,
+            place=self.place,
+            parent=self,
         )
         serial.item = item
         serial.save()
@@ -857,12 +857,12 @@ class Item(models.Model):
         if chunk.chunk < quantity:
             raise InvalidParameters(_("Chunks length lesser than requested quantity"))
         item = Item.objects.create(
-                quantity=quantity,
-                is_reserved=True,
-                purchase=self.purchase,
-                category=self.category,
-                place=self.place,
-                parent=self,
+            quantity=quantity,
+            is_reserved=True,
+            purchase=self.purchase,
+            category=self.category,
+            place=self.place,
+            parent=self,
         )
         if chunk.chunk == quantity:
             chunk.qs.update(item=item)
@@ -871,9 +871,9 @@ class Item(models.Model):
             chunk.qs.update(chunk=models.F('chunk') - quantity)
 
             chunk_b = ItemChunk.objects.create(
-                    item=item,
-                    chunk=quantity,
-                    purchase=chunk.purchase
+                item=item,
+                chunk=quantity,
+                purchase=chunk.purchase
             )
 
         return item, chunk, chunk_b
@@ -895,8 +895,8 @@ class Item(models.Model):
         if self.unit.unit_type == Unit.INTEGER:
             if not int(quantity) == quantity:
                 raise IncompatibleUnitException(_("Unit {unit} can not have value {quantity}".format(
-                        unit=self.unit.name,
-                        quantity=quantity)
+                    unit=self.unit.name,
+                    quantity=quantity)
                 ))
         if quantity > self.quantity:
             raise QuantityNotEnough(_("Requested quantity more than available"))
@@ -1074,7 +1074,19 @@ class TransactionItem(MovementItem):
     def __str__(self):
         return self.category.name
 
+    def clean_destination(self):
+        if hasattr(self.transaction, 'is_pending') and self.transaction.is_pending:
+            if not self.destination:
+                raise ValidationError(
+                    {'destination': ugettext("Can't complete transaction because transaction item haven't destination")}
+                )
+
+    def clean(self):
+
+        self.clean_destination()
+
     def save(self, *args, **kwargs):
+        self.full_clean()
         if not self.cell_from:
             if self.serial:
                 self.cell_from = self.serial.cell
@@ -1115,7 +1127,6 @@ class Transaction(Movement):
         return u'%s → %s' % (self.source.name, self.destination.name)
 
     def save(self, *args, **kwargs):
-        # print "TRANSACTION SAVED!"
         super(Transaction, self).save(*args, **kwargs)
 
     def reset(self):
@@ -1170,7 +1181,7 @@ class Transaction(Movement):
 
     @transaction.atomic
     def complete(self, pending=False, transmutation=False):
-        # print "TRANSACTION COMPLETED!"
+        # print("TRANSACTION COMPLETED!")
         if pending:
             # print "transaction complete defer"
             setattr(self, "is_pending", True)
@@ -1196,10 +1207,10 @@ class Transaction(Movement):
 
             if item.reserved_by.destination:
                 assert item.reserved_by.destination.is_descendant_of(self.destination, include_self=True), ugettext(
-                        "<{ti_dest}> must be child node of <{dest}>".format(
-                                ti_dest=item.reserved_by.destination.name,
-                                dest=self.destination.name
-                        )
+                    "<{ti_dest}> must be child node of <{dest}>".format(
+                        ti_dest=item.reserved_by.destination.name,
+                        dest=self.destination.name
+                    )
                 )
                 item.reserved_by.destination.deposit(item, cell=cell)
             else:
@@ -1596,26 +1607,26 @@ class Transmutation(Transaction):
         #     destination = self.destination,
         # )
         rev_t = Transaction.objects.create(
-                destination=self.source,
-                source=self.destination,
+            destination=self.source,
+            source=self.destination,
         )
         for tr in self.transmutation_items.all():
             ti = TransactionItem.objects.create(
-                    transaction=self.transaction_ptr,
-                    category=tr.category,
-                    quantity=tr.quantity,
-                    serial=tr.serial,
-                    chunk=tr.chunk,
-                    cell=tr.cell
+                transaction=self.transaction_ptr,
+                category=tr.category,
+                quantity=tr.quantity,
+                serial=tr.serial,
+                chunk=tr.chunk,
+                cell=tr.cell
             )
             tr.ti = ti
             tr.save()
             rev_ti = TransactionItem.objects.create(
-                    transaction=rev_t,
-                    category=tr.transmuted,
-                    quantity=tr.quantity,
-                    serial=tr.serial,
-                    cell=tr.cell
+                transaction=rev_t,
+                category=tr.transmuted,
+                quantity=tr.quantity,
+                serial=tr.serial,
+                cell=tr.cell
             )
         self.complete()
         rev_t.force_complete()
@@ -1663,7 +1674,6 @@ class ReturnItem(MovementItem):
 
 
 class Return(Transaction):
-
     @transaction.atomic
     def ret(self):
         if not self.return_items.count():
@@ -1709,9 +1719,9 @@ class Return(Transaction):
                     p_prep.complete()
                     if ri.serial:
                         serial = ItemSerial.objects.get(
-                                serial=ri.serial,
-                                item__category=ri.category,
-                                item__place=ri.source
+                            serial=ri.serial,
+                            item__category=ri.category,
+                            item__place=ri.source
                         )
                     else:
                         serial = None

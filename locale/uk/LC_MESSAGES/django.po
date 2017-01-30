@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-08-23 17:07+0300\n"
+"POT-Creation-Date: 2017-01-30 12:30+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,343 +19,383 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
 "%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: base/admin/__init__.py:119
+#: base/admin/__init__.py:125 base/superadmin/__init__.py:126
 msgid "items list"
 msgstr "предмети"
 
-#: base/admin/__init__.py:212
+#: base/admin/__init__.py:223 base/superadmin/__init__.py:224
 msgid "purchase items data is read only!"
 msgstr "дані закупки змінити не можна"
 
-#: base/admin/__init__.py:258 base/admin/__init__.py:434
-#: base/admin/__init__.py:436 base/admin/__init__.py:525
-#: base/admin/__init__.py:591 base/admin/__init__.py:593
+#: base/admin/__init__.py:269 base/admin/__init__.py:445
+#: base/admin/__init__.py:447 base/admin/__init__.py:536
+#: base/admin/__init__.py:602 base/admin/__init__.py:604
+#: base/superadmin/__init__.py:386
 msgid "movement history"
 msgstr "історія переміщень"
 
-#: base/admin/__init__.py:366
+#: base/admin/__init__.py:377 base/superadmin/__init__.py:312
 msgid "transaction items data is read only!"
 msgstr "предмети транзакції тільки для перегляду"
 
-#: base/admin/__init__.py:385
+#: base/admin/__init__.py:396 base/superadmin/__init__.py:331
 #, python-brace-format
 msgid "Transaction {trans} not completed. cannot rollback"
 msgstr "Транзакція {trans} ще не завершена. Неможливо зробити відкат"
 
-#: base/admin/__init__.py:396
+#: base/admin/__init__.py:407 base/superadmin/__init__.py:342
 msgid "rollback"
 msgstr "відкат"
 
-#: base/admin/__init__.py:422 base/admin/__init__.py:517
+#: base/admin/__init__.py:433 base/admin/__init__.py:528
 msgid "serials list"
 msgstr "серійні номери"
 
-#: base/admin/__init__.py:424 base/admin/forms.py:155 base/models.py:841
+#: base/admin/__init__.py:435 base/admin/forms.py:155 base/models.py:1007
+#: base/superadmin/forms.py:153 base/workeradmin/forms.py:170
 msgid "serials"
 msgstr "серійні номери"
 
-#: base/admin/__init__.py:428 base/admin/__init__.py:521
+#: base/admin/__init__.py:439 base/admin/__init__.py:532
 msgid "chunks list"
 msgstr "куски"
 
-#: base/admin/__init__.py:430 base/models.py:872
+#: base/admin/__init__.py:441 base/models.py:1038
 msgid "chunks"
 msgstr "куски"
 
-#: base/admin/__init__.py:472
+#: base/admin/__init__.py:483
 msgid "Place does not exist"
 msgstr "Місце не існує"
 
-#: base/admin/__init__.py:480
+#: base/admin/__init__.py:491
 msgid "> ALL"
 msgstr "> ВСІ"
 
-#: base/admin/__init__.py:544
+#: base/admin/__init__.py:555
 msgid "Category does not exist"
 msgstr "Категорія не існує"
 
-#: base/admin/__init__.py:547
+#: base/admin/__init__.py:558
 #, python-brace-format
 msgid "<{name}> items"
 msgstr "<{name}> предмети"
 
-#: base/admin/__init__.py:613 base/admin/__init__.py:697
+#: base/admin/__init__.py:624 base/admin/__init__.py:708
 msgid "Item does not exist"
 msgstr "Предмет не існує"
 
-#: base/admin/__init__.py:616
+#: base/admin/__init__.py:627
 #, python-brace-format
 msgid "Serials for <{name}> in <{place}>"
 msgstr "Серійні номери для <{name}> в <{place}>"
 
-#: base/admin/__init__.py:700
+#: base/admin/__init__.py:711
 #, python-brace-format
 msgid "Chunks for <{name}> in <{place}>"
 msgstr "Куски для <{name}> в <{place}>"
 
-#: base/admin/__init__.py:850
+#: base/admin/__init__.py:861
 #, python-brace-format
 msgid "Movement history for <{category_name}> in <{place_name}>"
 msgstr "Історія переміщень для <{category_name}> в <{place_name}>"
 
-#: base/admin/__init__.py:855
+#: base/admin/__init__.py:866
 #, python-brace-format
 msgid "Movement history for <{place_name}>"
 msgstr "Історія переміщень для <{place_name}>"
 
-#: base/admin/__init__.py:909
+#: base/admin/__init__.py:920
 #, python-brace-format
 msgid "Movement history for <{serial_name}> in <{place_name}>"
 msgstr "Історія переміщень для  <{serial_name}> в <{place_name}>"
 
-#: base/admin/__init__.py:914
+#: base/admin/__init__.py:925
 #, python-brace-format
 msgid "Movement history for <{serial_name}>"
 msgstr "Історія переміщень для <{serial_name}>"
 
-#: base/admin/actions.py:13
+#: base/admin/actions.py:13 base/superadmin/actions.py:14
 #, python-format
 msgid "processed %s"
 msgstr "списано %s"
 
-#: base/admin/actions.py:15
+#: base/admin/actions.py:15 base/superadmin/actions.py:16
 #, python-format
 msgid "Error: no comment for %s"
 msgstr "Помилка: немає коментаря для %s"
 
-#: base/admin/actions.py:18
+#: base/admin/actions.py:18 base/superadmin/actions.py:19
 msgid "Process to void"
 msgstr "Списати"
 
-#: base/admin/actions.py:26
+#: base/admin/actions.py:26 base/superadmin/actions.py:27
 msgid "Selected cell does not exist"
 msgstr "Обрана комірка не існує"
 
-#: base/admin/actions.py:32
+#: base/admin/actions.py:32 base/superadmin/actions.py:33
 #, python-brace-format
 msgid "Updated items count: {cnt}, Cell: {cell}"
 msgstr "Оновлено пердметів: {cnt}, Комірка: {cell}"
 
-#: base/admin/actions.py:37
+#: base/admin/actions.py:37 base/superadmin/actions.py:39
 msgid "Update cell of selected rows"
 msgstr "Оновити комірки для обраних предметів"
 
-#: base/admin/forms.py:146 base/admin/forms.py:186 base/models.py:367
+#: base/admin/forms.py:146 base/admin/forms.py:186 base/models.py:533
+#: base/superadmin/forms.py:144 base/superadmin/forms.py:184
+#: base/workeradmin/forms.py:201
 #, python-format
 msgid "unit type `%s` can not have serials"
 msgstr "одиниця виміру `%s` не може мати серійних номерів"
 
-#: base/admin/forms.py:172
+#: base/admin/forms.py:172 base/superadmin/forms.py:170
+#: base/workeradmin/forms.py:187
 msgid "can't set serial when serial list not empty"
 msgstr ""
 "неможливо зберегти серійний номер якщо список серійних номерів не порожній"
 
-#: base/admin/forms.py:193 base/models.py:372
+#: base/admin/forms.py:193 base/models.py:538 base/superadmin/forms.py:191
+#: base/workeradmin/forms.py:208
 #, python-brace-format
 msgid "serials count error: {count}≠{quantity}"
 msgstr "помилка кількості серійних номерів: {count}≠{quantity}"
 
-#: base/admin/forms.py:201
+#: base/admin/forms.py:201 base/superadmin/forms.py:199
+#: base/workeradmin/forms.py:216
 #, python-brace-format
 msgid "serial <{serial}> <{category}> not found in <{place}>"
 msgstr "серійний номер <{serial}> <{category}> не знайдений в <{place}>"
 
-#: base/admin/forms.py:215
+#: base/admin/forms.py:215 base/superadmin/forms.py:213
 msgid "serial not found: {}. It is in {}"
 msgstr ""
 
 #: base/admin/forms.py:258 base/admin/forms.py:277 base/admin/forms.py:298
-#: base/admin/forms.py:395
+#: base/admin/forms.py:395 base/superadmin/forms.py:255
+#: base/superadmin/forms.py:274 base/superadmin/forms.py:295
+#: base/superadmin/forms.py:386 base/workeradmin/forms.py:279
 msgid "force complete"
 msgstr "завершити"
 
 #: base/admin/forms.py:268 base/admin/forms.py:289 base/admin/forms.py:309
-#: base/admin/forms.py:407
+#: base/admin/forms.py:407 base/superadmin/forms.py:286
+#: base/superadmin/forms.py:306 base/superadmin/forms.py:398
+#: base/workeradmin/forms.py:291
 msgid "already completed"
 msgstr "вже було завершено"
 
 #: base/admin/functions.py:32
-#, python-brace-format
-msgid "serials range left and rigth parts length mismatch: {raw_serial}"
+#, fuzzy, python-brace-format
+#| msgid "serials range left and rigth parts length mismatch: {raw_serial}"
+msgid "serials range left and right parts length mismatch: {raw_serial}"
 msgstr ""
 "помилка діапазону серійних номерів: ліва і права частини мають різну довжину "
 "{raw_serial}"
 
-#: base/admin/functions.py:41
+#: base/admin/functions.py:41 base/superadmin/functions.py:46
 #, python-brace-format
 msgid "serials range format error: {raw_serial}"
 msgstr "помилка формату діапазону серійних номерів: {raw_serial}"
 
 #: base/admin/functions.py:50
-#, python-brace-format
+#, fuzzy, python-brace-format
+#| msgid "serials range left and rigth parts length mismatch: {raw_serial}"
 msgid ""
-"serials range left and rigth parts base mismatch: {raw_serial}, {lb}≠{rb}"
+"serials range left and right parts base mismatch: {raw_serial}, {lb}≠{rb}"
 msgstr ""
+"помилка діапазону серійних номерів: ліва і права частини мають різну довжину "
+"{raw_serial}"
 
-#: base/admin/functions.py:60
+#: base/admin/functions.py:60 base/superadmin/functions.py:65
 #, python-brace-format
 msgid ""
 "serials range left part must be lesser than rigth: {raw_serial}, {li}>={ri}"
 msgstr ""
 
-#: base/admin/functions.py:68
+#: base/admin/functions.py:68 base/superadmin/functions.py:73
 #, python-brace-format
 msgid "serials range too large: {raw_serial} {size}>500"
 msgstr ""
 
-#: base/admin/functions.py:81
+#: base/admin/functions.py:81 base/superadmin/functions.py:86
 msgid "serials data non unique"
 msgstr "серійні номери мають повтори"
 
-#: base/models.py:56
+#: base/api/viewsets.py:114
+msgid "rt  Can't delete completed transaction"
+msgstr ""
+
+#: base/models.py:75
 msgid "integer unit"
 msgstr "ціле число"
 
-#: base/models.py:57
+#: base/models.py:76
 msgid "decimal unit"
 msgstr "не ціле число"
 
-#: base/models.py:60 base/models.py:76 base/models.py:141
+#: base/models.py:79 base/models.py:95 base/models.py:245
 msgid "name"
 msgstr "ім'я"
 
-#: base/models.py:61
+#: base/models.py:80
 msgid "unit type"
 msgstr "тим одиниці виміру"
 
-#: base/models.py:64 base/models.py:77
+#: base/models.py:83 base/models.py:96
 msgid "unit"
 msgstr "одиниця виміру"
 
-#: base/models.py:65
+#: base/models.py:84
 msgid "units"
 msgstr "одиниці виміру"
 
-#: base/models.py:78
+#: base/models.py:97
 msgid "stackable"
 msgstr "можуть бути з'єднані"
 
-#: base/models.py:79 base/models.py:142 base/models.py:559
+#: base/models.py:98 base/models.py:246 base/models.py:725
 msgid "parent"
 msgstr "батьківський елемент"
 
-#: base/models.py:80 base/models.py:130 base/models.py:146 base/models.py:421
-#: base/models.py:562 base/models.py:836 base/models.py:868 base/models.py:935
-#: base/models.py:1465
+#: base/models.py:99 base/models.py:234 base/models.py:250 base/models.py:587
+#: base/models.py:728 base/models.py:1002 base/models.py:1034
+#: base/models.py:1113 base/models.py:1643
 msgid "comment"
 msgstr "коментар"
 
-#: base/models.py:85 base/models.py:127 base/models.py:259 base/models.py:555
-#: base/models.py:1118 base/models.py:1175 base/models.py:1204
+#: base/models.py:104 base/models.py:231 base/models.py:425 base/models.py:721
+#: base/models.py:1296 base/models.py:1353 base/models.py:1382
 msgid "item category"
 msgstr "категорія предмету"
 
-#: base/models.py:86
+#: base/models.py:105
 msgid "item categories"
 msgstr "категорії предметів"
 
-#: base/models.py:101
+#: base/models.py:120
 msgid "Unit must be set for object or for one of its parents."
 msgstr ""
 "Одиниця виміру має бути вказана для об'єкта чи для одного з батьківських "
 "елементів"
 
-#: base/models.py:111
+#: base/models.py:130
 msgid "Stackable must be set for object or for one of its parents."
 msgstr ""
 "Можливість з'єднання має бути вказана для об'єкта чи для одного з "
 "батьківських елементів"
 
-#: base/models.py:128
+#: base/models.py:161 base/models.py:166 base/models.py:373 base/models.py:380
+#: templates/admin/mptt_change_list.html:34
+msgid "view"
+msgstr "переглянути"
+
+#: base/models.py:181 base/models.py:188 base/models.py:395 base/models.py:402
+#: templates/admin/mptt_change_list.html:35
+msgid "view movement"
+msgstr "рух товару"
+
+#: base/models.py:203 base/models.py:208
+#: templates/admin/mptt_change_list.html:36
+msgid "view storage"
+msgstr "переглянути місце"
+
+#: base/models.py:220 base/models.py:225 base/models.py:414 base/models.py:419
+#, fuzzy
+#| msgid "view items"
+msgid "view in tree"
+msgstr "переглянути предмети"
+
+#: base/models.py:232
 msgid "prefix"
 msgstr "префікс"
 
-#: base/models.py:129
+#: base/models.py:233
 msgid "last code"
 msgstr "останній код"
 
-#: base/models.py:133
+#: base/models.py:237
 msgid "item category comment"
 msgstr "коментар до категорій"
 
-#: base/models.py:134
+#: base/models.py:238
 msgid "item category comments"
 msgstr "коментарі до категорій"
 
-#: base/models.py:143
+#: base/models.py:247
 msgid "is shop"
 msgstr "це магазин?"
 
-#: base/models.py:144
+#: base/models.py:248
 msgid "has cells"
 msgstr "має комірки?"
 
-#: base/models.py:145
+#: base/models.py:249
 msgid "has chunks"
 msgstr "має відрізки?"
 
-#: base/models.py:150 base/models.py:560 base/models.py:1346
+#: base/models.py:254 base/models.py:726 base/models.py:1524
 msgid "place"
 msgstr "місце"
 
-#: base/models.py:151
+#: base/models.py:255
 msgid "places"
 msgstr "місця"
 
-#: base/models.py:156
+#: base/models.py:260
 msgid "view place"
 msgstr "переглянути місце"
 
-#: base/models.py:157
+#: base/models.py:261
 msgid "view items"
 msgstr "переглянути предмети"
 
-#: base/models.py:158
+#: base/models.py:262
 msgid "view item quantity"
 msgstr "переглянути кількість предметів"
 
-#: base/models.py:159
+#: base/models.py:263
 msgid "view item serial"
 msgstr "переглянути серійні номери"
 
-#: base/models.py:160
+#: base/models.py:264
 msgid "accept transactions"
 msgstr "прийняти транзакцію"
 
-#: base/models.py:161
+#: base/models.py:265
 msgid "request item store"
 msgstr "запросити як пункт призначення"
 
-#: base/models.py:162
+#: base/models.py:266
 msgid "request item withdraw"
 msgstr "запросити як джерело"
 
-#: base/models.py:163
+#: base/models.py:267
 msgid "change serial"
 msgstr "змінити серійний номер"
 
-#: base/models.py:164
+#: base/models.py:268
 msgid "change chunks"
 msgstr "змінити відрізки"
 
-#: base/models.py:165
+#: base/models.py:269
 msgid "modify items"
 msgstr "змінити предмети (super user)"
 
-#: base/models.py:166
+#: base/models.py:270
 msgid "make purchase"
 msgstr "створити закупівлю"
 
-#: base/models.py:167
+#: base/models.py:271
 msgid "make auto purchase"
 msgstr "створити автоматичну закупівлю"
 
-#: base/models.py:209
+#: base/models.py:313
 #, python-brace-format
 msgid "Can not withdraw <{item}> from <{place}>: not found."
 msgstr "Неможливо забрати <{item}> з <{place}>: не знайдено."
 
-#: base/models.py:218
+#: base/models.py:322
 #, python-brace-format
 msgid ""
 "Can not withdraw <{item}> from <{place}>: quantity >1 for serial <{serial}> "
@@ -363,516 +403,526 @@ msgstr ""
 "Неможливо забрати <{item}> з <{place}>: кількість не 1 для серійного номера "
 "<{serial}>"
 
-#: base/models.py:226
+#: base/models.py:330
 #, python-brace-format
 msgid "Can not withdraw <{item}> from <{place}>: serial <{serial}> not found"
 msgstr ""
 "Неможливо забрати <{item}> з <{place}>: серыйний номер <{serial}> не знайдено"
 
-#: base/models.py:260 base/models.py:556 base/models.py:1111
-#: base/models.py:1167
+#: base/models.py:426 base/models.py:722 base/models.py:1289
+#: base/models.py:1345
 msgid "quantity"
 msgstr "кількість"
 
-#: base/models.py:307
+#: base/models.py:473
 msgid "this field is required"
 msgstr ""
 
-#: base/models.py:317 base/models.py:606
+#: base/models.py:483 base/models.py:772
 #, python-format
 msgid "unit type `%s` can not be decimal"
 msgstr "одиниця виміру `%s` повинна бути цілою"
 
-#: base/models.py:330 base/models.py:890
+#: base/models.py:496 base/models.py:1056
 msgid "Purchase"
 msgstr "Закупка"
 
-#: base/models.py:331
+#: base/models.py:497
 msgid "price"
 msgstr "ціна"
 
-#: base/models.py:332
+#: base/models.py:498
 msgid "price usd"
 msgstr "ціна $"
 
-#: base/models.py:341
+#: base/models.py:507
 msgid "purchase item"
 msgstr "предмет закупка"
 
-#: base/models.py:342
+#: base/models.py:508
 msgid "purchase items"
 msgstr "предмети закупки"
 
-#: base/models.py:344
+#: base/models.py:510
 msgid "view item price"
 msgstr "переглянути ціну"
 
-#: base/models.py:394 base/models.py:397 base/models.py:420
+#: base/models.py:560 base/models.py:563 base/models.py:586
 msgid "payer"
 msgstr "платник"
 
-#: base/models.py:398
+#: base/models.py:564
 msgid "payers"
 msgstr "платники"
 
-#: base/models.py:406 base/models.py:1120 base/models.py:1177
+#: base/models.py:572 base/models.py:1298 base/models.py:1355
 msgid "created at"
 msgstr "створено"
 
-#: base/models.py:407 base/models.py:1121 base/models.py:1178
+#: base/models.py:573 base/models.py:1299 base/models.py:1356
 msgid "completed at"
 msgstr "завершено"
 
-#: base/models.py:408
+#: base/models.py:574
 msgid "is completed"
 msgstr "завершено"
 
-#: base/models.py:409
+#: base/models.py:575
 msgid "is prepared"
 msgstr "підготовлено"
 
-#: base/models.py:416 base/models.py:567 base/models.py:928
+#: base/models.py:582 base/models.py:733 base/models.py:1106
 msgid "items"
 msgstr "предмети"
 
-#: base/models.py:417 base/models.py:929 base/models.py:1109
-#: base/models.py:1112 base/models.py:1165 base/models.py:1171
-#: base/models.py:1479
+#: base/models.py:583 base/models.py:1107 base/models.py:1287
+#: base/models.py:1290 base/models.py:1343 base/models.py:1349
+#: base/models.py:1657
 msgid "source"
 msgstr "джерело"
 
-#: base/models.py:418 base/models.py:899 base/models.py:930 base/models.py:1110
-#: base/models.py:1116 base/models.py:1166 base/models.py:1173
+#: base/models.py:584 base/models.py:1065 base/models.py:1108
+#: base/models.py:1288 base/models.py:1294 base/models.py:1344
+#: base/models.py:1351
 msgid "destination"
 msgstr "пункт призначення"
 
-#: base/models.py:419
+#: base/models.py:585
 msgid "auto source"
 msgstr "автоматичне джерело"
 
-#: base/models.py:430 base/models.py:561 base/models.py:835 base/models.py:866
-#: base/models.py:892
+#: base/models.py:596 base/models.py:727 base/models.py:1001
+#: base/models.py:1032 base/models.py:1058
 msgid "purchase"
 msgstr "закупка"
 
-#: base/models.py:431
+#: base/models.py:597
 msgid "purchases"
 msgstr "закупки"
 
-#: base/models.py:443
+#: base/models.py:609
 msgid "auto source is allowed for shops only"
 msgstr "автоматичне джерело дозволено тільки якщо джерело це магазин"
 
-#: base/models.py:557
+#: base/models.py:723
 msgid "is reserved"
 msgstr "зарезервовано"
 
-#: base/models.py:558
+#: base/models.py:724
 msgid "reserved by transaction"
 msgstr "зарезервовано в транзакції"
 
-#: base/models.py:566 base/models.py:833 base/models.py:863
+#: base/models.py:732 base/models.py:999 base/models.py:1029
 msgid "item"
 msgstr "предмет"
 
-#: base/models.py:631
+#: base/models.py:797
 msgid "please provide serial to withdraw"
 msgstr "вкажіть серійні номери"
 
-#: base/models.py:638
+#: base/models.py:804
 msgid "please provide chunk to withdraw"
 msgstr "вкажіть відрізки"
 
-#: base/models.py:663
+#: base/models.py:829
 msgid "Serials count does not match requested quantity"
 msgstr "помилка кількості серійних номерів: {count}≠{quantity}"
 
-#: base/models.py:665
+#: base/models.py:831
 #, python-brace-format
 msgid "Serial {serial} doesn't belong to item {item}"
 msgstr "серійний номер {serial} не прив'язаний до предмета {item}"
 
-#: base/models.py:692
+#: base/models.py:858
 msgid "Chunks length lesser than requested quantity"
 msgstr "Кусок коротший за заявлену кількість"
 
-#: base/models.py:731
+#: base/models.py:897
 #, python-brace-format
 msgid "Unit {unit} can not have value {quantity}"
 msgstr "Одиниця виміру {unit} не може прийняти значенння {quantity}"
 
-#: base/models.py:736
+#: base/models.py:902
 msgid "Requested quantity more than available"
 msgstr "Заявленя кількість перевищує залишок"
 
-#: base/models.py:772 base/models.py:827
+#: base/models.py:938 base/models.py:993
 msgid "Cancelled due to dry_run option"
 msgstr "Відмінено через dry_run опцію"
 
-#: base/models.py:786
+#: base/models.py:952
 msgid "item parameter must be instance of base.models.Item"
 msgstr "item parameter must be instance of base.models.Item"
 
-#: base/models.py:789
+#: base/models.py:955
 msgid "Item category must match"
 msgstr "Категорії предметів маюсть співпадати "
 
-#: base/models.py:792
+#: base/models.py:958
 msgid "Destination item must exist in db"
 msgstr "Предмет призначення має ісеувати в базі данних"
 
-#: base/models.py:795
+#: base/models.py:961
 msgid "Source item must exist in db"
 msgstr "Предмет передачі має ісеувати в базі данних"
 
-#: base/models.py:798
+#: base/models.py:964
 msgid "Can't join item with itself"
 msgstr "Не можу об'єднати предмет із самим собою"
 
-#: base/models.py:834 base/models.py:840 base/models.py:1168
-#: base/models.py:1169 base/models.py:1463
+#: base/models.py:1000 base/models.py:1006 base/models.py:1346
+#: base/models.py:1347 base/models.py:1641
 msgid "serial"
 msgstr "серійний номер"
 
-#: base/models.py:865
+#: base/models.py:1031
 msgid "label"
 msgstr "мітка"
 
-#: base/models.py:871
+#: base/models.py:1037
 msgid "chunk"
 msgstr "кусок"
 
-#: base/models.py:889
+#: base/models.py:1055
 msgid "item transaction"
 msgstr "предмет транзакції"
 
-#: base/models.py:905
+#: base/models.py:1071
 msgid "transaction item"
 msgstr "предмет транзакції"
 
-#: base/models.py:906
+#: base/models.py:1072
 msgid "transaction items"
 msgstr "предмети транзакції"
 
-#: base/models.py:931
+#: base/models.py:1081
+msgid "Can't complete transaction because transaction item haven't destination"
+msgstr "Не можна завершити транзакцію тому, що в предметі транзакції відсутній пункт презначення"
+
+#: base/models.py:1109
 msgid "source negotiated"
 msgstr "джерело погоджено"
 
-#: base/models.py:932
+#: base/models.py:1110
 msgid "destination negotiated"
 msgstr "пункт призначення погоджено"
 
-#: base/models.py:933
+#: base/models.py:1111
 msgid "source confirmed"
 msgstr "джерело підтверджено"
 
-#: base/models.py:934
+#: base/models.py:1112
 msgid "destination confirmed"
 msgstr "пункт призначення підтверджено"
 
-#: base/models.py:936
+#: base/models.py:1114
 msgid "comment places"
 msgstr "місця по лінії"
 
-#: base/models.py:945 base/models.py:946 base/models.py:1119
-#: base/models.py:1176
+#: base/models.py:1123 base/models.py:1124 base/models.py:1297
+#: base/models.py:1354
 msgid "transaction"
 msgstr "транзакція"
 
-#: base/models.py:1020
+#: base/models.py:1197
 msgid "list is not confirmed by source"
 msgstr "список предметів не підтверджений джерелом"
 
-#: base/models.py:1022
+#: base/models.py:1199
 msgid "list is not confirmed by destination"
 msgstr "список предметів не підтверджений в пункті призначення"
 
-#: base/models.py:1024
+#: base/models.py:1201
 msgid "transaction is not confirmed by source"
 msgstr "транзакція не підтверджена джерелом"
 
-#: base/models.py:1026
+#: base/models.py:1203
 msgid "transaction is not confirmed by destination"
 msgstr "Транзакція не підтверджена в пункті призначення"
 
-#: base/models.py:1033
+#: base/models.py:1210
 #, python-brace-format
 msgid "<{ti_dest}> must be child node of <{dest}>"
 msgstr ""
 
-#: base/models.py:1083
+#: base/models.py:1261
 msgid "order serial"
 msgstr "приходнік"
 
-#: base/models.py:1084
+#: base/models.py:1262
 msgid "order serials"
 msgstr "приходніки"
 
-#: base/models.py:1090
+#: base/models.py:1268
 msgid "contract serial"
 msgstr "договір"
 
-#: base/models.py:1091
+#: base/models.py:1269
 msgid "contract serials"
 msgstr "договори"
 
-#: base/models.py:1108 base/models.py:1164
+#: base/models.py:1286 base/models.py:1342
 msgid "item_category"
 msgstr "категорія предмету"
 
-#: base/models.py:1114 base/models.py:1162
+#: base/models.py:1292 base/models.py:1340
 msgid "transaction_item"
 msgstr "предмет транзакції"
 
-#: base/models.py:1126
+#: base/models.py:1304
 msgid "item movement"
 msgstr "рух товару"
 
-#: base/models.py:1127
+#: base/models.py:1305
 msgid "items movements"
 msgstr "рух товарів"
 
-#: base/models.py:1183
+#: base/models.py:1361
 msgid "serial movement"
 msgstr "рух серійного номера"
 
-#: base/models.py:1184
+#: base/models.py:1362
 msgid "serials movements"
 msgstr "рух серійних номерів"
 
-#: base/models.py:1202
+#: base/models.py:1380
 msgid "old serial"
 msgstr "старий серійний номер"
 
-#: base/models.py:1203
+#: base/models.py:1381
 msgid "new serial"
 msgstr "новий серійний номер"
 
-#: base/models.py:1210
+#: base/models.py:1388
 msgid "fix: serial transform"
 msgstr "fix: заміна серійного номеру"
 
-#: base/models.py:1211
+#: base/models.py:1389
 msgid "fix: serial transforms"
 msgstr "fix: заміна серійних номерів"
 
-#: base/models.py:1256
+#: base/models.py:1434
 msgid "old item category"
 msgstr "стара категорія предмету"
 
-#: base/models.py:1258
+#: base/models.py:1436
 msgid "new item category"
 msgstr "нова категорія предмету"
 
-#: base/models.py:1266
+#: base/models.py:1444
 msgid "fix: category merge"
 msgstr "fix: об'єднання категорій"
 
-#: base/models.py:1267
+#: base/models.py:1445
 msgid "fix: category merges"
 msgstr "fix: об'єднання категорій"
 
-#: base/models.py:1325
+#: base/models.py:1503
 msgid "old place"
 msgstr "старе місце"
 
-#: base/models.py:1327
+#: base/models.py:1505
 msgid "new place"
 msgstr "нове місце"
 
-#: base/models.py:1333
+#: base/models.py:1511
 msgid "fix: place merge"
 msgstr "fix: об'єднання місць"
 
-#: base/models.py:1334
+#: base/models.py:1512
 msgid "fix: place merges"
 msgstr "fix: об'єднання місць"
 
-#: base/models.py:1350
+#: base/models.py:1528
 msgid "cell"
 msgstr "комірка"
 
-#: base/models.py:1351
+#: base/models.py:1529
 msgid "cells"
 msgstr "комірки"
 
-#: base/models.py:1363
+#: base/models.py:1541
 msgid "transmuted item category"
 msgstr "нова категорія предмету"
 
-#: base/models.py:1365
+#: base/models.py:1543
 msgid "transmutation"
 msgstr "трансмутація"
 
-#: base/models.py:1377
+#: base/models.py:1555
 msgid "transmutation item"
 msgstr "предмет трансмутації"
 
-#: base/models.py:1378
+#: base/models.py:1556
 msgid "transmutation items"
 msgstr "предмети трансмутації"
 
-#: base/models.py:1395
+#: base/models.py:1573
 msgid "Transmutator not found. Please check settings"
 msgstr ""
 
-#: base/models.py:1427
+#: base/models.py:1605
 msgid "No transmutation items added"
 msgstr "Не додано жодного пердмету для транстутації"
 
-#: base/models.py:1458
+#: base/models.py:1636
 msgid "Fix: transmutation"
 msgstr "Fix: трансмутація"
 
-#: base/models.py:1459
+#: base/models.py:1637
 msgid "Fix: transmutations"
 msgstr "Fix: трансмутації"
 
-#: base/models.py:1464 base/models.py:1468
+#: base/models.py:1642 base/models.py:1646
 msgid "warranty date"
 msgstr "гарантійна дата"
 
-#: base/models.py:1469
+#: base/models.py:1647
 msgid "warranty dates"
 msgstr "гарантійні дати"
 
-#: base/models.py:1481 base/models.py:1577
+#: base/models.py:1659 base/models.py:1763
 msgid "return"
 msgstr "повернення"
 
-#: base/models.py:1492
+#: base/models.py:1670
 msgid "return item"
 msgstr "предмет повернення"
 
-#: base/models.py:1493
+#: base/models.py:1671
 msgid "return items"
 msgstr "предмети повернення"
 
-#: base/models.py:1504
+#: base/models.py:1681
 msgid "No return items added"
 msgstr "Не додано жодного пердмету для повернення"
 
-#: base/models.py:1578
+#: base/models.py:1764
 msgid "returns"
 msgstr "повернення"
 
-#: templates/admin/__stash/app_index.html:11
-#: templates/admin/__stash/change_form.html:139
-#: templates/admin/__stash/change_list.html:160
-#: templates/admin/__stash/index.html:18 templates/admin/app_index.html:11
-#: templates/admin/change_form.html:147 templates/admin/change_list.html:167
-#: templates/admin/index.html:18 templates/admin/proxy_change_form.html:10
+#: base/models.py:1770
+#, fuzzy
+#| msgid "view storage"
+msgid "withdraw from storage"
+msgstr "переглянути місце"
+
+#: base/models.py:1771
+msgid "withdraws from storage"
+msgstr ""
+
+#: base/superadmin/functions.py:37
+#, python-brace-format
+msgid "serials range left and rigth parts length mismatch: {raw_serial}"
+msgstr ""
+"помилка діапазону серійних номерів: ліва і права частини мають різну довжину "
+"{raw_serial}"
+
+#: base/superadmin/functions.py:55
+#, python-brace-format
+msgid ""
+"serials range left and rigth parts base mismatch: {raw_serial}, {lb}≠{rb}"
+msgstr ""
+
+#: base/workeradmin/__init__.py:92
+msgid "user does not have configured place in profile"
+msgstr ""
+
+#: base/workeradmin/forms.py:32
+#, python-format
+msgid ""
+"Please enter the correct %(username)s and password for a worker account. "
+"Note that both fields may be case-sensitive."
+msgstr ""
+
+#: base/workeradmin/forms.py:35
+msgid ""
+"You have no access to workers group. Please contact your administrator and "
+"ask him to grant you access. "
+msgstr ""
+
+#: templates/admin/app_index.html:11 templates/admin/change_form.html:147
+#: templates/admin/change_list.html:167 templates/admin/index.html:18
+#: templates/admin/proxy_change_form.html:10
 #: templates/admin/proxy_change_list.html:10
 msgid "Home"
 msgstr "Домівка"
 
-#: templates/admin/__stash/app_index.html:13 templates/admin/app_index.html:13
+#: templates/admin/app_index.html:13
 #, python-format
 msgid "<li>%(name)s</li>"
 msgstr "<li>%(name)s</li>"
 
-#: templates/admin/__stash/app_index.html:31
-#: templates/admin/__stash/change_form.html:142
-#: templates/admin/__stash/index.html:46 templates/admin/app_index.html:31
-#: templates/admin/change_form.html:153 templates/admin/index.html:46
+#: templates/admin/app_index.html:31 templates/admin/change_form.html:153
+#: templates/admin/index.html:46
 msgid "Add"
 msgstr "Додати"
 
-#: templates/admin/__stash/app_index.html:32
-#: templates/admin/__stash/index.html:51 templates/admin/app_index.html:32
-#: templates/admin/index.html:51 templates/admin/related_widget_wrapper.html:15
+#: templates/admin/app_index.html:32 templates/admin/index.html:51
+#: templates/admin/related_widget_wrapper.html:15
 msgid "Change"
 msgstr "Змінити"
 
-#: templates/admin/__stash/app_index.html:40
-#: templates/admin/__stash/index.html:61 templates/admin/app_index.html:40
-#: templates/admin/index.html:61
+#: templates/admin/app_index.html:40 templates/admin/index.html:61
 msgid "You don´t have permission to edit anything."
 msgstr ""
 
-#: templates/admin/__stash/base_site.html:5
-msgid "Sklad"
-msgstr "Склад"
-
-#: templates/admin/__stash/change_form.html:129
 #: templates/admin/change_form.html:137
 msgid "Open All Items"
 msgstr "Розгорнути всі дерева"
 
-#: templates/admin/__stash/change_form.html:130
 #: templates/admin/change_form.html:138
 msgid "Close All Items"
 msgstr "Згорнути всі дерева"
 
-#: templates/admin/__stash/change_form.html:154
 #: templates/admin/change_form.html:165
 msgid "History"
 msgstr "Історія"
 
-#: templates/admin/__stash/change_form.html:155
 #: templates/admin/change_form.html:166
 msgid "View on site"
 msgstr "переглянути"
 
-#: templates/admin/__stash/change_form.html:173
-#: templates/admin/__stash/change_list.html:250
 #: templates/admin/change_form.html:184 templates/admin/change_list.html:257
 msgid "Please correct the error below."
 msgstr "Виправте помилку нижче"
 
-#: templates/admin/__stash/change_form.html:173
-#: templates/admin/__stash/change_list.html:250
 #: templates/admin/change_form.html:184 templates/admin/change_list.html:257
 msgid "Please correct the errors below."
 msgstr "Виправте помилки нижче"
 
-#: templates/admin/__stash/change_list.html:187
 #: templates/admin/change_list.html:194
 #, python-format
 msgid "Add %(name)s"
 msgstr "Додати %(name)s"
 
-#: templates/admin/__stash/change_list.html:216
 #: templates/admin/change_list.html:223
 msgid "Filter"
 msgstr "Фільтр"
 
-#: templates/admin/__stash/change_list.html:277
 #: templates/admin/change_list.html:284
 msgid "Save"
 msgstr "Зберегти"
 
-#: templates/admin/__stash/index.html:67 templates/admin/index.html:66
+#: templates/admin/index.html:66
 msgid "Custom Views"
 msgstr ""
 
-#: templates/admin/__stash/index.html:78 templates/admin/index.html:78
+#: templates/admin/index.html:78
 msgid "Recent Actions"
 msgstr "Нещодавні дії"
 
-#: templates/admin/__stash/index.html:80 templates/admin/index.html:80
+#: templates/admin/index.html:80
 msgid "My Actions"
 msgstr "Мої дії"
 
-#: templates/admin/__stash/index.html:83 templates/admin/index.html:83
+#: templates/admin/index.html:83
 msgid "None available"
 msgstr ""
 
 #: templates/admin/mptt_change_list.html:33
 msgid "change"
 msgstr "змінити"
-
-#: templates/admin/mptt_change_list.html:34
-msgid "view"
-msgstr "переглянути"
-
-#: templates/admin/mptt_change_list.html:35
-msgid "view movement"
-msgstr "рух товару"
-
-#: templates/admin/mptt_change_list.html:36
-msgid "view storage"
-msgstr "переглянути місце"
 
 #: templates/admin/mptt_change_list.html:37
 msgid "move failed"
@@ -886,14 +936,25 @@ msgstr ""
 msgid "Grid view"
 msgstr ""
 
-#: templates/admin/proxy_change_list.html:28
-#: templates/admin/proxy_change_list.html:31
+#: templates/admin/proxy_change_list.html:32
+#: templates/admin/proxy_change_list.html:35
 msgid "show zero"
 msgstr ""
 
 #: templates/admin/related_widget_wrapper.html:13
 #, python-format
 msgid "Change selected %(model)s"
+msgstr ""
+
+#: templates/admin/related_widget_wrapper.html:24
+#, fuzzy, python-format
+#| msgid "Add %(name)s"
+msgid "Add another %(model)s"
+msgstr "Додати %(name)s"
+
+#: templates/daterange_filter/filter.html:2
+#, python-format
+msgid " By %(filter_title)s "
 msgstr ""
 
 #: templates/daterange_filter/filter.html:26
@@ -903,3 +964,14 @@ msgstr ""
 #: templates/daterange_filter/filter.html:27
 msgid "Clear"
 msgstr ""
+
+#: userprofile/models.py:13
+msgid "profile"
+msgstr ""
+
+#: userprofile/models.py:14
+msgid "profiles"
+msgstr ""
+
+#~ msgid "Sklad"
+#~ msgstr "Склад"
