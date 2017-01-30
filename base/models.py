@@ -1075,7 +1075,9 @@ class TransactionItem(MovementItem):
         return self.category.name
 
     def clean_destination(self):
-        if hasattr(self.transaction, 'is_pending') and self.transaction.is_pending:
+        trans = self.transaction
+        if trans.destination_id == settings.APP_FILTERS['PLACE_ADDRESS_ID'] and hasattr(trans,
+                                                                                        'is_pending') and trans.is_pending:
             if not self.destination:
                 raise ValidationError(
                     {'destination': ugettext("Can't complete transaction because transaction item haven't destination")}
@@ -1796,4 +1798,3 @@ class WorkersInstalled(Transaction):
         proxy = True
         verbose_name = _("worker's installed item")
         verbose_name_plural = _("worker's installed items")
-
