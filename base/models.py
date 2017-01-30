@@ -26,30 +26,61 @@ class Object(object):
 
 
 class IncompatibleUnitException(ValueError):
+    """
+    Thrown when you are trying to store or withdraw decimal amount from
+    item that can have only integer amount.
+    """
     pass
 
 
 class ItemNotFound(ValueError):
+    """
+    Thrown when you try to withdraw Item from Place but there is not any available.
+    """
     pass
 
 
 class QuantityNotEnough(ValueError):
+    """
+    Thrown when you try to withdraw Item from Place but there are no enough quantity available
+    """
     pass
 
 
 class InvalidParameters(ValueError):
+    """
+    Thrown when function expects other type arguments
+    """
     pass
 
 
 class DryRun(RuntimeError):
+    """
+    Thrown when dry_run argument is passed to operation. With atomic requests it will rollback operation.
+    Useful for testing purposes
+    """
     pass
 
 
 class TransactionNotReady(RuntimeError):
+    """
+    Thrown when transaction.complete is called but transaction does not have all 2-step handshake flags:
+    is_negotiated_source
+    is_negotiated_destination
+    is_confirmed_source
+    is_confirmed_destination
+    :note: Now all transaction are managed by storage operator and Transaction.force_complete method
+           ignores all this flags.
+    """
     pass
 
 
 def get_placeholder_image():
+    """
+    Returns empty image for placeholders. Path is set in settings.PLACEHOLDER_IMAGE_PATH
+    :return: Placeholder image object
+    :rtype: ImageFile
+    """
     from django.core.files.images import ImageFile
     from django.core.files.storage import get_storage_class
     storage_class = get_storage_class(settings.STATICFILES_STORAGE)
@@ -61,6 +92,10 @@ def get_placeholder_image():
 
 
 class GeoName(models.Model):
+    """
+    Model with geographical names, cities, villages, streets...
+    Used in validation process for Place.name
+    """
     name = models.CharField(max_length=100, unique=True)
     timestamp = models.DateTimeField(default=timezone.now)
 
@@ -69,6 +104,9 @@ class GeoName(models.Model):
 
 
 class Unit(models.Model):
+    """
+    Model with units.
+    """
     INTEGER = 0
     DECIMAL = 1
     UNIT_TYPES = (
@@ -88,6 +126,11 @@ class Unit(models.Model):
 
 
 class ItemCategory(MPTTModel):
+    """
+    Model with item categories. Tree-like structure is provided by django-mptt app
+     - is_stackable - flag that shows if two chunks can be joined to whole one for this item category.
+       Falce values are used for cables in example.
+    """
     @staticmethod
     def get_upload_dir():
         return "uploads"
@@ -111,6 +154,11 @@ class ItemCategory(MPTTModel):
         return self.name
 
     def clean_unit(self):
+        """
+        Validates ItemCategory.unit. If it is empty - value is taken from closest parent.
+        Throws ValidationError if ItemCategory.unit is empty for this object and all of his parents.
+        :return: None
+        """
         obj = self
         while not obj.unit and obj.parent:
             obj = obj.parent
@@ -120,6 +168,11 @@ class ItemCategory(MPTTModel):
             raise ValidationError({'unit': ugettext('Unit must be set for object or for one of its parents.')})
 
     def clean_is_stackable(self):
+        """
+        Validates ItemCategory.is_stackable. If it is empty - value is taken from closest parent.
+        Throws ValidationError if ItemCategory.is_stackable is empty for this object and all of his parents.
+        :return: None
+        """
         obj = self
         while obj.is_stackable is None and obj.parent:
             obj = obj.parent
@@ -143,24 +196,38 @@ class ItemCategory(MPTTModel):
 
     @property
     def thumbnail(self):
-        # TODO: need better implementation (1)
+        """
+        :return: ItemCategory.photo or placeholder if photo is not set.
+        :rtype: ImageFile
+        """
         im = get_thumbnail(self.photo or get_placeholder_image(), '128x128', crop='center', quality=99)
-        # if not im:
-        #     im = Object()
-        #     im.url = "/static/base/img/empty.gif"
         return im
 
     @lazyprop
     def node_view_url(self):
+        """
+        Url for base_category_item_changelist admin page
+        :return: url
+        :rtype: string
+        """
         return reverse("admin:base_category_item_changelist", args=[self.pk])
 
     def node_view_link(self):
+        """
+        Html code with link for base_category_item_changelist admin page
+        :return: html code with link
+        :rtype: string
+        """
         return mark_safe('<a href="%s"><img src="%s" width="16" height="8" alt="%s"></a>' % (
             self.node_view_url,
             static("glyphicons/glyphicons-52-eye-open.png"),
             _("view"),
         ))
 
+    """
+    short_description for function is used as table header in admin page
+    https://docs.djangoproject.com/en/1.10/ref/contrib/admin/#django.contrib.admin.ModelAdmin.list_display
+    """
     node_view_link.short_description = mark_safe('<img src="%s" width="16" height="8" alt="%s">' % (
         static("glyphicons/glyphicons-52-eye-open.png"),
         _("view"),
@@ -228,6 +295,9 @@ class ItemCategory(MPTTModel):
 
 
 class ItemCategoryComment(models.Model):
+    """
+    Model for additional ItemCategory data. Used serial keys generation and barcode printing
+    """
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"), related_name="comments")
     serial_prefix = models.CharField(max_length=12, verbose_name=_("prefix"), unique=True)
     serial_last_code = models.CharField(max_length=12, verbose_name=_("last code"), blank=True, null=True)
@@ -242,6 +312,17 @@ class ItemCategoryComment(models.Model):
 
 
 class Place(MPTTModel):
+    """
+    Model with places. Tree-like structure is provided by django-mptt app.
+     - is_shop: flag that allows item creation from nothing in this place. Used in Purchase with auto_source.
+     - has_cells: not used yet.
+     - has_chunks:
+        if Transaction.destination = this place and ItemCategory.is_stackable is False for
+        TransactionItem, then ItemChunk will be created in this place.
+        if Transaction.source = this place and ItemCategory.is_stackable is False for
+        TransactionItem, then ItemChunk should be set for TransactionItem.
+        Its quantity will change and if it drops to zero - ItemChunk will be deleted.
+    """
     name = models.CharField(_("name"), max_length=100, unique=True)
     parent = models.ForeignKey('self', verbose_name=_("parent"), null=True, blank=True, related_name='children')
     is_shop = models.BooleanField(_("is shop"), blank=True, default=False)
@@ -256,6 +337,8 @@ class Place(MPTTModel):
         unique_together = (
             ('name', 'parent'),
         )
+        # Permissions not used yet. they are designed for full 2-step handshake transactions.
+        # Now transactions are managed by storage operator.
         permissions = (
             ('view_place', _('view place')),  # can view this
             ('view_items', _('view items')),  # can view items here
@@ -285,9 +368,25 @@ class Place(MPTTModel):
         super(Place, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
+        """
+        url for admin interface
+        :return: url
+        :rtype: str
+        """
         return reverse('admin:base_place_item_changelist', args=[self.pk])
 
     def deposit(self, item, cell=None):
+        """
+        Stores item in this place.
+        If in this place exists item with the same ItemCategory - Item.deposit method will be called to join
+          two items into single one.
+        If in this place no item with the same ItemCategory - item.place can be safely changed into this place.
+        :param item: Item that will be stored in this place
+        :type item: Item
+        :param cell: If not null - Item.cell will be set to this value.
+        :type cell: str
+        :return: None
+        """
         try:
             i = self.items.get(category=item.category, is_reserved=False)
         except Item.DoesNotExist:
@@ -307,6 +406,14 @@ class Place(MPTTModel):
                 new_item.chunks.all().delete()
 
     def withdraw(self, item):
+        """
+        Removes Item from this place. Function finds Item with the same ItemCategory in this place and calls
+        Item.withdraw
+        :param item: Item which is needed to be removed from this place
+        :type item: Item
+        :return: new Item.
+        :rtype: Item
+        """
         try:
             i = self.items.get(category=item.category, is_reserved=False, quantity__gt=0)
         except Item.DoesNotExist:
@@ -337,6 +444,14 @@ class Place(MPTTModel):
             return i.withdraw(quantity=item.quantity, serial=serial, chunk=item.chunk)
 
     def join_to(self, place):
+        """
+        Helper function to join contents of 2 places into one. It creates transaction from this place to provided place
+        and all stored items are moved to provided place by this transaction.
+        This place name will be marked with DEL prefix and can be safely deleted in future by storage manager.
+        :param place:
+        :type place: Place
+        :return: None
+        """
         t = Transaction.objects.create(source=self, destination=place)
         for item in self.items.filter(quantity__gt=0):
             if item.serials.count():
@@ -422,6 +537,10 @@ class Place(MPTTModel):
 
 
 class MovementItem(models.Model):
+    """
+    Abstract class for TransactionItem and PurchaseItem.
+    Common fields and functions placed here
+    """
     category = models.ForeignKey("ItemCategory", verbose_name=_("item category"))
     quantity = models.DecimalField(_("quantity"), max_digits=9, decimal_places=3)
 
@@ -493,6 +612,10 @@ class MovementItem(models.Model):
 
 
 class PurchaseItem(MovementItem):
+    """
+    M2M Model for Purchase and ItemCategory relations
+    Purchase.items = models.ManyToManyField("ItemCategory", through="PurchaseItem" ...)
+    """
     purchase = models.ForeignKey("Purchase", verbose_name=_("Purchase"), related_name="purchase_items")
     price = models.DecimalField(_("price"), max_digits=9, decimal_places=2)
     price_usd = models.DecimalField(_("price usd"), max_digits=9, decimal_places=2, blank=True, null=True)
@@ -525,6 +648,12 @@ class PurchaseItem(MovementItem):
         )
 
     def clean_serials(self):
+        """
+        Validation for _serials value. Multiple serials can be provided with any delimiter except dash ("-").
+        If _serials count does not match with Item.quantity then Validation error raises
+        :return: list of serials
+        :rtype: list[str]
+        """
         if not self._serials:
             return []
 
@@ -542,10 +671,19 @@ class PurchaseItem(MovementItem):
 
     @property
     def serials(self):
+        """
+        getter method for serials
+        :return: list of serials
+        :rtype: list[str]
+        """
         return self.clean_serials()
 
     @serials.setter
     def serials(self, value):
+        """
+        setter method for serials
+        :return: None
+        """
         self._serials = ", ".join(value)
 
     def clean(self):
@@ -557,6 +695,9 @@ class PurchaseItem(MovementItem):
 
 
 class Payer(models.Model):
+    """
+    Model with purchase payer name. Used in Purchase.payer
+    """
     name = models.CharField(_("payer"), max_length=100)
 
     class Meta:
@@ -568,6 +709,10 @@ class Payer(models.Model):
 
 
 class Movement(models.Model):
+    """
+    Abstract class for Transaction and Purchase
+    Common fields and functions placed here
+    """
     items_prepared = []
     created_at = models.DateTimeField(_("created at"), default=timezone.now)
     completed_at = models.DateTimeField(_("completed at"), default=None, blank=True, null=True)
